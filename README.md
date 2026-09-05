@@ -79,7 +79,7 @@ src/
 | 0 — Spike | Code xong, **chưa qua GATE A** | GATE A cần một file MP4 nghe rõ cả hai bên trên máy thật |
 | 1 — Lõi ghi 2 chiều | Code xong, **chưa qua GATE B** | Chunk 5s, khôi phục crash, phát hiện im lặng, loudnorm riêng track |
 | 2 — Video + đồng bộ | Code xong, **chưa qua GATE C** | Offset đo bằng `performance.now()`, bù bằng `-itsoffset` |
-| 3 — UI + thư viện | Code xong | Overlay không tắt được, tray, phím tắt, thư viện, cài đặt |
+| 3 — UI + thư viện | Code xong | Overlay không tắt được, tray, phím tắt, thư viện, cài đặt, giao diện Việt/Anh |
 | 4 — Transcript | Code xong | whisper.cpp riêng từng track, tìm toàn văn, xuất txt/srt/md, tóm tắt |
 | 5 — Phát hành | Code xong, trừ ký số | Đóng gói, tự cập nhật, crash dump cục bộ, CI release, tài liệu người dùng |
 
@@ -90,7 +90,7 @@ src/
 | `npm run lint`, `npm run typecheck` | Sạch |
 | 96 unit test (máy trạng thái, offset, đặt tên, tham số ffmpeg/whisper, trộn transcript, tóm tắt) | Pass |
 | 4 test tích hợp chạy FFmpeg thật, kiểm tra file đích | Pass — MP4 ra đúng 1 video + **2 audio track có nhãn**, tách WAV 16 kHz đúng từng track |
-| `npm run smoke` — bật app thật dưới Xvfb | Pass — cửa sổ load, contextBridge hoạt động, renderer dựng đủ 3 tab, không lỗi console |
+| `npm run smoke` — bật app thật dưới Xvfb | Pass — cửa sổ load, contextBridge hoạt động, renderer dựng đủ 3 tab, đổi Việt→Anh qua đúng ô chọn thì nhãn đổi thật, không lỗi console |
 | `electron-builder` dựng bản đóng gói | Pass — sidecar FFmpeg nằm đúng `resources/ffmpeg/`, app đã đóng gói khởi động được |
 
 ### Chưa kiểm chứng được — việc đầu tiên cần làm

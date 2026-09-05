@@ -1,0 +1,307 @@
+export type Lang = 'vi' | 'en'
+
+/**
+ * Từ điển phẳng, một tầng. Không dùng thư viện i18n: ứng dụng chỉ có hai ngôn ngữ và vài trăm
+ * chuỗi, thêm một dependency chỉ để nội suy `{x}` là không đáng.
+ */
+const vi = {
+  'tab.record': 'Ghi',
+  'tab.library': 'Thư viện',
+  'tab.settings': 'Cài đặt',
+  'app.loading': 'Đang tải…',
+  'app.close': 'Đóng',
+  'app.cancel': 'Huỷ',
+  'app.save': 'Lưu',
+  'app.delete': 'Xoá',
+  'app.choose': 'Chọn…',
+
+  'update.downloaded': 'Đã tải xong bản {version}. Cập nhật sẽ tự cài khi thoát ứng dụng.',
+  'update.installNow': 'Cài ngay',
+
+  'orphan.found':
+    'Phiên ghi ngày {when} chưa được xuất file — có thể ứng dụng đã bị đóng đột ngột. Phần đã ghi vẫn còn.',
+  'orphan.export': 'Xuất file',
+  'orphan.discard': 'Bỏ',
+  'orphan.confirmDiscard': 'Xoá hẳn phần đã ghi của phiên này?',
+
+  'record.recording': 'Đang ghi',
+  'record.pickSource': 'Chọn nguồn cần ghi',
+  'record.refresh': 'Làm mới',
+  'record.noSources': 'Chưa thấy nguồn nào. Cấp quyền ghi màn hình rồi bấm Làm mới.',
+  'record.start': 'Bắt đầu ghi',
+  'record.pause': 'Tạm dừng',
+  'record.resume': 'Tiếp tục',
+  'record.bookmark': 'Đánh dấu mốc',
+  'record.stop': 'Dừng',
+  'record.meterMe': 'Tôi (micro)',
+  'record.meterThem': 'Đối phương',
+  'record.exporting': 'Đang xuất file… {percent}%',
+  'record.saved': 'Đã lưu: {title}',
+  'record.openFolder': 'Mở thư mục',
+  'record.dismissAlert': 'Đóng cảnh báo',
+  'record.mic': 'Microphone',
+  'record.defaultDevice': 'Thiết bị mặc định',
+  'record.quality': 'Chất lượng',
+  'record.quality.audio': 'Chỉ ghi tiếng (~115 MB/giờ)',
+  'record.quality.720': '720p30 (~320 MB/giờ)',
+  'record.quality.1080': '1080p30 (~500 MB/giờ)',
+  'record.quality.1080_60': '1080p60 (~850 MB/giờ)',
+  'record.diskFull': 'Ổ đĩa còn dưới 1 GB, không đủ chỗ để bắt đầu ghi.',
+  'record.diskLow': 'Ổ đĩa sắp đầy, chỉ còn ghi được khoảng {minutes} phút.',
+  'record.bookmarked': 'Đã đánh dấu mốc thời gian.',
+  'record.noMic': 'Không mở được microphone. Chỉ ghi được tiếng đầu bên kia.',
+  'record.noSystemAudio': 'Không lấy được âm thanh hệ thống. Kiểm tra quyền ghi màn hình rồi thử lại.',
+  'record.streamError': 'Luồng {stream} gặp lỗi và đã dừng.',
+  'record.sourceLost': 'Nguồn {stream} đã bị ngắt giữa chừng.',
+  'record.silenceMic': 'Micro không thu được tiếng suốt 30 giây. Kiểm tra thiết bị đầu vào.',
+  'record.silenceSystem': 'Không nghe thấy tiếng đầu bên kia suốt 30 giây. Kiểm tra thiết bị phát.',
+  'record.exportFailed': 'Không xuất được file. File thô vẫn được giữ lại.',
+
+  'library.search': 'Tìm theo tên hoặc ngày…',
+  'library.empty': 'Chưa có bản ghi nào.',
+  'library.play': 'Nghe lại',
+  'library.rename': 'Đổi tên',
+  'library.renamePrompt': 'Tên bản ghi',
+  'library.confirmDelete': 'Xoá vĩnh viễn "{title}"? Không khôi phục được.',
+  'library.cannotOpen': 'Không mở được file bản ghi.',
+  'library.withVideo': 'có hình',
+  'library.audioOnly': 'chỉ tiếng',
+  'library.hits': 'Tìm thấy trong nội dung cuộc gọi ({count})',
+  'library.extractAudio': 'Tách tiếng',
+  'library.extractMe': 'Tách track Tôi',
+  'library.extractThem': 'Tách track Đối phương',
+  'library.extracted': 'Đã tách xong: {path}',
+  'library.extractFailed': 'Không tách được file tiếng.',
+
+  'transcript.title': 'Biên bản',
+  'transcript.heading': 'Gỡ băng',
+  'transcript.run': 'Gỡ băng bản ghi này',
+  'transcript.rerun': 'Gỡ băng lại',
+  'transcript.filter': 'Lọc trong biên bản…',
+  'transcript.noMatch': 'Không có đoạn nào khớp.',
+  'transcript.seekHint': 'Nhấn để tua tới đoạn này',
+  'transcript.overlap': 'nói chồng',
+  'transcript.noBinary': 'Chưa có whisper.cpp. Xem hướng dẫn cài ở docs/06-transcript.md.',
+  'transcript.explain':
+    'Chạy nhận dạng tiếng nói riêng cho từng track, nên nhãn người nói lấy thẳng từ track chứ không phải đoán. Model đang chọn: {model}.',
+  'transcript.share': 'Tôi {me}% · Đối phương {them}%',
+  'transcript.export': 'Xuất .{format}',
+  'transcript.phase.model': 'Đang tải model',
+  'transcript.phase.extracting': 'Đang tách audio',
+  'transcript.phase.transcribing': 'Đang gỡ băng',
+  'transcript.phase.done': 'Xong',
+  'transcript.phase.error': 'Lỗi',
+
+  'summary.title': 'Tóm tắt',
+  'summary.local': 'Tóm tắt trên máy',
+  'summary.cloud': 'Tóm tắt qua API',
+  'summary.sourceCloud': 'Sinh bởi {model} — nội dung cuộc gọi đã được gửi ra ngoài',
+  'summary.sourceLocal': 'Trích từ chính lời trong cuộc gọi, chạy trên máy này',
+  'summary.noKeyPoints': 'Không đủ dữ liệu để trích điểm chính.',
+  'summary.actions': 'Việc cần làm',
+  'summary.noActions': 'Không phát hiện việc cần làm nào.',
+  'summary.hasDeadline': 'có hạn',
+
+  'settings.legal.title': 'Trách nhiệm khi ghi cuộc gọi.',
+  'settings.legal.body':
+    'Luật về ghi âm khác nhau theo từng nơi, và nhiều nơi yêu cầu tất cả các bên phải đồng ý chứ không chỉ người bấm nút ghi. CallRec luôn hiển thị chỉ báo đang ghi và không có chế độ ghi ẩn. Việc xin phép những người còn lại trong cuộc gọi thuộc trách nhiệm của bạn.',
+  'settings.permissions': 'Quyền hệ thống',
+  'settings.permissionsState': 'Microphone: {mic} · Ghi màn hình: {screen}',
+  'settings.checking': 'Đang kiểm tra…',
+  'settings.needsRestart': 'Quyền ghi màn hình chỉ có hiệu lực sau khi khởi động lại CallRec.',
+  'settings.grant': 'Cấp quyền',
+  'settings.folder': 'Thư mục lưu bản ghi',
+  'settings.language': 'Ngôn ngữ',
+  'settings.whisperModel': 'Model gỡ băng',
+  'settings.modelDownloaded': 'đã tải',
+  'settings.modelHint': 'Model tự tải về lần đầu dùng và lưu lại cho những lần sau.',
+  'settings.modelNoBinary': 'Chưa tìm thấy whisper.cpp — xem hướng dẫn cài ở docs/06-transcript.md.',
+  'settings.modelsOnDisk': 'Model đã tải về máy',
+  'settings.modelsNone': 'Chưa tải model nào.',
+  'settings.deleteModel': 'Xoá {name} ({size} MB)',
+  'settings.consent': 'Phát câu thông báo “Cuộc gọi này đang được ghi lại” khi bắt đầu ghi.',
+  'settings.consentHint':
+    'Câu này phát ra loa nên nằm luôn trong bản ghi, làm bằng chứng đã thông báo.',
+  'settings.cloud': 'Cho phép gửi transcript tới dịch vụ tóm tắt bên ngoài.',
+  'settings.cloudHint':
+    'Mặc định tắt. Bật lên nghĩa là nội dung cuộc gọi — gồm cả lời của người khác — sẽ rời khỏi máy này.',
+  'settings.apiKey': 'Khoá API Anthropic',
+  'settings.apiKeySaved': 'Đã lưu một khoá',
+  'settings.apiKeyHint':
+    'Khoá được mã hoá bằng kho khoá của hệ điều hành và không bao giờ được gửi ngược về phần giao diện.',
+  'settings.noSecureStorage':
+    'Hệ điều hành này không cung cấp kho khoá an toàn, nên CallRec từ chối lưu khoá API. Tóm tắt qua API sẽ không dùng được.',
+  'settings.crash': 'Báo lỗi',
+  'settings.crashBody':
+    'CallRec thu thập crash dump nhưng không gửi đi đâu cả. Một crash dump có thể chứa mảnh bộ nhớ của bản ghi đang mở, nên nó nằm nguyên trên máy này. Muốn gửi cho người phát triển thì bạn tự mở thư mục và tự quyết định gửi file nào.',
+  'settings.crashCount': 'Có {count} báo cáo sự cố',
+  'settings.crashNone': 'Chưa có báo cáo sự cố nào',
+  'settings.crashOpen': 'Mở thư mục',
+  'settings.crashClear': 'Xoá hết',
+
+  'overlay.recording': 'Đang ghi',
+  'overlay.paused': 'Tạm dừng',
+  'overlay.saving': 'Đang lưu',
+
+  'speaker.me': 'Tôi',
+  'speaker.them': 'Đối phương',
+} as const
+
+export type TranslationKey = keyof typeof vi
+
+const en: Record<TranslationKey, string> = {
+  'tab.record': 'Record',
+  'tab.library': 'Library',
+  'tab.settings': 'Settings',
+  'app.loading': 'Loading…',
+  'app.close': 'Close',
+  'app.cancel': 'Cancel',
+  'app.save': 'Save',
+  'app.delete': 'Delete',
+  'app.choose': 'Choose…',
+
+  'update.downloaded': 'Version {version} is ready. It will install when you quit the app.',
+  'update.installNow': 'Install now',
+
+  'orphan.found':
+    'The session from {when} was never exported — the app may have closed unexpectedly. What was recorded is still there.',
+  'orphan.export': 'Export it',
+  'orphan.discard': 'Discard',
+  'orphan.confirmDiscard': 'Permanently discard what was recorded in this session?',
+
+  'record.recording': 'Recording',
+  'record.pickSource': 'Pick what to record',
+  'record.refresh': 'Refresh',
+  'record.noSources': 'No sources found. Grant screen recording permission, then press Refresh.',
+  'record.start': 'Start recording',
+  'record.pause': 'Pause',
+  'record.resume': 'Resume',
+  'record.bookmark': 'Add marker',
+  'record.stop': 'Stop',
+  'record.meterMe': 'Me (microphone)',
+  'record.meterThem': 'Other party',
+  'record.exporting': 'Exporting… {percent}%',
+  'record.saved': 'Saved: {title}',
+  'record.openFolder': 'Open folder',
+  'record.dismissAlert': 'Dismiss alert',
+  'record.mic': 'Microphone',
+  'record.defaultDevice': 'System default',
+  'record.quality': 'Quality',
+  'record.quality.audio': 'Audio only (~115 MB/hour)',
+  'record.quality.720': '720p30 (~320 MB/hour)',
+  'record.quality.1080': '1080p30 (~500 MB/hour)',
+  'record.quality.1080_60': '1080p60 (~850 MB/hour)',
+  'record.diskFull': 'Less than 1 GB free — not enough space to start recording.',
+  'record.diskLow': 'Disk is nearly full: about {minutes} minutes of recording left.',
+  'record.bookmarked': 'Marker added.',
+  'record.noMic': 'Could not open the microphone. Only the other party will be recorded.',
+  'record.noSystemAudio': 'Could not capture system audio. Check screen recording permission and try again.',
+  'record.streamError': 'The {stream} stream failed and stopped.',
+  'record.sourceLost': 'The {stream} source was disconnected mid-recording.',
+  'record.silenceMic': 'The microphone has been silent for 30 seconds. Check your input device.',
+  'record.silenceSystem': 'No sound from the other party for 30 seconds. Check your output device.',
+  'record.exportFailed': 'Export failed. The raw files were kept.',
+
+  'library.search': 'Search by name or date…',
+  'library.empty': 'No recordings yet.',
+  'library.play': 'Play',
+  'library.rename': 'Rename',
+  'library.renamePrompt': 'Recording name',
+  'library.confirmDelete': 'Permanently delete "{title}"? This cannot be undone.',
+  'library.cannotOpen': 'Could not open the recording file.',
+  'library.withVideo': 'with video',
+  'library.audioOnly': 'audio only',
+  'library.hits': 'Found in call content ({count})',
+  'library.extractAudio': 'Extract audio',
+  'library.extractMe': 'Extract my track',
+  'library.extractThem': 'Extract their track',
+  'library.extracted': 'Extracted: {path}',
+  'library.extractFailed': 'Could not extract the audio file.',
+
+  'transcript.title': 'Transcript',
+  'transcript.heading': 'Transcription',
+  'transcript.run': 'Transcribe this recording',
+  'transcript.rerun': 'Transcribe again',
+  'transcript.filter': 'Filter the transcript…',
+  'transcript.noMatch': 'Nothing matches.',
+  'transcript.seekHint': 'Click to jump here',
+  'transcript.overlap': 'overlapping',
+  'transcript.noBinary': 'whisper.cpp is not installed. See docs/06-transcript.md.',
+  'transcript.explain':
+    'Speech recognition runs separately on each track, so speaker labels come straight from the track rather than a guess. Model: {model}.',
+  'transcript.share': 'Me {me}% · Other party {them}%',
+  'transcript.export': 'Export .{format}',
+  'transcript.phase.model': 'Downloading model',
+  'transcript.phase.extracting': 'Extracting audio',
+  'transcript.phase.transcribing': 'Transcribing',
+  'transcript.phase.done': 'Done',
+  'transcript.phase.error': 'Error',
+
+  'summary.title': 'Summary',
+  'summary.local': 'Summarize on this machine',
+  'summary.cloud': 'Summarize via API',
+  'summary.sourceCloud': 'Generated by {model} — the call content left this machine',
+  'summary.sourceLocal': 'Pulled from what was actually said, computed on this machine',
+  'summary.noKeyPoints': 'Not enough material to pull key points from.',
+  'summary.actions': 'Action items',
+  'summary.noActions': 'No action items detected.',
+  'summary.hasDeadline': 'has a deadline',
+
+  'settings.legal.title': 'Your responsibility when recording calls.',
+  'settings.legal.body':
+    'Recording law varies by place, and many places require every party to consent — not just the person pressing record. CallRec always shows a recording indicator and has no hidden recording mode. Getting permission from the other people on the call is your responsibility.',
+  'settings.permissions': 'System permissions',
+  'settings.permissionsState': 'Microphone: {mic} · Screen recording: {screen}',
+  'settings.checking': 'Checking…',
+  'settings.needsRestart': 'Screen recording permission only takes effect after restarting CallRec.',
+  'settings.grant': 'Grant permissions',
+  'settings.folder': 'Recordings folder',
+  'settings.language': 'Language',
+  'settings.whisperModel': 'Transcription model',
+  'settings.modelDownloaded': 'downloaded',
+  'settings.modelHint': 'The model downloads on first use and is kept for later.',
+  'settings.modelNoBinary': 'whisper.cpp not found — see docs/06-transcript.md.',
+  'settings.modelsOnDisk': 'Models on this machine',
+  'settings.modelsNone': 'No models downloaded yet.',
+  'settings.deleteModel': 'Delete {name} ({size} MB)',
+  'settings.consent': 'Play “This call is being recorded” when recording starts.',
+  'settings.consentHint':
+    'It plays through the speakers, so it lands inside the recording as proof you gave notice.',
+  'settings.cloud': 'Allow sending transcripts to an external summarization service.',
+  'settings.cloudHint':
+    'Off by default. Turning it on means the call content — including what other people said — leaves this machine.',
+  'settings.apiKey': 'Anthropic API key',
+  'settings.apiKeySaved': 'A key is saved',
+  'settings.apiKeyHint':
+    'The key is encrypted with the operating system keychain and is never sent back to the interface.',
+  'settings.noSecureStorage':
+    'This operating system offers no secure keychain, so CallRec refuses to store an API key. Summarizing via API will not work.',
+  'settings.crash': 'Crash reports',
+  'settings.crashBody':
+    'CallRec collects crash dumps but sends them nowhere. A crash dump can contain fragments of the recording held in memory, so it stays on this machine. To send one to a developer, open the folder and decide yourself what to send.',
+  'settings.crashCount': '{count} crash report(s)',
+  'settings.crashNone': 'No crash reports',
+  'settings.crashOpen': 'Open folder',
+  'settings.crashClear': 'Delete all',
+
+  'overlay.recording': 'Recording',
+  'overlay.paused': 'Paused',
+  'overlay.saving': 'Saving',
+
+  'speaker.me': 'Me',
+  'speaker.them': 'Other party',
+}
+
+const DICTS: Record<Lang, Record<TranslationKey, string>> = { vi, en }
+
+export function translate(lang: Lang, key: TranslationKey, params?: Record<string, string | number>): string {
+  // Thiếu bản dịch thì rơi về tiếng Việt chứ không hiện tên khoá cho người dùng thấy.
+  const template = DICTS[lang]?.[key] ?? vi[key] ?? key
+  if (!params) return template
+  return template.replace(/\{(\w+)\}/g, (whole, name: string) =>
+    name in params ? String(params[name]) : whole,
+  )
+}
+
+export const LANG_KEYS = Object.keys(vi) as TranslationKey[]
+export { vi as viDict, en as enDict }

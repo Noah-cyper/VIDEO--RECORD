@@ -79,13 +79,15 @@ function stamp(ms: number, msSep: string): string {
   return `${h}:${m}:${s}${msSep}${String(Math.max(0, ms) % 1000).padStart(3, '0')}`
 }
 
-export function toSrt(segments: TranscriptSegment[]): string {
+export type SpeakerLabels = Record<Speaker, string>
+
+export function toSrt(segments: TranscriptSegment[], labels: SpeakerLabels = SPEAKER_LABEL): string {
   return segments
     .map((seg, i) =>
       [
         String(i + 1),
         `${stamp(seg.startMs, ',')} --> ${stamp(seg.endMs, ',')}`,
-        `${SPEAKER_LABEL[seg.speaker]}: ${seg.text}`,
+        `${labels[seg.speaker]}: ${seg.text}`,
         '',
       ].join('\n'),
     )
@@ -94,15 +96,20 @@ export function toSrt(segments: TranscriptSegment[]): string {
 
 const shortStamp = (ms: number) => stamp(ms, '.').slice(0, 8)
 
-export function toTxt(segments: TranscriptSegment[]): string {
-  return segments.map((seg) => `[${shortStamp(seg.startMs)}] ${SPEAKER_LABEL[seg.speaker]}: ${seg.text}`).join('\n')
+export function toTxt(segments: TranscriptSegment[], labels: SpeakerLabels = SPEAKER_LABEL): string {
+  return segments.map((seg) => `[${shortStamp(seg.startMs)}] ${labels[seg.speaker]}: ${seg.text}`).join('\n')
 }
 
-export function toMarkdown(segments: TranscriptSegment[], title: string): string {
+export function toMarkdown(
+  segments: TranscriptSegment[],
+  title: string,
+  labels: SpeakerLabels = SPEAKER_LABEL,
+  overlapNote = 'nói chồng',
+): string {
   const lines = [`# ${title}`, '']
   for (const seg of segments) {
-    const mark = seg.overlap ? ' _(nói chồng)_' : ''
-    lines.push(`**${SPEAKER_LABEL[seg.speaker]}** · \`${shortStamp(seg.startMs)}\`${mark}`, '', seg.text, '')
+    const mark = seg.overlap ? ` _(${overlapNote})_` : ''
+    lines.push(`**${labels[seg.speaker]}** · \`${shortStamp(seg.startMs)}\`${mark}`, '', seg.text, '')
   }
   return lines.join('\n')
 }

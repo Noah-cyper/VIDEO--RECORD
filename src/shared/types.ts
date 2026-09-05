@@ -119,7 +119,11 @@ export interface ExportProgress {
 
 /** Cảnh báo phát ra khi một luồng im lặng bất thường hoặc thiết bị bị rút. */
 export interface CaptureAlert {
-  kind: 'silence' | 'device-lost' | 'device-changed' | 'disk-low' | 'stream-error'
+  kind: 'silence' | 'device-lost' | 'device-changed' | 'disk-low' | 'stream-error' | 'info'
   stream?: StreamKind
-  message: string
+  /** Khoá dịch; nơi phát cảnh báo không biết người dùng đang dùng ngôn ngữ nào. */
+  messageKey?: string
+  params?: Record<string, string | number>
+  /** Chuỗi đã thành hình từ hệ điều hành hoặc ffmpeg - không dịch được, hiện nguyên văn. */
+  message?: string
 }

@@ -3,6 +3,8 @@ import type { CaptureSource, Settings } from '@shared/types'
 import { formatDuration } from '@shared/naming'
 import { listMics } from '../capture/engine'
 import { useRecorder } from '../state/useRecorder'
+import { useT, type Translator } from './i18n'
+import { alertText } from './alertText'
 
 function Meter({ label, value }: { label: string; value: number }) {
   const pct = Math.round(value * 100)
@@ -18,6 +20,7 @@ function Meter({ label, value }: { label: string; value: number }) {
 }
 
 export function RecordView({ settings, onSettings }: { settings: Settings; onSettings: (p: Partial<Settings>) => void }) {
+  const t: Translator = useT()
   const [sources, setSources] = useState<CaptureSource[]>([])
   const [mics, setMics] = useState<{ deviceId: string; label: string }[]>([])
   const r = useRecorder({
@@ -44,15 +47,15 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
     <div className="col" style={{ gap: 18 }}>
       {r.alerts.map((a, i) => (
         <div key={`${a.kind}-${a.stream ?? ''}-${i}`} className={`alert${a.kind === 'stream-error' ? ' error' : ''}`}>
-          <span>{a.message}</span>
-          <button className="ghost" onClick={() => r.dismissAlert(i)} aria-label="Đóng cảnh báo">✕</button>
+          <span>{alertText(t, a)}</span>
+          <button className="ghost" onClick={() => r.dismissAlert(i)} aria-label={t('record.dismissAlert')}>✕</button>
         </div>
       ))}
 
       <div className="panel col">
         <div className="row spread">
-          <strong>{recording ? 'Đang ghi' : 'Chọn nguồn cần ghi'}</strong>
-          <button className="ghost" onClick={refreshSources} disabled={recording}>Làm mới</button>
+          <strong>{t(recording ? 'record.recording' : 'record.pickSource')}</strong>
+          <button className="ghost" onClick={refreshSources} disabled={recording}>{t('record.refresh')}</button>
         </div>
 
         {!recording && (
@@ -68,7 +71,7 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
                 <span title={s.name}>{s.name}</span>
               </button>
             ))}
-            {sources.length === 0 && <p className="muted">Chưa thấy nguồn nào. Cấp quyền ghi màn hình rồi bấm Làm mới.</p>}
+            {sources.length === 0 && <p className="muted">{t('record.noSources')}</p>}
           </div>
         )}
       </div>
@@ -79,36 +82,36 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
           <div className="row">
             {!recording && (
               <button className="danger" onClick={() => void r.start()} disabled={!r.canStart}>
-                Bắt đầu ghi
+                {t('record.start')}
               </button>
             )}
             {recording && (
               <>
-                <button onClick={r.pause}>{state === 'paused' ? 'Tiếp tục' : 'Tạm dừng'}</button>
-                <button onClick={() => void r.bookmark()}>Đánh dấu mốc</button>
-                <button className="danger" onClick={() => void r.stop()}>Dừng</button>
+                <button onClick={r.pause}>{t(state === 'paused' ? 'record.resume' : 'record.pause')}</button>
+                <button onClick={() => void r.bookmark()}>{t('record.bookmark')}</button>
+                <button className="danger" onClick={() => void r.stop()}>{t('record.stop')}</button>
               </>
             )}
           </div>
         </div>
 
-        <Meter label="Tôi (micro)" value={r.levels.mic} />
-        <Meter label="Đối phương" value={r.levels.system} />
+        <Meter label={t('record.meterMe')} value={r.levels.mic} />
+        <Meter label={t('record.meterThem')} value={r.levels.system} />
 
         {state === 'finalizing' && (
-          <p className="muted">Đang xuất file… {r.progress?.percent ?? 0}%</p>
+          <p className="muted">{t('record.exporting', { percent: r.progress?.percent ?? 0 })}</p>
         )}
         {state === 'error' && (
           <div className="alert error">
-            <span>{r.ctx.error}</span>
-            <button className="ghost" onClick={r.reset}>Đóng</button>
+            <span>{r.ctx.error === 'record.exportFailed' ? t('record.exportFailed') : r.ctx.error}</span>
+            <button className="ghost" onClick={r.reset}>{t('app.close')}</button>
           </div>
         )}
         {state === 'done' && r.lastRecording && (
           <div className="alert">
-            <span>Đã lưu: {r.lastRecording.title}</span>
+            <span>{t('record.saved', { title: r.lastRecording.title })}</span>
             <button className="ghost" onClick={() => void window.callrec.library.reveal(r.lastRecording!.id)}>
-              Mở thư mục
+              {t('record.openFolder')}
             </button>
           </div>
         )}
@@ -116,31 +119,31 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
 
       <div className="panel col">
         <div className="field">
-          <label htmlFor="mic">Microphone</label>
+          <label htmlFor="mic">{t('record.mic')}</label>
           <select
             id="mic"
             value={settings.micDeviceId ?? ''}
             disabled={recording}
             onChange={(e) => onSettings({ micDeviceId: e.target.value || null })}
           >
-            <option value="">Thiết bị mặc định</option>
+            <option value="">{t('record.defaultDevice')}</option>
             {mics.map((m) => (
               <option key={m.deviceId} value={m.deviceId}>{m.label}</option>
             ))}
           </select>
         </div>
         <div className="field">
-          <label htmlFor="quality">Chất lượng</label>
+          <label htmlFor="quality">{t('record.quality')}</label>
           <select
             id="quality"
             value={settings.quality}
             disabled={recording}
             onChange={(e) => onSettings({ quality: e.target.value as Settings['quality'] })}
           >
-            <option value="audio-only">Chỉ ghi tiếng (~115 MB/giờ)</option>
-            <option value="720p30">720p30 (~320 MB/giờ)</option>
-            <option value="1080p30">1080p30 (~500 MB/giờ)</option>
-            <option value="1080p60">1080p60 (~850 MB/giờ)</option>
+            <option value="audio-only">{t('record.quality.audio')}</option>
+            <option value="720p30">{t('record.quality.720')}</option>
+            <option value="1080p30">{t('record.quality.1080')}</option>
+            <option value="1080p60">{t('record.quality.1080_60')}</option>
           </select>
         </div>
       </div>

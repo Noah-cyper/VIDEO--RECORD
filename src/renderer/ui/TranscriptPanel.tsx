@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Recording, Settings } from '@shared/types'
 import type { TranscriptProgress, WhisperStatus } from '@shared/ipc'
-import { SPEAKER_LABEL, speakingTime, type Transcript } from '@shared/transcript'
+import { speakingTime, type Speaker, type Transcript } from '@shared/transcript'
 import type { StoredSummary } from '@shared/summary'
 import { formatDuration } from '@shared/naming'
 import { WHISPER_MODELS } from '@shared/whisper'
+import type { TranslationKey } from '@shared/i18n'
+import { useT } from './i18n'
 
-const PHASE_LABEL: Record<TranscriptProgress['phase'], string> = {
-  model: 'Đang tải model',
-  extracting: 'Đang tách audio',
-  transcribing: 'Đang gỡ băng',
-  done: 'Xong',
-  error: 'Lỗi',
+const PHASE_KEY: Record<TranscriptProgress['phase'], TranslationKey> = {
+  model: 'transcript.phase.model',
+  extracting: 'transcript.phase.extracting',
+  transcribing: 'transcript.phase.transcribing',
+  done: 'transcript.phase.done',
+  error: 'transcript.phase.error',
 }
+
+const speakerKey = (s: Speaker): TranslationKey => (s === 'me' ? 'speaker.me' : 'speaker.them')
 
 export function TranscriptPanel({
   recording,
@@ -23,6 +27,7 @@ export function TranscriptPanel({
   settings: Settings
   onSeek: (ms: number) => void
 }) {
+  const t = useT()
   const [transcript, setTranscript] = useState<Transcript | null>(null)
   const [summary, setSummary] = useState<StoredSummary | null>(null)
   const [status, setStatus] = useState<WhisperStatus | null>(null)
@@ -72,28 +77,29 @@ export function TranscriptPanel({
   if (!transcript) {
     return (
       <div className="panel col">
-        <strong>Gỡ băng</strong>
+        <strong>{t('transcript.heading')}</strong>
         {status && !status.binaryAvailable && (
           <div className="alert">
-            <span>Chưa có whisper.cpp. Xem hướng dẫn cài ở docs/06-transcript.md.</span>
+            <span>{t('transcript.noBinary')}</span>
           </div>
         )}
         <p className="muted">
-          Chạy nhận dạng tiếng nói riêng cho từng track, nên nhãn người nói lấy thẳng từ track chứ
-          không phải đoán. Model đang chọn: {WHISPER_MODELS[settings.whisperModel].label}.
+          {t('transcript.explain', { model: WHISPER_MODELS[settings.whisperModel].label })}
         </p>
         {progress && progress.phase !== 'done' && (
           <p className="muted">
-            {PHASE_LABEL[progress.phase]}
-            {progress.track ? ` (${SPEAKER_LABEL[progress.track]})` : ''} — {progress.percent}%
+            {t(PHASE_KEY[progress.phase])}
+            {progress.track ? ` (${t(speakerKey(progress.track))})` : ''} — {progress.percent}%
             {progress.message ? ` · ${progress.message}` : ''}
           </p>
         )}
         <div className="row">
           <button className="primary" onClick={() => void transcribe()} disabled={busy || !status?.binaryAvailable}>
-            Gỡ băng bản ghi này
+            {t('transcript.run')}
           </button>
-          {busy && <button onClick={() => void window.callrec.transcript.cancel(recording.id)}>Huỷ</button>}
+          {busy && (
+            <button onClick={() => void window.callrec.transcript.cancel(recording.id)}>{t('app.cancel')}</button>
+          )}
         </div>
       </div>
     )
@@ -108,13 +114,16 @@ export function TranscriptPanel({
   return (
     <div className="panel col">
       <div className="row spread">
-        <strong>Biên bản</strong>
+        <strong>{t('transcript.title')}</strong>
         <span className="muted" style={{ fontSize: 12 }}>
-          Tôi {Math.round((talk.me / total) * 100)}% · Đối phương {Math.round((talk.them / total) * 100)}%
+          {t('transcript.share', {
+            me: Math.round((talk.me / total) * 100),
+            them: Math.round((talk.them / total) * 100),
+          })}
         </span>
       </div>
 
-      <input placeholder="Lọc trong biên bản…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+      <input placeholder={t('transcript.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
 
       <div className="transcript">
         {shown.map((seg, i) => (
@@ -122,41 +131,41 @@ export function TranscriptPanel({
             key={`${seg.startMs}-${i}`}
             className={`segment ${seg.speaker}${seg.overlap ? ' overlap' : ''}`}
             onClick={() => onSeek(seg.startMs)}
-            title="Nhấn để tua tới đoạn này"
+            title={t('transcript.seekHint')}
           >
             <span className="seg-meta">
-              {formatDuration(seg.startMs)} · {SPEAKER_LABEL[seg.speaker]}
-              {seg.overlap ? ' · nói chồng' : ''}
+              {formatDuration(seg.startMs)} · {t(speakerKey(seg.speaker))}
+              {seg.overlap ? ` · ${t('transcript.overlap')}` : ''}
             </span>
             <span>{seg.text}</span>
           </button>
         ))}
-        {shown.length === 0 && <p className="muted">Không có đoạn nào khớp.</p>}
+        {shown.length === 0 && <p className="muted">{t('transcript.noMatch')}</p>}
       </div>
 
       <div className="row" style={{ flexWrap: 'wrap' }}>
         {(['txt', 'srt', 'md'] as const).map((f) => (
           <button key={f} onClick={() => void window.callrec.transcript.export(recording.id, f)}>
-            Xuất .{f}
+            {t('transcript.export', { format: f })}
           </button>
         ))}
         <button onClick={() => void transcribe()} disabled={busy || !status?.binaryAvailable}>
-          Gỡ băng lại
+          {t('transcript.rerun')}
         </button>
-        <button onClick={() => void makeSummary(false)} disabled={busy}>Tóm tắt trên máy</button>
+        <button onClick={() => void makeSummary(false)} disabled={busy}>{t('summary.local')}</button>
         {settings.allowCloudSummary && status?.apiKeyConfigured && (
-          <button onClick={() => void makeSummary(true)} disabled={busy}>Tóm tắt qua API</button>
+          <button onClick={() => void makeSummary(true)} disabled={busy}>{t('summary.cloud')}</button>
         )}
       </div>
 
       {summary && (
         <div className="col" style={{ gap: 10 }}>
           <div className="row spread">
-            <strong>Tóm tắt</strong>
+            <strong>{t('summary.title')}</strong>
             <span className="muted" style={{ fontSize: 12 }}>
               {summary.source === 'cloud'
-                ? `Sinh bởi ${summary.model ?? 'API'} — nội dung cuộc gọi đã được gửi ra ngoài`
-                : 'Trích từ chính lời trong cuộc gọi, chạy trên máy này'}
+                ? t('summary.sourceCloud', { model: summary.model ?? 'API' })
+                : t('summary.sourceLocal')}
             </span>
           </div>
 
@@ -167,23 +176,23 @@ export function TranscriptPanel({
               {summary.keyPoints.map((k, i) => (
                 <li key={i}>
                   <button className="link" onClick={() => onSeek(k.startMs)}>{formatDuration(k.startMs)}</button>{' '}
-                  <b>{SPEAKER_LABEL[k.speaker]}:</b> {k.text}
+                  <b>{t(speakerKey(k.speaker))}:</b> {k.text}
                 </li>
               ))}
-              {summary.keyPoints.length === 0 && <li className="muted">Không đủ dữ liệu để trích điểm chính.</li>}
+              {summary.keyPoints.length === 0 && <li className="muted">{t('summary.noKeyPoints')}</li>}
             </ul>
           )}
 
-          <strong>Việc cần làm</strong>
+          <strong>{t('summary.actions')}</strong>
           <ul className="summary-list">
             {summary.actionItems.map((a, i) => (
               <li key={i}>
                 <button className="link" onClick={() => onSeek(a.atMs)}>{formatDuration(a.atMs)}</button>{' '}
-                <b>{SPEAKER_LABEL[a.speaker]}:</b> {a.text}
-                {a.hasDeadline && <span className="badge">có hạn</span>}
+                <b>{t(speakerKey(a.speaker))}:</b> {a.text}
+                {a.hasDeadline && <span className="badge">{t('summary.hasDeadline')}</span>}
               </li>
             ))}
-            {summary.actionItems.length === 0 && <li className="muted">Không phát hiện việc cần làm nào.</li>}
+            {summary.actionItems.length === 0 && <li className="muted">{t('summary.noActions')}</li>}
           </ul>
         </div>
       )}

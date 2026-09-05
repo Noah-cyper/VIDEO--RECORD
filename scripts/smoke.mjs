@@ -39,14 +39,44 @@ app.whenReady().then(async () => {
     bodyLen: document.body.innerText.trim().length,
   }))()`)
 
+  // Đổi ngôn ngữ bằng đúng cái select người dùng bấm, không gọi tắt qua IPC: chỉ đường này mới
+  // chứng minh i18n nối thật tới giao diện chứ không chỉ có từ điển nằm trong file.
+  const original = await win.webContents.executeJavaScript(
+    `window.callrec.settings.get().then((s) => s.language)`,
+  )
+  const pickLanguage = (value) => `(() => {
+    const tab = [...document.querySelectorAll('.tabs button')].pop()
+    tab.click()
+    return new Promise((resolve) => setTimeout(() => {
+      const select = document.getElementById('lang')
+      if (!select) return resolve('không thấy ô chọn ngôn ngữ')
+      // React theo dõi value bằng tracker riêng, gán thẳng .value sẽ bị nuốt mất sự kiện.
+      const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set
+      setter.call(select, ${JSON.stringify(value)})
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+      resolve('ok')
+    }, 300))
+  })()`
+
+  const picked = await win.webContents.executeJavaScript(pickLanguage('en'))
+  if (picked !== 'ok') return fail(picked)
+  await new Promise((r) => setTimeout(r, 1200))
+  const english = await win.webContents.executeJavaScript(
+    `[...document.querySelectorAll('.tabs button')].map((b) => b.textContent)`,
+  )
+  await win.webContents.executeJavaScript(pickLanguage(original))
+
   clearTimeout(timer)
   const problems = []
   if (!probe.hasBridge) problems.push('contextBridge không lộ ra window.callrec')
   if (probe.tabs.length !== 3) problems.push(`mong đợi 3 tab, nhận được ${JSON.stringify(probe.tabs)}`)
   if (probe.bodyLen < 20) problems.push('renderer không dựng được nội dung')
+  if (english.join(',') !== 'Record,Library,Settings') {
+    problems.push(`đổi sang tiếng Anh không ăn: ${JSON.stringify(english)}`)
+  }
   if (errors.length > 0) problems.push(`lỗi console: ${errors.join(' | ')}`)
 
   if (problems.length > 0) return fail(problems.join('; '))
-  console.log(`SMOKE OK — tabs: ${probe.tabs.join(', ')}`)
+  console.log(`SMOKE OK — vi: ${probe.tabs.join(', ')} | en: ${english.join(', ')}`)
   app.exit(0)
 })

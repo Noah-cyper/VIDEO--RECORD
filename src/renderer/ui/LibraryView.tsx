@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Recording, Settings } from '@shared/types'
 import type { TranscriptHitDto } from '@shared/ipc'
-import { SPEAKER_LABEL } from '@shared/transcript'
 import { formatBytes, formatDuration } from '@shared/naming'
 import { TranscriptPanel } from './TranscriptPanel'
+import { useT } from './i18n'
 
 export function LibraryView({ settings }: { settings: Settings }) {
+  const t = useT()
   const [items, setItems] = useState<Recording[]>([])
+  const [notice, setNotice] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [hits, setHits] = useState<TranscriptHitDto[]>([])
   const [playing, setPlaying] = useState<Recording | null>(null)
@@ -38,8 +40,13 @@ export function LibraryView({ settings }: { settings: Settings }) {
     refresh('')
   }, [])
 
+  const extractAudio = async (rec: Recording, track: number) => {
+    const path = await window.callrec.library.extractAudio(rec.id, track)
+    setNotice(path ? t('library.extracted', { path }) : t('library.extractFailed'))
+  }
+
   const rename = async (rec: Recording) => {
-    const title = window.prompt('Tên bản ghi', rec.title)
+    const title = window.prompt(t('library.renamePrompt'), rec.title)
     if (title && title !== rec.title) {
       await window.callrec.library.rename(rec.id, title)
       refresh()
@@ -47,7 +54,7 @@ export function LibraryView({ settings }: { settings: Settings }) {
   }
 
   const remove = async (rec: Recording) => {
-    if (!window.confirm(`Xoá vĩnh viễn "${rec.title}"? Không khôi phục được.`)) return
+    if (!window.confirm(t('library.confirmDelete', { title: rec.title }))) return
     await window.callrec.library.remove(rec.id)
     if (playing?.id === rec.id) {
       setPlaying(null)
@@ -59,7 +66,7 @@ export function LibraryView({ settings }: { settings: Settings }) {
   return (
     <div className="col" style={{ gap: 16 }}>
       <input
-        placeholder="Tìm theo tên hoặc ngày…"
+        placeholder={t('library.search')}
         value={query}
         onChange={(e) => {
           setQuery(e.target.value)
@@ -72,7 +79,7 @@ export function LibraryView({ settings }: { settings: Settings }) {
         <div className="panel col">
           <div className="row spread">
             <strong>{playing.title}</strong>
-            <button className="ghost" onClick={() => { setPlaying(null); setMediaSrc(null) }}>Đóng</button>
+            <button className="ghost" onClick={() => { setPlaying(null); setMediaSrc(null) }}>{t('app.close')}</button>
           </div>
           {/* Hai audio track nằm trong cùng file; trình phát chọn track qua menu của chính nó. */}
           {mediaSrc ? (
@@ -89,7 +96,7 @@ export function LibraryView({ settings }: { settings: Settings }) {
               }}
             />
           ) : (
-            <p className="muted">Không mở được file bản ghi.</p>
+            <p className="muted">{t('library.cannotOpen')}</p>
           )}
           {playing.bookmarks.length > 0 && (
             <div className="row" style={{ flexWrap: 'wrap' }}>
@@ -101,13 +108,24 @@ export function LibraryView({ settings }: { settings: Settings }) {
             </div>
           )}
         </div>
+        <div className="panel col">
+          <strong>{t('library.extractAudio')}</strong>
+          <div className="row" style={{ flexWrap: 'wrap' }}>
+            {(playing.audioTracks ?? ['me', 'them']).map((speaker, index) => (
+              <button key={speaker} onClick={() => void extractAudio(playing, index)}>
+                {t(speaker === 'me' ? 'library.extractMe' : 'library.extractThem')}
+              </button>
+            ))}
+          </div>
+          {notice && <span className="muted" style={{ fontSize: 12 }}>{notice}</span>}
+        </div>
         <TranscriptPanel recording={playing} settings={settings} onSeek={seek} />
         </>
       )}
 
       {hits.length > 0 && (
         <div className="panel col">
-          <strong>Tìm thấy trong nội dung cuộc gọi ({hits.length})</strong>
+          <strong>{t('library.hits', { count: hits.length })}</strong>
           {hits.slice(0, 25).map((h, i) => (
             <button
               key={`${h.recordingId}-${i}`}
@@ -119,7 +137,7 @@ export function LibraryView({ settings }: { settings: Settings }) {
               }}
             >
               <span className="seg-meta">
-                {h.recordingTitle} · {formatDuration(h.atMs)} · {SPEAKER_LABEL[h.speaker]}
+                {h.recordingTitle} · {formatDuration(h.atMs)} · {t(h.speaker === 'me' ? 'speaker.me' : 'speaker.them')}
               </span>
               <span>{h.text}</span>
             </button>
@@ -134,16 +152,16 @@ export function LibraryView({ settings }: { settings: Settings }) {
               <div className="title">{rec.title}</div>
               <div className="meta">
                 {new Date(rec.createdAt).toLocaleString('vi-VN')} · {formatDuration(rec.durationMs)} ·{' '}
-                {formatBytes(rec.sizeBytes)} · {rec.hasVideo ? 'có hình' : 'chỉ tiếng'}
+                {formatBytes(rec.sizeBytes)} · {t(rec.hasVideo ? 'library.withVideo' : 'library.audioOnly')}
               </div>
             </div>
-            <button onClick={() => void open(rec)}>Nghe lại</button>
-            <button onClick={() => void rename(rec)}>Đổi tên</button>
-            <button onClick={() => void window.callrec.library.reveal(rec.id)}>Mở thư mục</button>
-            <button className="ghost" onClick={() => void remove(rec)}>Xoá</button>
+            <button onClick={() => void open(rec)}>{t('library.play')}</button>
+            <button onClick={() => void rename(rec)}>{t('library.rename')}</button>
+            <button onClick={() => void window.callrec.library.reveal(rec.id)}>{t('record.openFolder')}</button>
+            <button className="ghost" onClick={() => void remove(rec)}>{t('app.delete')}</button>
           </div>
         ))}
-        {items.length === 0 && <p className="muted">Chưa có bản ghi nào.</p>}
+        {items.length === 0 && <p className="muted">{t('library.empty')}</p>}
       </div>
     </div>
   )

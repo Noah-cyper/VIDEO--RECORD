@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Settings } from '@shared/types'
 import type { PermissionStatus, WhisperStatus } from '@shared/ipc'
 import { WHISPER_MODELS, type WhisperModelName } from '@shared/whisper'
+import { useT } from './i18n'
 
 export function SettingsView({
   settings,
@@ -14,6 +15,7 @@ export function SettingsView({
   onSettings: (patch: Partial<Settings>) => void
   onRequestPermissions: () => void
 }) {
+  const t = useT()
   const [whisper, setWhisper] = useState<WhisperStatus | null>(null)
   const [apiKey, setApiKeyInput] = useState('')
   const [crashes, setCrashes] = useState(0)
@@ -36,46 +38,64 @@ export function SettingsView({
   return (
     <div className="col" style={{ gap: 18 }}>
       <div className="notice">
-        <strong>Trách nhiệm khi ghi cuộc gọi.</strong> Luật về ghi âm khác nhau theo từng nơi, và nhiều nơi
-        yêu cầu <em>tất cả</em> các bên phải đồng ý chứ không chỉ người bấm nút ghi. CallRec luôn hiển thị
-        chỉ báo đang ghi và không có chế độ ghi ẩn. Việc xin phép những người còn lại trong cuộc gọi
-        thuộc trách nhiệm của bạn.
+        <strong>{t('settings.legal.title')}</strong> {t('settings.legal.body')}
       </div>
 
       <div className="panel col">
-        <strong>Quyền hệ thống</strong>
+        <strong>{t('settings.permissions')}</strong>
         {permissions ? (
           <>
-            <p className="muted">Microphone: {permissions.microphone} · Ghi màn hình: {permissions.screen}</p>
+            <p className="muted">
+              {t('settings.permissionsState', { mic: permissions.microphone, screen: permissions.screen })}
+            </p>
             {permissions.needsRestart && (
               <div className="alert">
-                <span>Quyền ghi màn hình chỉ có hiệu lực sau khi khởi động lại CallRec.</span>
+                <span>{t('settings.needsRestart')}</span>
               </div>
             )}
           </>
         ) : (
-          <p className="muted">Đang kiểm tra…</p>
+          <p className="muted">{t('settings.checking')}</p>
         )}
         <div className="row">
-          <button onClick={onRequestPermissions}>Cấp quyền</button>
+          <button onClick={onRequestPermissions}>{t('settings.grant')}</button>
         </div>
       </div>
 
       <div className="panel col">
         <div className="field">
-          <label>Thư mục lưu bản ghi</label>
+          <label>{t('settings.folder')}</label>
           <div className="row">
             <input readOnly value={settings.recordingsDir} />
-            <button onClick={() => void pickDir()}>Chọn…</button>
+            <button onClick={() => void pickDir()}>{t('app.choose')}</button>
           </div>
         </div>
 
         <div className="field">
-          <label htmlFor="lang">Ngôn ngữ</label>
+          <label htmlFor="lang">{t('settings.language')}</label>
           <select id="lang" value={settings.language} onChange={(e) => onSettings({ language: e.target.value as 'vi' | 'en' })}>
             <option value="vi">Tiếng Việt</option>
             <option value="en">English</option>
           </select>
+        </div>
+
+        <div className="field">
+          <label>{t('settings.modelsOnDisk')}</label>
+          {whisper && whisper.installedModels.length > 0 ? (
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              {whisper.installedModels.map((name) => (
+                <button
+                  key={name}
+                  className="ghost"
+                  onClick={() => void window.callrec.whisper.removeModel(name).then(setWhisper)}
+                >
+                  {t('settings.deleteModel', { name, size: WHISPER_MODELS[name].sizeMb })}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <span className="muted" style={{ fontSize: 12 }}>{t('settings.modelsNone')}</span>
+          )}
         </div>
 
         <label className="check">
@@ -85,14 +105,14 @@ export function SettingsView({
             onChange={(e) => onSettings({ playConsentNotice: e.target.checked })}
           />
           <span>
-            Phát câu thông báo &ldquo;Cuộc gọi này đang được ghi lại&rdquo; khi bắt đầu ghi.
+            {t('settings.consent')}
             <br />
-            <span className="muted">Câu này phát ra loa nên nằm luôn trong bản ghi, làm bằng chứng đã thông báo.</span>
+            <span className="muted">{t('settings.consentHint')}</span>
           </span>
         </label>
 
         <div className="field">
-          <label htmlFor="whisper-model">Model gỡ băng</label>
+          <label htmlFor="whisper-model">{t('settings.whisperModel')}</label>
           <select
             id="whisper-model"
             value={settings.whisperModel}
@@ -101,14 +121,12 @@ export function SettingsView({
             {(Object.keys(WHISPER_MODELS) as WhisperModelName[]).map((name) => (
               <option key={name} value={name}>
                 {WHISPER_MODELS[name].label} — {WHISPER_MODELS[name].sizeMb} MB
-                {whisper?.installedModels.includes(name) ? ' (đã tải)' : ''}
+                {whisper?.installedModels.includes(name) ? ` (${t('settings.modelDownloaded')})` : ''}
               </option>
             ))}
           </select>
           <span className="muted" style={{ fontSize: 12 }}>
-            {whisper?.binaryAvailable
-              ? 'Model tự tải về lần đầu dùng và lưu lại cho những lần sau.'
-              : 'Chưa tìm thấy whisper.cpp — xem hướng dẫn cài ở docs/06-transcript.md.'}
+            {t(whisper?.binaryAvailable ? 'settings.modelHint' : 'settings.modelNoBinary')}
           </span>
         </div>
 
@@ -119,23 +137,18 @@ export function SettingsView({
             onChange={(e) => onSettings({ allowCloudSummary: e.target.checked })}
           />
           <span>
-            Cho phép gửi transcript tới dịch vụ tóm tắt bên ngoài.
+            {t('settings.cloud')}
             <br />
-            <span className="muted">
-              Mặc định tắt. Bật lên nghĩa là nội dung cuộc gọi — gồm cả lời của người khác — sẽ rời khỏi máy này.
-            </span>
+            <span className="muted">{t('settings.cloudHint')}</span>
           </span>
         </label>
 
         {settings.allowCloudSummary && (
           <div className="field">
-            <label htmlFor="api-key">Khoá API Anthropic</label>
+            <label htmlFor="api-key">{t('settings.apiKey')}</label>
             {whisper?.secureStorageAvailable === false ? (
               <div className="alert error">
-                <span>
-                  Hệ điều hành này không cung cấp kho khoá an toàn, nên CallRec từ chối lưu khoá API.
-                  Tóm tắt qua API sẽ không dùng được.
-                </span>
+                <span>{t('settings.noSecureStorage')}</span>
               </div>
             ) : (
               <>
@@ -143,24 +156,21 @@ export function SettingsView({
                   <input
                     id="api-key"
                     type="password"
-                    placeholder={whisper?.apiKeyConfigured ? 'Đã lưu một khoá' : 'sk-ant-...'}
+                    placeholder={whisper?.apiKeyConfigured ? t('settings.apiKeySaved') : 'sk-ant-...'}
                     value={apiKey}
                     onChange={(e) => setApiKeyInput(e.target.value)}
                   />
-                  <button onClick={() => void saveApiKey()} disabled={!apiKey.trim()}>Lưu</button>
+                  <button onClick={() => void saveApiKey()} disabled={!apiKey.trim()}>{t('app.save')}</button>
                   {whisper?.apiKeyConfigured && (
                     <button
                       className="ghost"
                       onClick={() => void window.callrec.settings.clearApiKey().then(setWhisper)}
                     >
-                      Xoá
+                      {t('app.delete')}
                     </button>
                   )}
                 </div>
-                <span className="muted" style={{ fontSize: 12 }}>
-                  Khoá được mã hoá bằng kho khoá của hệ điều hành và không bao giờ được gửi ngược
-                  về phần giao diện.
-                </span>
+                <span className="muted" style={{ fontSize: 12 }}>{t('settings.apiKeyHint')}</span>
               </>
             )}
           </div>
@@ -168,21 +178,21 @@ export function SettingsView({
       </div>
 
       <div className="panel col">
-        <strong>Báo lỗi</strong>
-        <p className="muted">
-          CallRec thu thập crash dump nhưng <b>không gửi đi đâu cả</b>. Một crash dump có thể chứa
-          mảnh bộ nhớ của bản ghi đang mở, nên nó nằm nguyên trên máy này. Muốn gửi cho người phát
-          triển thì bạn tự mở thư mục và tự quyết định gửi file nào.
-        </p>
+        <strong>{t('settings.crash')}</strong>
+        <p className="muted">{t('settings.crashBody')}</p>
         <div className="row">
-          <span className="muted">{crashes > 0 ? `Có ${crashes} báo cáo sự cố` : 'Chưa có báo cáo sự cố nào'}</span>
-          <button onClick={() => void window.callrec.crash.open()} disabled={crashes === 0}>Mở thư mục</button>
+          <span className="muted">
+            {crashes > 0 ? t('settings.crashCount', { count: crashes }) : t('settings.crashNone')}
+          </span>
+          <button onClick={() => void window.callrec.crash.open()} disabled={crashes === 0}>
+            {t('settings.crashOpen')}
+          </button>
           <button
             className="ghost"
             onClick={() => void window.callrec.crash.clear().then(() => setCrashes(0))}
             disabled={crashes === 0}
           >
-            Xoá hết
+            {t('settings.crashClear')}
           </button>
         </div>
       </div>

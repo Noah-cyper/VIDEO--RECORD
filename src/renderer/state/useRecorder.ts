@@ -67,11 +67,11 @@ export function useRecorder(options: RecorderOptions) {
     const opts = optionsRef.current
     const disk = await window.callrec.disk.status(opts.quality)
     if (!disk.canRecord) {
-      pushAlert({ kind: 'disk-low', message: 'Ổ đĩa còn dưới 1 GB, không đủ chỗ để bắt đầu ghi.' })
+      pushAlert({ kind: 'disk-low', messageKey: 'record.diskFull' })
       return
     }
     if (disk.warn) {
-      pushAlert({ kind: 'disk-low', message: `Ổ đĩa sắp đầy, chỉ còn ghi được khoảng ${disk.minutesLeft} phút.` })
+      pushAlert({ kind: 'disk-low', messageKey: 'record.diskLow', params: { minutes: disk.minutesLeft } })
     }
 
     const session = await window.callrec.session.open({ quality: opts.quality })
@@ -143,7 +143,7 @@ export function useRecorder(options: RecorderOptions) {
     const recording = await window.callrec.session.close({ sessionId: id, durationMs: finalElapsed })
     sessionRef.current = null
     setLastRecording(recording)
-    send(recording ? { type: 'FINALIZED' } : { type: 'FAIL', error: 'Không xuất được file. File thô vẫn được giữ lại.' })
+    send(recording ? { type: 'FINALIZED' } : { type: 'FAIL', error: 'record.exportFailed' })
   }, [elapsed, send])
 
   const bookmark = useCallback(async () => {
@@ -152,8 +152,8 @@ export function useRecorder(options: RecorderOptions) {
     const atMs = ctxRef.current.startedAtMs
       ? computeElapsed(ctxRef.current.startedAtMs, performance.now(), ctxRef.current.pauses)
       : 0
-    await window.callrec.session.bookmark(id, { atMs, label: `Mốc ${new Date().toLocaleTimeString('vi-VN')}` })
-    pushAlert({ kind: 'silence', message: 'Đã đánh dấu mốc thời gian.' })
+    await window.callrec.session.bookmark(id, { atMs, label: new Date().toLocaleTimeString() })
+    pushAlert({ kind: 'info', messageKey: 'record.bookmarked' })
   }, [pushAlert])
 
   const reset = useCallback(() => {

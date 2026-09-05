@@ -61,7 +61,7 @@ P1 quan trọng, P2 để sau.
 | U-07 | Onboarding + xin quyền + giải thích pháp lý | 3 | P0 |
 | U-08 | Nút phát câu thông báo đồng ý | 2 | P0 |
 | U-09 | Màn hình cài đặt | 3 | P0 |
-| U-10 | Đa ngôn ngữ Việt/Anh | 2 | P1 |
+| U-10 | Đa ngôn ngữ Việt/Anh | 2 | P1 |  
 | U-11 | Đánh dấu mốc trong lúc ghi | 2 | P1 |
 
 ## Phase 4 — Transcript
@@ -97,7 +97,7 @@ P1 quan trọng, P2 để sau.
 | X-02 | Tự phát hiện cuộc gọi đang diễn ra | FR-10, cần theo dõi tiến trình |
 | X-03 | Bắt âm theo từng ứng dụng (macOS 14.4+ Core Audio Taps) | Chỉ ghi tiếng Zoom, bỏ tiếng nhạc |
 | X-04 | Cắt đầu/cuối bản ghi | Không làm trình dựng phim đầy đủ |
-| X-05 | Xuất riêng file audio MP3/M4A | FR-14 |
+| X-05 | ~~Xuất riêng file audio MP3/M4A~~ — đã làm | FR-14 |
 | X-06 | Hỗ trợ Linux | Ưu tiên thấp |
 
 ---

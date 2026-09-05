@@ -4,13 +4,15 @@ import type { PermissionStatus, UpdateStatus } from '@shared/ipc'
 import { RecordView } from './RecordView'
 import { LibraryView } from './LibraryView'
 import { SettingsView } from './SettingsView'
+import { LangProvider, useT } from './i18n'
+import { translate, type TranslationKey } from '@shared/i18n'
 
 type Tab = 'record' | 'library' | 'settings'
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'record', label: 'Ghi' },
-  { id: 'library', label: 'Thư viện' },
-  { id: 'settings', label: 'Cài đặt' },
+const TABS: { id: Tab; labelKey: TranslationKey }[] = [
+  { id: 'record', labelKey: 'tab.record' },
+  { id: 'library', labelKey: 'tab.library' },
+  { id: 'settings', labelKey: 'tab.settings' },
 ]
 
 export function App() {
@@ -45,19 +47,59 @@ export function App() {
   }
 
   const discardOrphan = async (m: SessionManifest) => {
-    if (!window.confirm('Xoá hẳn phần đã ghi của phiên này?')) return
+    if (!window.confirm(translate(settings?.language ?? 'vi', 'orphan.confirmDiscard'))) return
     await window.callrec.session.discard(m.id)
     setOrphans((prev) => prev.filter((o) => o.id !== m.id))
   }
 
-  if (!settings) return <div className="content muted">Đang tải…</div>
+  // Chờ có settings mới dựng cây: LangProvider phải biết ngôn ngữ trước khi con nó gọi useT.
+  if (!settings) return <div className="content muted">…</div>
+
+  return (
+    <LangProvider lang={settings.language}>
+      <Shell
+        tab={tab}
+        setTab={setTab}
+        settings={settings}
+        permissions={permissions}
+        orphans={orphans}
+        update={update}
+        updateError={updateError}
+        setUpdateError={setUpdateError}
+        patchSettings={patchSettings}
+        setPermissions={setPermissions}
+        recoverOrphan={recoverOrphan}
+        discardOrphan={discardOrphan}
+      />
+    </LangProvider>
+  )
+}
+
+function Shell({
+  tab, setTab, settings, permissions, orphans, update, updateError,
+  setUpdateError, patchSettings, setPermissions, recoverOrphan, discardOrphan,
+}: {
+  tab: Tab
+  setTab: (t: Tab) => void
+  settings: Settings
+  permissions: PermissionStatus | null
+  orphans: SessionManifest[]
+  update: UpdateStatus | null
+  updateError: string | null
+  setUpdateError: (v: string | null) => void
+  patchSettings: (patch: Partial<Settings>) => void
+  setPermissions: (p: PermissionStatus) => void
+  recoverOrphan: (m: SessionManifest) => Promise<void>
+  discardOrphan: (m: SessionManifest) => Promise<void>
+}) {
+  const t = useT()
 
   return (
     <div className="app">
       <nav className="tabs">
-        {TABS.map((t) => (
-          <button key={t.id} aria-current={tab === t.id} onClick={() => setTab(t.id)}>
-            {t.label}
+        {TABS.map((tab_) => (
+          <button key={tab_.id} aria-current={tab === tab_.id} onClick={() => setTab(tab_.id)}>
+            {t(tab_.labelKey)}
           </button>
         ))}
       </nav>
@@ -66,7 +108,7 @@ export function App() {
         {update?.state === 'downloaded' && (
           <div className="alert">
             <span>
-              Đã tải xong bản {update.version}. Cập nhật sẽ tự cài khi thoát ứng dụng.
+              {t('update.downloaded', { version: update.version ?? '' })}
               {updateError ? ` ${updateError}` : ''}
             </span>
             <button
@@ -74,19 +116,16 @@ export function App() {
                 void window.callrec.update.install().then((r) => setUpdateError(r.ok ? null : (r.reason ?? null)))
               }
             >
-              Cài ngay
+              {t('update.installNow')}
             </button>
           </div>
         )}
         {orphans.map((m) => (
           <div key={m.id} className="alert">
-            <span>
-              Phiên ghi ngày {new Date(m.startedAt).toLocaleString('vi-VN')} chưa được xuất file — có thể ứng dụng
-              đã bị đóng đột ngột. Phần đã ghi vẫn còn.
-            </span>
+            <span>{t('orphan.found', { when: new Date(m.startedAt).toLocaleString() })}</span>
             <div className="row">
-              <button onClick={() => void recoverOrphan(m)}>Xuất file</button>
-              <button className="ghost" onClick={() => void discardOrphan(m)}>Bỏ</button>
+              <button onClick={() => void recoverOrphan(m)}>{t('orphan.export')}</button>
+              <button className="ghost" onClick={() => void discardOrphan(m)}>{t('orphan.discard')}</button>
             </div>
           </div>
         ))}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { RecordState } from '@shared/types'
 import { formatDuration } from '@shared/naming'
+import { translate, type Lang } from '@shared/i18n'
 import './styles.css'
 
 /**
@@ -11,6 +12,11 @@ import './styles.css'
 function Overlay() {
   const [state, setState] = useState<RecordState>('recording')
   const [elapsed, setElapsed] = useState(0)
+  const [lang, setLang] = useState<Lang>('vi')
+
+  useEffect(() => {
+    void window.callrec.settings.get().then((s) => setLang(s.language))
+  }, [])
 
   useEffect(
     () =>
@@ -28,7 +34,7 @@ function Overlay() {
       <span className={`dot ${paused || finalizing ? 'paused' : 'blink'}`} />
       <span className="overlay-time">{formatDuration(elapsed)}</span>
       <span className="muted" style={{ fontSize: 12 }}>
-        {finalizing ? 'Đang lưu' : paused ? 'Tạm dừng' : 'Đang ghi'}
+        {translate(lang, finalizing ? 'overlay.saving' : paused ? 'overlay.paused' : 'overlay.recording')}
       </span>
     </div>
   )

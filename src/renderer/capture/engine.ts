@@ -116,7 +116,7 @@ export class CaptureEngine {
       this.streams.push(mic)
     } catch {
       // Không có mic vẫn ghi được phía đối phương; báo rõ chứ đừng huỷ cả buổi ghi.
-      this.cb.onAlert({ kind: 'device-lost', stream: 'mic', message: 'Không mở được microphone. Chỉ ghi được tiếng đầu bên kia.' })
+      this.cb.onAlert({ kind: 'device-lost', stream: 'mic', messageKey: 'record.noMic' })
     }
 
     const systemTrack = display.getAudioTracks()[0]
@@ -124,11 +124,7 @@ export class CaptureEngine {
     const micTrack = mic?.getAudioTracks()[0]
 
     if (!systemTrack) {
-      this.cb.onAlert({
-        kind: 'stream-error',
-        stream: 'system',
-        message: 'Không lấy được âm thanh hệ thống. Kiểm tra quyền ghi màn hình rồi thử lại.',
-      })
+      this.cb.onAlert({ kind: 'stream-error', stream: 'system', messageKey: 'record.noSystemAudio' })
     }
 
     const t0 = performance.now()
@@ -144,10 +140,10 @@ export class CaptureEngine {
         if (e.data.size > 0) this.cb.onChunk(kind, await e.data.arrayBuffer())
       }
       rec.onerror = () =>
-        this.cb.onAlert({ kind: 'stream-error', stream: kind, message: `Luồng ${kind} gặp lỗi và đã dừng.` })
+        this.cb.onAlert({ kind: 'stream-error', stream: kind, messageKey: 'record.streamError', params: { stream: kind } })
       // Track kết thúc đột ngột = người dùng đóng cửa sổ đang ghi hoặc rút thiết bị.
       track.onended = () =>
-        this.cb.onAlert({ kind: 'device-lost', stream: kind, message: `Nguồn ${kind} đã bị ngắt giữa chừng.` })
+        this.cb.onAlert({ kind: 'device-lost', stream: kind, messageKey: 'record.sourceLost', params: { stream: kind } })
       rec.start(CHUNK_MS)
       starts.push({ kind, startedAtMs: performance.now() - t0 })
       this.recorders.set(kind, rec)
@@ -180,10 +176,7 @@ export class CaptureEngine {
           this.cb.onAlert({
             kind: 'silence',
             stream: kind,
-            message:
-              kind === 'mic'
-                ? 'Micro không thu được tiếng suốt 30 giây. Kiểm tra thiết bị đầu vào.'
-                : 'Không nghe thấy tiếng đầu bên kia suốt 30 giây. Kiểm tra thiết bị phát.',
+            messageKey: kind === 'mic' ? 'record.silenceMic' : 'record.silenceSystem',
           })
         }
         if (silentMs === 0) this.alerted.delete(kind)

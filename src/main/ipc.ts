@@ -6,7 +6,8 @@ import {
   CH, type CloseSessionInput, type OpenSessionInput, type RegisterStreamInput,
   type TranscriptFormat, type TranscriptHitDto, type WhisperStatus, type WriteChunkInput,
 } from '@shared/ipc'
-import { toMarkdown, toSrt, toTxt } from '@shared/transcript'
+import { toMarkdown, toSrt, toTxt, type SpeakerLabels } from '@shared/transcript'
+import { translate } from '@shared/i18n'
 import { WHISPER_MODELS, type WhisperModelName } from '@shared/whisper'
 import { readTranscript, searchAllTranscripts, transcribeRecording } from './transcribe'
 import { CloudSummaryUnavailable, readSummary, summarizeRecording } from './summarize'
@@ -121,10 +122,16 @@ export function registerIpc(): void {
     if (!rec) return null
     const transcript = await readTranscript(rec)
     if (!transcript) return null
+    // Nhãn trong file xuất ra phải theo ngôn ngữ người dùng đang chọn, không cứng tiếng Việt.
+    const { language } = await getSettings()
+    const labels: SpeakerLabels = {
+      me: translate(language, 'speaker.me'),
+      them: translate(language, 'speaker.them'),
+    }
     const body =
-      format === 'srt' ? toSrt(transcript.segments)
-      : format === 'md' ? toMarkdown(transcript.segments, rec.title)
-      : toTxt(transcript.segments)
+      format === 'srt' ? toSrt(transcript.segments, labels)
+      : format === 'md' ? toMarkdown(transcript.segments, rec.title, labels, translate(language, 'transcript.overlap'))
+      : toTxt(transcript.segments, labels)
     const out = join(rec.folder, `transcript.${format}`)
     await fsp.writeFile(out, body, 'utf-8')
     return out
