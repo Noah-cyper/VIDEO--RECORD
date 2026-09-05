@@ -32,6 +32,20 @@ const vi = {
     'Bật “cho phép gửi transcript tới dịch vụ ngoài” và nhập khoá API ở Cài đặt để dùng chức năng dịch.',
 
   'update.downloaded': 'Đã tải xong bản {version}. Cập nhật sẽ tự cài khi thoát ứng dụng.',
+  'update.title': 'Cập nhật',
+  'update.current': 'Phiên bản đang dùng: {version}',
+  'update.check': 'Kiểm tra bản mới',
+  'update.checking': 'Đang kiểm tra…',
+  'update.idle': 'Chưa kiểm tra lần nào.',
+  'update.upToDate': 'Đang dùng bản mới nhất.',
+  'update.available': 'Có bản {version}, đang tải về…',
+  'update.downloading': 'Đang tải bản {version} — {percent}%',
+  'update.readyToInstall': 'Bản {version} đã tải xong, sẵn sàng cài.',
+  'update.install': 'Cài đặt và khởi động lại',
+  'update.installBusy': 'Đang ghi — dừng bản ghi trước rồi mới cài được.',
+  'update.unsupported': 'Bản chạy từ mã nguồn không có kênh cập nhật; chỉ bản đã cài mới tự cập nhật được.',
+  'update.failed': 'Không kiểm tra được bản mới: {reason}',
+  'update.openPage': 'Mở trang tải',
   'update.installNow': 'Cài ngay',
 
   'orphan.found':
@@ -203,6 +217,20 @@ const en: Record<TranslationKey, string> = {
     'Turn on “allow sending transcripts to an external service” and enter an API key in Settings to use translation.',
 
   'update.downloaded': 'Version {version} is ready. It will install when you quit the app.',
+  'update.title': 'Updates',
+  'update.current': 'Current version: {version}',
+  'update.check': 'Check for updates',
+  'update.checking': 'Checking…',
+  'update.idle': 'Not checked yet.',
+  'update.upToDate': 'You are on the latest version.',
+  'update.available': 'Version {version} found, downloading…',
+  'update.downloading': 'Downloading {version} — {percent}%',
+  'update.readyToInstall': 'Version {version} is downloaded and ready to install.',
+  'update.install': 'Install and restart',
+  'update.installBusy': 'Recording in progress — stop the recording before installing.',
+  'update.unsupported': 'Running from source has no update channel; only an installed build updates itself.',
+  'update.failed': 'Could not check for updates: {reason}',
+  'update.openPage': 'Open downloads page',
   'update.installNow': 'Install now',
 
   'orphan.found':

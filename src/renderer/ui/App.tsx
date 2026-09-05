@@ -29,6 +29,7 @@ export function App() {
     void window.callrec.permissions.check().then(setPermissions)
     void window.callrec.session.orphans().then(setOrphans)
     const offOrphans = window.callrec.onOrphans(setOrphans)
+    void window.callrec.update.get().then(setUpdate)
     const offUpdate = window.callrec.update.onStatus(setUpdate)
     return () => {
       offOrphans()

@@ -70,6 +70,9 @@ const api: CallrecApi & { onOrphans(cb: (m: SessionManifest[]) => void): () => v
     create: (id: string, useCloud: boolean) => ipcRenderer.invoke(CH.summaryCreate, id, useCloud),
   },
   update: {
+    get: () => ipcRenderer.invoke(CH.updateGet),
+    check: () => ipcRenderer.invoke(CH.updateCheck),
+    openPage: () => ipcRenderer.invoke(CH.updateOpenPage),
     install: () => ipcRenderer.invoke(CH.updateInstall),
     onStatus: (cb) => on(CH.updateStatus, cb),
   },

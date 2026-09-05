@@ -1,8 +1,35 @@
 import { useEffect, useState } from 'react'
 import type { Settings } from '@shared/types'
-import type { PermissionStatus, WhisperStatus } from '@shared/ipc'
+import type { PermissionStatus, UpdateStatus, WhisperStatus } from '@shared/ipc'
 import { WHISPER_MODELS, type WhisperModelName } from '@shared/whisper'
 import { useT } from './i18n'
+
+function UpdateLine({ update }: { update: UpdateStatus }) {
+  const t = useT()
+  const version = update.version ?? ''
+  switch (update.state) {
+    case 'checking':
+      return <p className="muted">{t('update.checking')}</p>
+    case 'available':
+      return <p className="muted">{t('update.available', { version })}</p>
+    case 'downloading':
+      return <p className="muted">{t('update.downloading', { version, percent: update.percent ?? 0 })}</p>
+    case 'downloaded':
+      return <p className="muted">{t('update.readyToInstall', { version })}</p>
+    case 'not-available':
+      return <p className="muted">{t('update.upToDate')}</p>
+    case 'unsupported':
+      return <p className="muted">{t('update.unsupported')}</p>
+    case 'error':
+      return (
+        <div className="alert error">
+          <span style={{ whiteSpace: 'pre-wrap' }}>{t('update.failed', { reason: update.message ?? '' })}</span>
+        </div>
+      )
+    default:
+      return <p className="muted">{t('update.idle')}</p>
+  }
+}
 
 export function SettingsView({
   settings,
@@ -20,12 +47,16 @@ export function SettingsView({
   const [apiKey, setApiKeyInput] = useState('')
   const [crashes, setCrashes] = useState(0)
   const [dirDraft, setDirDraft] = useState(settings.recordingsDir)
+  const [update, setUpdate] = useState<UpdateStatus | null>(null)
+  const [installError, setInstallError] = useState<string | null>(null)
 
   useEffect(() => setDirDraft(settings.recordingsDir), [settings.recordingsDir])
 
   useEffect(() => {
     void window.callrec.whisper.status().then(setWhisper)
     void window.callrec.crash.count().then(setCrashes)
+    void window.callrec.update.get().then(setUpdate)
+    return window.callrec.update.onStatus(setUpdate)
   }, [])
 
   const saveApiKey = async () => {
@@ -192,6 +223,47 @@ export function SettingsView({
               </>
             )}
           </div>
+        )}
+      </div>
+
+      <div className="panel col">
+        <strong>{t('update.title')}</strong>
+        <p className="muted">{t('update.current', { version: update?.currentVersion ?? '…' })}</p>
+
+        {update && <UpdateLine update={update} />}
+
+        {update?.state === 'downloading' && (
+          <div className="meter-bar">
+            <div className="meter-fill" style={{ width: `${update.percent ?? 0}%`, background: 'var(--accent)' }} />
+          </div>
+        )}
+
+        {installError && <div className="alert error"><span>{installError}</span></div>}
+
+        <div className="row" style={{ flexWrap: 'wrap' }}>
+          <button
+            onClick={() => void window.callrec.update.check().then(setUpdate)}
+            disabled={update?.state === 'checking' || update?.state === 'downloading'}
+          >
+            {t('update.check')}
+          </button>
+          {update?.state === 'downloaded' && (
+            <button
+              className="primary"
+              disabled={!update.canInstall}
+              onClick={() =>
+                void window.callrec.update.install().then((r) => setInstallError(r.ok ? null : (r.reason ?? null)))
+              }
+            >
+              {t('update.install')}
+            </button>
+          )}
+          <button className="ghost" onClick={() => void window.callrec.update.openPage()}>
+            {t('update.openPage')}
+          </button>
+        </div>
+        {update?.state === 'downloaded' && update.busyRecording && (
+          <span className="muted" style={{ fontSize: 12 }}>{t('update.installBusy')}</span>
         )}
       </div>
 

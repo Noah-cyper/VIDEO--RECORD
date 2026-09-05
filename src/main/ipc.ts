@@ -15,7 +15,7 @@ import { readTranslation, translateRecording } from './translate'
 import { CloudSummaryUnavailable, readSummary, summarizeRecording } from './summarize'
 import { modelInstalled, removeModel, whisperAvailable } from './whisper'
 import { clearApiKey, hasApiKey, secureStorageAvailable, setApiKey } from './secrets'
-import { installUpdate } from './updater'
+import { checkForUpdates, installUpdate, openReleasesPage, snapshot } from './updater'
 import { clearCrashDumps, countCrashDumps, openCrashDumpDir } from './crash'
 import { trimRecording } from './trim'
 import * as storage from './storage'
@@ -209,6 +209,9 @@ export function registerIpc(): void {
   })
 
   ipcMain.handle(CH.updateInstall, () => installUpdate())
+  ipcMain.handle(CH.updateGet, () => snapshot())
+  ipcMain.handle(CH.updateCheck, () => checkForUpdates())
+  ipcMain.handle(CH.updateOpenPage, () => openReleasesPage())
   ipcMain.handle(CH.crashCount, () => countCrashDumps())
   ipcMain.handle(CH.crashOpen, () => openCrashDumpDir())
   ipcMain.handle(CH.crashClear, () => clearCrashDumps())

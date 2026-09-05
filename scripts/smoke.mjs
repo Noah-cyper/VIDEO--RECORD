@@ -3,7 +3,10 @@
  * rồi kiểm tra renderer có dựng được cây DOM và không ném lỗi console nào.
  * Không thay được test thủ công trên thiết bị âm thanh thật, nhưng bắt được lỗi khởi động.
  */
+import { readFileSync } from 'node:fs'
 import { app, BrowserWindow } from 'electron'
+
+const pkgVersion = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8')).version
 
 const errors = []
 const timeoutMs = Number(process.env.SMOKE_TIMEOUT_MS ?? 30000)
@@ -106,11 +109,19 @@ app.whenReady().then(async () => {
 
     await window.callrec.settings.set({ recordingsDir: before })
 
+    // Nút "Kiểm tra bản mới" phải luôn trả về một trạng thái đọc được, không được im lặng.
+    const beforeCheck = await window.callrec.update.get()
+    const afterCheck = await window.callrec.update.check()
+
     const perms = await window.callrec.permissions.check()
     const grantButton = [...document.querySelectorAll('button')].some(
       (b) => b.textContent.trim() === 'Cấp quyền' || b.textContent.trim() === 'Grant permissions',
     )
-    return { before, saved, wanted, managed: perms.managed, grantButton, errorShown }
+    return {
+      before, saved, wanted, managed: perms.managed, grantButton, errorShown,
+      updateVersion: beforeCheck.currentVersion,
+      updateState: afterCheck.state,
+    }
   })()`).catch((err) => ({ error: `lỗi khi kiểm cài đặt: ${err.message}` }))
 
   clearTimeout(timer)
@@ -132,6 +143,13 @@ app.whenReady().then(async () => {
       problems.push('nút "Cấp quyền" hiện ở hệ điều hành không có cửa xin quyền')
     }
     if (!settingsChecks.errorShown) problems.push('đường dẫn hỏng nhưng không hiện cảnh báo nào')
+    if (settingsChecks.updateVersion !== pkgVersion) {
+      problems.push(`phiên bản hiện tại sai: hiện ${settingsChecks.updateVersion}, đúng ra là ${pkgVersion}`)
+    }
+    // Chạy từ mã nguồn thì phải nói rõ là không có kênh cập nhật, chứ không phải đứng im.
+    if (settingsChecks.updateState !== 'unsupported') {
+      problems.push(`kiểm tra cập nhật trả về trạng thái lạ: ${settingsChecks.updateState}`)
+    }
   }
   if (errors.length > 0) problems.push(`lỗi console: ${errors.join(' | ')}`)
 
@@ -140,7 +158,8 @@ app.whenReady().then(async () => {
     `SMOKE OK — vi: ${vi.tabs?.join(', ')} | en: ${en.tabs?.join(', ')} | ` +
       `thư mục lưu đổi được: ${settingsChecks.saved === settingsChecks.wanted} | ` +
       `nút cấp quyền ẩn đúng: ${!settingsChecks.grantButton} | ` +
-      `lỗi hiện ra được: ${settingsChecks.errorShown}`,
+      `lỗi hiện ra được: ${settingsChecks.errorShown} | ` +
+      `cập nhật: v${settingsChecks.updateVersion} → ${settingsChecks.updateState}`,
   )
   app.exit(0)
 })

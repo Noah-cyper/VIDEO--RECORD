@@ -57,6 +57,9 @@ export const CH = {
 
   updateStatus: 'update:status',
   updateInstall: 'update:install',
+  updateCheck: 'update:check',
+  updateGet: 'update:get',
+  updateOpenPage: 'update:openPage',
 
   crashCount: 'crash:count',
   crashOpen: 'crash:open',
@@ -123,10 +126,27 @@ export interface WhisperStatus {
   secureStorageAvailable: boolean
 }
 
+export type UpdateState =
+  | 'idle'
+  | 'checking'
+  | 'available'
+  | 'downloading'
+  | 'downloaded'
+  | 'not-available'
+  | 'error'
+  /** Chạy từ mã nguồn, không có kênh cập nhật. */
+  | 'unsupported'
+
 export interface UpdateStatus {
-  state: 'available' | 'downloaded' | 'error'
+  state: UpdateState
+  currentVersion: string
+  /** Phiên bản tìm thấy trên máy chủ, nếu có. */
   version?: string
+  percent?: number
+  bytesPerSecond?: number
   message?: string
+  canInstall: boolean
+  busyRecording: boolean
 }
 
 export interface TranscriptHitDto {
@@ -200,7 +220,10 @@ export interface CallrecApi {
     create(recordingId: string, useCloud: boolean): Promise<StoredSummary | null>
   }
   update: {
+    get(): Promise<UpdateStatus>
+    check(): Promise<UpdateStatus>
     install(): Promise<{ ok: boolean; reason?: string }>
+    openPage(): Promise<void>
     onStatus(cb: (s: UpdateStatus) => void): () => void
   }
   crash: {
