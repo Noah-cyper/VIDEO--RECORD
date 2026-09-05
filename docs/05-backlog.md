@@ -96,7 +96,7 @@ P1 quan trọng, P2 để sau.
 | X-01 | Webcam picture-in-picture | FR-09 |
 | X-02 | Tự phát hiện cuộc gọi đang diễn ra | FR-10, cần theo dõi tiến trình |
 | X-03 | Bắt âm theo từng ứng dụng (macOS 14.4+ Core Audio Taps) | Chỉ ghi tiếng Zoom, bỏ tiếng nhạc |
-| X-04 | Cắt đầu/cuối bản ghi | Không làm trình dựng phim đầy đủ |
+| X-04 | ~~Cắt đầu/cuối bản ghi~~ — đã làm | Không phá bản gốc: cắt ra một bản ghi mới |
 | X-05 | ~~Xuất riêng file audio MP3/M4A~~ — đã làm | FR-14 |
 | X-06 | Hỗ trợ Linux | Ưu tiên thấp |
 

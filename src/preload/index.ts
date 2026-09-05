@@ -45,6 +45,7 @@ const api: CallrecApi & { onOrphans(cb: (m: SessionManifest[]) => void): () => v
     reveal: (id: string) => ipcRenderer.invoke(CH.libraryReveal, id),
     extractAudio: (id: string, track: number) => ipcRenderer.invoke(CH.libraryExtractAudio, id, track),
     mediaUrl: (id: string) => ipcRenderer.invoke(CH.libraryMediaUrl, id),
+    trim: (id: string, startMs: number, endMs: number) => ipcRenderer.invoke(CH.libraryTrim, id, startMs, endMs),
   },
   settings: {
     get: () => ipcRenderer.invoke(CH.settingsGet),

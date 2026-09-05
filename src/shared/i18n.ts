@@ -73,6 +73,16 @@ const vi = {
   'library.extracted': 'Đã tách xong: {path}',
   'library.extractFailed': 'Không tách được file tiếng.',
 
+  'library.trim': 'Cắt đầu/cuối',
+  'library.trimStart': 'Từ giây',
+  'library.trimEnd': 'Đến giây',
+  'library.trimUseCurrent': 'Lấy vị trí đang phát',
+  'library.trimDo': 'Cắt thành bản mới',
+  'library.trimNote':
+    'Bản gốc được giữ nguyên, kết quả lưu thành một bản ghi mới. Điểm cắt bám vào keyframe gần nhất nên có thể lệch vài giây.',
+  'library.trimDone': 'Đã tạo bản ghi mới: {title}',
+  'library.trimFailed': 'Không cắt được: {reason}',
+
   'transcript.title': 'Biên bản',
   'transcript.heading': 'Gỡ băng',
   'transcript.run': 'Gỡ băng bản ghi này',
@@ -217,6 +227,16 @@ const en: Record<TranslationKey, string> = {
   'library.extractThem': 'Extract their track',
   'library.extracted': 'Extracted: {path}',
   'library.extractFailed': 'Could not extract the audio file.',
+
+  'library.trim': 'Trim start/end',
+  'library.trimStart': 'From second',
+  'library.trimEnd': 'To second',
+  'library.trimUseCurrent': 'Use playhead',
+  'library.trimDo': 'Trim into a new recording',
+  'library.trimNote':
+    'The original is kept; the result is saved as a new recording. Cuts snap to the nearest keyframe, so they can be off by a few seconds.',
+  'library.trimDone': 'New recording created: {title}',
+  'library.trimFailed': 'Trim failed: {reason}',
 
   'transcript.title': 'Transcript',
   'transcript.heading': 'Transcription',

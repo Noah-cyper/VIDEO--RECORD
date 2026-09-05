@@ -35,6 +35,7 @@ export const CH = {
   libraryReveal: 'library:reveal',
   libraryExtractAudio: 'library:extractAudio',
   libraryMediaUrl: 'library:mediaUrl',
+  libraryTrim: 'library:trim',
 
   settingsGet: 'settings:get',
   settingsSet: 'settings:set',
@@ -171,6 +172,7 @@ export interface CallrecApi {
     extractAudio(id: string, track: number): Promise<string | null>
     /** URL phát lại qua scheme riêng; renderer không tự dựng đường dẫn file được. */
     mediaUrl(id: string): Promise<string | null>
+    trim(id: string, startMs: number, endMs: number): Promise<Recording | null>
   }
   settings: {
     get(): Promise<Settings>

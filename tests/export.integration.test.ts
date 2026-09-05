@@ -6,6 +6,7 @@ import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { readFile } from 'node:fs/promises'
 import { buildExportArgs, buildWavExtractArgs, videoCodecFor } from '@shared/ffmpeg'
+import { buildTrimArgs } from '@shared/trim'
 
 const run = promisify(execFile)
 
@@ -107,6 +108,32 @@ maybe('xuất file thật bằng ffmpeg', () => {
     // thì cả hai file sẽ giống hệt và transcript sẽ gán cùng một giọng cho cả hai bên.
     const [a, b] = await Promise.all([readFile(wav0), readFile(wav1)])
     expect(a.equals(b)).toBe(false)
+  }, 120_000)
+
+  it('cắt đầu/cuối vẫn giữ đủ hai audio track kèm nhãn', async () => {
+    const full = join(dir, 'trim-source.mp4')
+    await run(bin!, buildExportArgs({
+      inputs: { mic: inputs.mic, system: inputs.system, video: inputs.video },
+      offsetsMs: {},
+      output: full,
+      videoCodec: 'h264',
+    }), { maxBuffer: 1 << 24 })
+
+    const trimmed = join(dir, 'trim-out.mp4')
+    await run(bin!, buildTrimArgs(full, trimmed, { startMs: 500, endMs: 2000 }))
+
+    const info = await probe(trimmed)
+    // Đây là điều dễ mất nhất khi cắt: thiếu -map 0 thì ffmpeg lặng lẽ chỉ giữ một luồng audio.
+    expect(info.match(/Stream #0:\d+.*: Audio:/g) ?? []).toHaveLength(2)
+    expect(info.match(/Stream #0:\d+.*: Video:/g) ?? []).toHaveLength(1)
+    expect(info).toContain('handler_name    : Toi')
+    expect(info).toContain('handler_name    : Doi phuong')
+
+    const duration = info.match(/Duration: (\d+):(\d+):(\d+\.\d+)/)
+    expect(duration).not.toBeNull()
+    const seconds = Number(duration![3]) + Number(duration![2]) * 60
+    expect(seconds).toBeGreaterThan(1)
+    expect(seconds).toBeLessThan(2.5)
   }, 120_000)
 
   it('VP8 không copy thẳng vào MP4 được - đây là lý do phải chọn codec theo mimeType', async () => {

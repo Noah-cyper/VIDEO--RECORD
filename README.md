@@ -53,6 +53,7 @@ src/
 │   ├── ffmpeg.ts    dựng tham số ffmpeg, đọc tiến độ
 │   ├── transcript.ts đọc JSON whisper, trộn 2 track, xuất txt/srt/md
 │   ├── summary.ts   tóm tắt trích xuất và dò việc cần làm, chạy offline
+│   ├── trim.ts      cắt đầu/cuối, dời mốc và biên bản theo
 │   ├── naming.ts    đặt tên file/thư mục, ước lượng dung lượng đĩa
 │   └── ipc.ts       hợp đồng IPC giữa main và renderer
 ├── main/        Electron main - chạm hệ điều hành và đĩa cứng

@@ -74,6 +74,18 @@ Bản ghi nằm ở thư mục bạn chọn trong Cài đặt, mỗi buổi mộ
 Vì tiếng hai bên nằm ở **hai track riêng**, trình phát (VLC, QuickTime) cho bạn bật tắt từng bên.
 Muốn nghe lại chỉ lời khách hàng thì tắt track của mình đi.
 
+### Cắt bỏ khoảng thừa đầu/cuối
+
+Trong Thư viện, mở bản ghi rồi dùng phần **Cắt đầu/cuối**. Nút ⏱ lấy luôn vị trí đang phát,
+nên cách nhanh nhất là tua tới chỗ muốn cắt rồi bấm nó.
+
+Bản gốc **không bị đụng tới** — kết quả lưu thành một bản ghi mới. Mốc đánh dấu và biên bản gỡ băng
+(nếu đã có) được dời theo, phần nằm ngoài khoảng cắt thì bỏ đi. Riêng bản tóm tắt cũ không mang sang
+vì nó nói về cả những đoạn vừa bị cắt bỏ.
+
+Cắt gần như tức thì kể cả với bản ghi một giờ, đổi lại điểm cắt bám vào keyframe gần nhất nên có thể
+lệch vài giây. Với việc cắt bỏ khoảng lặng đầu/cuối thì mức đó không ảnh hưởng gì.
+
 ### Gỡ băng
 
 Trong Thư viện, chọn bản ghi → **Gỡ băng bản ghi này**. Lần đầu sẽ mất thêm thời gian tải model.

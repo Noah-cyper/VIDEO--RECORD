@@ -9,6 +9,8 @@ export function LibraryView({ settings }: { settings: Settings }) {
   const t = useT()
   const [items, setItems] = useState<Recording[]>([])
   const [notice, setNotice] = useState<string | null>(null)
+  const [trim, setTrim] = useState({ start: 0, end: 0 })
+  const [trimming, setTrimming] = useState(false)
   const [query, setQuery] = useState('')
   const [hits, setHits] = useState<TranscriptHitDto[]>([])
   const [playing, setPlaying] = useState<Recording | null>(null)
@@ -19,6 +21,8 @@ export function LibraryView({ settings }: { settings: Settings }) {
     setPlaying(rec)
     setMediaSrc(await window.callrec.library.mediaUrl(rec.id))
     if (seekMs !== undefined) setPendingSeek(seekMs)
+    setTrim({ start: 0, end: Math.round(rec.durationMs / 1000) })
+    setNotice(null)
   }
 
   const [pendingSeek, setPendingSeek] = useState<number | null>(null)
@@ -39,6 +43,19 @@ export function LibraryView({ settings }: { settings: Settings }) {
   useEffect(() => {
     refresh('')
   }, [])
+
+  const doTrim = async (rec: Recording) => {
+    setTrimming(true)
+    try {
+      const made = await window.callrec.library.trim(rec.id, trim.start * 1000, trim.end * 1000)
+      setNotice(made ? t('library.trimDone', { title: made.title }) : t('library.trimFailed', { reason: '' }))
+      refresh()
+    } catch (err) {
+      setNotice(t('library.trimFailed', { reason: err instanceof Error ? err.message : String(err) }))
+    } finally {
+      setTrimming(false)
+    }
+  }
 
   const extractAudio = async (rec: Recording, track: number) => {
     const path = await window.callrec.library.extractAudio(rec.id, track)
@@ -118,6 +135,42 @@ export function LibraryView({ settings }: { settings: Settings }) {
             ))}
           </div>
           {notice && <span className="muted" style={{ fontSize: 12 }}>{notice}</span>}
+        </div>
+        <div className="panel col">
+          <strong>{t('library.trim')}</strong>
+          <div className="row" style={{ flexWrap: 'wrap' }}>
+            {(['start', 'end'] as const).map((edge) => (
+              <div key={edge} className="field" style={{ maxWidth: 220 }}>
+                <label htmlFor={`trim-${edge}`}>{t(edge === 'start' ? 'library.trimStart' : 'library.trimEnd')}</label>
+                <div className="row">
+                  <input
+                    id={`trim-${edge}`}
+                    type="number"
+                    min={0}
+                    value={trim[edge]}
+                    onChange={(e) => setTrim((prev) => ({ ...prev, [edge]: Number(e.target.value) }))}
+                  />
+                  <button
+                    className="ghost"
+                    title={t('library.trimUseCurrent')}
+                    onClick={() =>
+                      setTrim((prev) => ({ ...prev, [edge]: Math.round(videoRef.current?.currentTime ?? 0) }))
+                    }
+                  >
+                    ⏱
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={() => void doTrim(playing)}
+              disabled={trimming || trim.end <= trim.start}
+              style={{ alignSelf: 'flex-end' }}
+            >
+              {t('library.trimDo')}
+            </button>
+          </div>
+          <span className="muted" style={{ fontSize: 12 }}>{t('library.trimNote')}</span>
         </div>
         <TranscriptPanel recording={playing} settings={settings} onSeek={seek} />
         </>

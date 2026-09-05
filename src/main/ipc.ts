@@ -16,6 +16,7 @@ import { modelInstalled, removeModel, whisperAvailable } from './whisper'
 import { clearApiKey, hasApiKey, secureStorageAvailable, setApiKey } from './secrets'
 import { installUpdate } from './updater'
 import { clearCrashDumps, countCrashDumps, openCrashDumpDir } from './crash'
+import { trimRecording } from './trim'
 import * as storage from './storage'
 import * as library from './library'
 import { diskStatus, exportSession, extractAudio } from './exporter'
@@ -89,6 +90,11 @@ export function registerIpc(): void {
   ipcMain.handle(CH.libraryMediaUrl, async (_e, id: string) => {
     const rec = await library.getRecording(id)
     return rec ? mediaUrl(join(rec.folder, rec.videoFile)) : null
+  })
+
+  ipcMain.handle(CH.libraryTrim, (_e, id: string, startMs: unknown, endMs: unknown) => {
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) throw new Error('Khoảng cắt không hợp lệ')
+    return trimRecording(id, { startMs: startMs as number, endMs: endMs as number })
   })
 
   ipcMain.handle(CH.settingsGet, () => getSettings())
