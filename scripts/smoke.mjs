@@ -97,14 +97,22 @@ app.whenReady().then(async () => {
       saved = (await window.callrec.settings.get()).recordingsDir
       if (saved === wanted) break
     }
-    // Đường dẫn hỏng phải hiện thành cảnh báo đọc được, không được im lặng như bản 0.1.0.
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, '/')
-    input.dispatchEvent(new Event('input', { bubbles: true }))
-    await new Promise((r) => setTimeout(r, 200))
-    ;[...document.querySelectorAll('button')]
-      .find((b) => ['Áp dụng', 'Apply'].includes(b.textContent.trim()))
-      ?.click()
-    await new Promise((r) => setTimeout(r, 900))
+    const setDir = async (value) => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, value)
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+      await new Promise((r) => setTimeout(r, 200))
+      ;[...document.querySelectorAll('button')]
+        .find((b) => ['Áp dụng', 'Apply'].includes(b.textContent.trim()))
+        ?.click()
+      await new Promise((r) => setTimeout(r, 900))
+    }
+
+    // Gốc ổ đĩa phải được nhận và tự đưa vào thư mục con, không còn bị từ chối thẳng.
+    await setDir('/')
+    const rootNormalized = (await window.callrec.settings.get()).recordingsDir
+
+    // Đường dẫn thật sự vô nghĩa vẫn phải hiện cảnh báo đọc được, không im lặng như bản 0.1.0.
+    await setDir('ban-ghi-tuong-doi')
     const errorShown = document.querySelector('.alert.error') !== null
 
     await window.callrec.settings.set({ recordingsDir: before })
@@ -119,6 +127,7 @@ app.whenReady().then(async () => {
     )
     return {
       before, saved, wanted, managed: perms.managed, grantButton, errorShown,
+      rootNormalized,
       updateVersion: beforeCheck.currentVersion,
       updateState: afterCheck.state,
     }
@@ -143,6 +152,9 @@ app.whenReady().then(async () => {
       problems.push('nút "Cấp quyền" hiện ở hệ điều hành không có cửa xin quyền')
     }
     if (!settingsChecks.errorShown) problems.push('đường dẫn hỏng nhưng không hiện cảnh báo nào')
+    if (settingsChecks.rootNormalized !== '/CallRec') {
+      problems.push(`chọn gốc ổ đĩa phải thành /CallRec, nhận được ${settingsChecks.rootNormalized}`)
+    }
     if (settingsChecks.updateVersion !== pkgVersion) {
       problems.push(`phiên bản hiện tại sai: hiện ${settingsChecks.updateVersion}, đúng ra là ${pkgVersion}`)
     }
@@ -158,6 +170,7 @@ app.whenReady().then(async () => {
     `SMOKE OK — vi: ${vi.tabs?.join(', ')} | en: ${en.tabs?.join(', ')} | ` +
       `thư mục lưu đổi được: ${settingsChecks.saved === settingsChecks.wanted} | ` +
       `nút cấp quyền ẩn đúng: ${!settingsChecks.grantButton} | ` +
+      `gốc ổ đĩa → ${settingsChecks.rootNormalized} | ` +
       `lỗi hiện ra được: ${settingsChecks.errorShown} | ` +
       `cập nhật: v${settingsChecks.updateVersion} → ${settingsChecks.updateState}`,
   )

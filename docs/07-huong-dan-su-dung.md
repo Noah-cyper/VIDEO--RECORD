@@ -151,8 +151,10 @@ Bấm **Chọn…** để mở hộp thoại. Nếu hộp thoại không mở đ
 rồi bấm **Áp dụng** — ô đó sửa tay được.
 
 Ứng dụng sẽ thử tạo và ghi thử vào thư mục ngay lúc đó. Nếu không được (thư mục chỉ đọc, ổ mạng đã
-ngắt, thiếu quyền) thì báo lỗi kèm nguyên nhân thật của hệ điều hành. Lưu ý không chọn gốc ổ đĩa
-(`D:\`) — ứng dụng từ chối vì lệnh xoá một bản ghi ở đó sẽ quét sạch cả phân vùng.
+ngắt, thiếu quyền) thì báo lỗi kèm nguyên nhân thật của hệ điều hành.
+
+Chọn thẳng gốc ổ đĩa (`D:\`) thì ứng dụng **tự đưa vào `D:\CallRec`**. Nó không đổ file thẳng ra
+gốc ổ: vừa bẩn, vừa khiến phạm vi thao tác xoá của ứng dụng rộng bằng cả phân vùng.
 
 ### Nút "Cấp quyền" không làm gì
 

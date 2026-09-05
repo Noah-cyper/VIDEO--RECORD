@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type { Settings } from '@shared/types'
 import { readJson, writeJson } from './jsonstore'
-import { isUsableRecordingsDir } from './paths'
+import { isUsableRecordingsDir, normalizeRecordingsDir } from './paths'
 
 const file = () => join(app.getPath('userData'), 'settings.json')
 
@@ -43,15 +43,19 @@ export async function setSettings(patch: Partial<Settings>): Promise<Settings> {
   const current = await getSettings()
   // Thư mục bản ghi vừa là nơi ghi file vừa là biên của scheme phát lại; nhận bừa một chuỗi từ
   // renderer là mở đường đọc/xoá ngoài phạm vi.
+  const next = { ...current, ...patch }
   if (patch.recordingsDir !== undefined) {
     if (!isUsableRecordingsDir(patch.recordingsDir)) {
-      throw new Error(`Đường dẫn không dùng được: ${String(patch.recordingsDir)}`)
+      throw new Error(
+        `Đường dẫn không dùng được: "${String(patch.recordingsDir)}". Cần một đường dẫn tuyệt đối, ví dụ D:\\CallRec.`,
+      )
     }
+    // Gốc ổ đĩa được đưa vào thư mục con thay vì bị từ chối; giá trị lưu lại là giá trị đã chuẩn hoá.
+    next.recordingsDir = normalizeRecordingsDir(patch.recordingsDir.trim())
     // Tạo và thử ghi thật. Thư mục chỉ-đọc hay ổ mạng đã ngắt sẽ lộ ra NGAY ở đây, thay vì
     // im lặng cho tới lúc người dùng ghi xong một cuộc gọi rồi mới hỏng ở bước xuất file.
-    await assertWritable(patch.recordingsDir)
+    await assertWritable(next.recordingsDir)
   }
-  const next = { ...current, ...patch }
   // Gửi nội dung cuộc gọi ra ngoài phải là hành động có ý thức, không bật ngầm được (NFR-06).
   if (patch.allowCloudSummary === undefined) next.allowCloudSummary = current.allowCloudSummary
   cache = next

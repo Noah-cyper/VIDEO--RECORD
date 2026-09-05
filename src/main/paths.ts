@@ -1,25 +1,46 @@
-import { resolve, sep } from 'node:path'
+import nodePath, { type PlatformPath } from 'node:path'
+
+/** Tên thư mục app tự tạo khi người dùng trỏ thẳng vào gốc ổ đĩa. */
+export const APP_FOLDER = 'CallRec'
 
 /**
- * Chặn thoát thư mục. resolve() đã chuẩn hoá `..`, việc còn lại là so tiền tố có kèm dấu phân cách
- * để `/data/recordings-cu` không bị coi là nằm trong `/data/recordings`.
+ * Các hàm dưới đây nhận `PlatformPath` để test được cả win32 lẫn posix trên cùng một máy.
+ * Toàn bộ lớp lỗi này chỉ xuất hiện trên Windows, mà máy dựng thì chạy Linux - không tách ra
+ * thế này thì không có cách nào kiểm trước khi giao cho người dùng.
  */
-export function isInside(parent: string, child: string): boolean {
-  const root = resolve(parent)
-  const target = resolve(child)
-  return target === root || target.startsWith(root + sep)
+export function isInsideWith(p: PlatformPath, parent: string, child: string): boolean {
+  const root = p.resolve(parent)
+  const target = p.resolve(child)
+  // So tiền tố phải kèm dấu phân cách, để `/data/rec-cu` không bị coi là nằm trong `/data/rec`.
+  return target === root || target.startsWith(root + p.sep)
 }
+
+export function isRootWith(p: PlatformPath, dir: string): boolean {
+  const abs = p.resolve(dir)
+  return abs === p.resolve(abs, '..')
+}
+
+/**
+ * Không đổ bản ghi thẳng vào gốc ổ đĩa. Vừa bẩn, vừa khiến biên kiểm tra containment rộng bằng
+ * cả phân vùng - một entry hỏng trong chỉ mục là đủ để lệnh xoá quét sạch ổ. Người dùng chọn
+ * `D:\` thì hiểu là `D:\CallRec`, chứ không phải từ chối họ.
+ */
+export function normalizeRecordingsDirWith(p: PlatformPath, dir: string): string {
+  const abs = p.resolve(dir)
+  return isRootWith(p, abs) ? p.join(abs, APP_FOLDER) : abs
+}
+
+/** Chỉ còn chặn thứ thật sự vô nghĩa; khả năng ghi thật do bước ghi thử quyết định. */
+export function isUsableRecordingsDirWith(p: PlatformPath, dir: unknown): dir is string {
+  return typeof dir === 'string' && dir.trim() !== '' && p.isAbsolute(dir.trim())
+}
+
+export const isInside = (parent: string, child: string) => isInsideWith(nodePath, parent, child)
+export const normalizeRecordingsDir = (dir: string) => normalizeRecordingsDirWith(nodePath, dir)
+export const isUsableRecordingsDir = (dir: unknown): dir is string =>
+  isUsableRecordingsDirWith(nodePath, dir)
 
 export function assertInside(parent: string, child: string, what: string): string {
   if (!isInside(parent, child)) throw new Error(`Đường dẫn ${what} nằm ngoài thư mục cho phép`)
-  return resolve(child)
-}
-
-/** Thư mục lưu bản ghi do người dùng chọn, nhưng renderer vẫn gọi settings.set được với chuỗi bất kỳ. */
-export function isUsableRecordingsDir(dir: unknown): dir is string {
-  if (typeof dir !== 'string' || dir.trim() === '') return false
-  const abs = resolve(dir)
-  if (abs !== dir && resolve(abs) !== abs) return false
-  // Gốc ổ đĩa: một lệnh xoá bản ghi ở đây sẽ quét sạch cả phân vùng.
-  return abs !== resolve(abs, '..')
+  return nodePath.resolve(child)
 }
