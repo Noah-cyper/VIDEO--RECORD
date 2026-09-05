@@ -5,8 +5,12 @@ import { registerIpc } from './ipc'
 import { createTray, registerShortcuts, unregisterShortcuts, updateTray } from './tray'
 import { closeAllWriters, findOrphans, hasOpenWriters } from './storage'
 import { installMediaProtocol, registerMediaScheme } from './media-protocol'
+import { initCrashReporter } from './crash'
+import { initUpdater } from './updater'
 
 // Ghi cuộc gọi là tác vụ chỉ nên có một phiên bản chạy: hai instance sẽ tranh nhau thiết bị.
+// crashReporter phải khởi động trước khi app ready mới bắt được crash lúc khởi động.
+initCrashReporter()
 registerMediaScheme()
 
 if (!app.requestSingleInstanceLock()) {
@@ -28,6 +32,7 @@ if (!app.requestSingleInstanceLock()) {
     createTray()
     registerShortcuts()
     updateTray('idle')
+    initUpdater()
 
     const orphans = await findOrphans()
     if (orphans.length > 0) {

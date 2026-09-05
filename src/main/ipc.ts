@@ -12,6 +12,8 @@ import { readTranscript, searchAllTranscripts, transcribeRecording } from './tra
 import { CloudSummaryUnavailable, readSummary, summarizeRecording } from './summarize'
 import { modelInstalled, removeModel, whisperAvailable } from './whisper'
 import { clearApiKey, hasApiKey, secureStorageAvailable, setApiKey } from './secrets'
+import { installUpdate } from './updater'
+import { clearCrashDumps, countCrashDumps, openCrashDumpDir } from './crash'
 import * as storage from './storage'
 import * as library from './library'
 import { diskStatus, exportSession, extractAudio } from './exporter'
@@ -151,6 +153,11 @@ export function registerIpc(): void {
       throw err
     }
   })
+
+  ipcMain.handle(CH.updateInstall, () => installUpdate())
+  ipcMain.handle(CH.crashCount, () => countCrashDumps())
+  ipcMain.handle(CH.crashOpen, () => openCrashDumpDir())
+  ipcMain.handle(CH.crashClear, () => clearCrashDumps())
 
   ipcMain.handle(CH.whisperStatus, () => whisperStatus())
   ipcMain.handle(CH.whisperRemoveModel, async (_e, name: WhisperModelName) => {

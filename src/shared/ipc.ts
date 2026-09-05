@@ -52,6 +52,13 @@ export const CH = {
   summaryGet: 'summary:get',
   summaryCreate: 'summary:create',
 
+  updateStatus: 'update:status',
+  updateInstall: 'update:install',
+
+  crashCount: 'crash:count',
+  crashOpen: 'crash:open',
+  crashClear: 'crash:clear',
+
   whisperStatus: 'whisper:status',
   whisperRemoveModel: 'whisper:removeModel',
 
@@ -109,6 +116,12 @@ export interface WhisperStatus {
   /** Khoá API đã lưu chưa - chỉ trả về true/false, không bao giờ trả về chính khoá. */
   apiKeyConfigured: boolean
   secureStorageAvailable: boolean
+}
+
+export interface UpdateStatus {
+  state: 'available' | 'downloaded' | 'error'
+  version?: string
+  message?: string
 }
 
 export interface TranscriptHitDto {
@@ -177,6 +190,15 @@ export interface CallrecApi {
   summary: {
     get(recordingId: string): Promise<StoredSummary | null>
     create(recordingId: string, useCloud: boolean): Promise<StoredSummary | null>
+  }
+  update: {
+    install(): Promise<{ ok: boolean; reason?: string }>
+    onStatus(cb: (s: UpdateStatus) => void): () => void
+  }
+  crash: {
+    count(): Promise<number>
+    open(): Promise<void>
+    clear(): Promise<void>
   }
   whisper: {
     status(): Promise<WhisperStatus>

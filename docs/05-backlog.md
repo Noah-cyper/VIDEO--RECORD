@@ -3,7 +3,8 @@
 > **Cập nhật:** phần code của Phase 0-4 đã viết xong (xem README). Các task S-*, C-*, V-*, U-*, T-*
 > đã có code và test tự động; riêng những task cần thiết bị âm thanh thật (S-02, S-03, S-04, C-11,
 > V-07) và những task cần binary whisper.cpp (T-01, T-02) vẫn phải chạy tay mới coi là xong.
-> Phần lớn Phase 5 chưa làm.
+> Phase 5 đã có R-01, R-04, R-05, R-06, R-07; còn R-02 và R-03 (ký số) cần chứng thư trả phí,
+> và R-08 (beta với người dùng thật) chỉ chạy được sau khi qua các gate ở trên.
 
 Ước lượng theo **điểm** (1 điểm ≈ nửa ngày làm việc). Ưu tiên: P0 bắt buộc cho MVP,
 P1 quan trọng, P2 để sau.

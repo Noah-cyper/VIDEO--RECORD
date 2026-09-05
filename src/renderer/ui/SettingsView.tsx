@@ -16,9 +16,11 @@ export function SettingsView({
 }) {
   const [whisper, setWhisper] = useState<WhisperStatus | null>(null)
   const [apiKey, setApiKeyInput] = useState('')
+  const [crashes, setCrashes] = useState(0)
 
   useEffect(() => {
     void window.callrec.whisper.status().then(setWhisper)
+    void window.callrec.crash.count().then(setCrashes)
   }, [])
 
   const saveApiKey = async () => {
@@ -163,6 +165,26 @@ export function SettingsView({
             )}
           </div>
         )}
+      </div>
+
+      <div className="panel col">
+        <strong>Báo lỗi</strong>
+        <p className="muted">
+          CallRec thu thập crash dump nhưng <b>không gửi đi đâu cả</b>. Một crash dump có thể chứa
+          mảnh bộ nhớ của bản ghi đang mở, nên nó nằm nguyên trên máy này. Muốn gửi cho người phát
+          triển thì bạn tự mở thư mục và tự quyết định gửi file nào.
+        </p>
+        <div className="row">
+          <span className="muted">{crashes > 0 ? `Có ${crashes} báo cáo sự cố` : 'Chưa có báo cáo sự cố nào'}</span>
+          <button onClick={() => void window.callrec.crash.open()} disabled={crashes === 0}>Mở thư mục</button>
+          <button
+            className="ghost"
+            onClick={() => void window.callrec.crash.clear().then(() => setCrashes(0))}
+            disabled={crashes === 0}
+          >
+            Xoá hết
+          </button>
+        </div>
       </div>
     </div>
   )

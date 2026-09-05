@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { SessionManifest, Settings } from '@shared/types'
-import type { PermissionStatus } from '@shared/ipc'
+import type { PermissionStatus, UpdateStatus } from '@shared/ipc'
 import { RecordView } from './RecordView'
 import { LibraryView } from './LibraryView'
 import { SettingsView } from './SettingsView'
@@ -18,12 +18,19 @@ export function App() {
   const [settings, setSettings] = useState<Settings | null>(null)
   const [permissions, setPermissions] = useState<PermissionStatus | null>(null)
   const [orphans, setOrphans] = useState<SessionManifest[]>([])
+  const [update, setUpdate] = useState<UpdateStatus | null>(null)
+  const [updateError, setUpdateError] = useState<string | null>(null)
 
   useEffect(() => {
     void window.callrec.settings.get().then(setSettings)
     void window.callrec.permissions.check().then(setPermissions)
     void window.callrec.session.orphans().then(setOrphans)
-    return window.callrec.onOrphans(setOrphans)
+    const offOrphans = window.callrec.onOrphans(setOrphans)
+    const offUpdate = window.callrec.update.onStatus(setUpdate)
+    return () => {
+      offOrphans()
+      offUpdate()
+    }
   }, [])
 
   const patchSettings = useCallback((patch: Partial<Settings>) => {
@@ -56,6 +63,21 @@ export function App() {
       </nav>
 
       <div className="content col" style={{ gap: 18 }}>
+        {update?.state === 'downloaded' && (
+          <div className="alert">
+            <span>
+              Đã tải xong bản {update.version}. Cập nhật sẽ tự cài khi thoát ứng dụng.
+              {updateError ? ` ${updateError}` : ''}
+            </span>
+            <button
+              onClick={() =>
+                void window.callrec.update.install().then((r) => setUpdateError(r.ok ? null : (r.reason ?? null)))
+              }
+            >
+              Cài ngay
+            </button>
+          </div>
+        )}
         {orphans.map((m) => (
           <div key={m.id} className="alert">
             <span>

@@ -65,6 +65,15 @@ const api: CallrecApi & { onOrphans(cb: (m: SessionManifest[]) => void): () => v
     get: (id: string) => ipcRenderer.invoke(CH.summaryGet, id),
     create: (id: string, useCloud: boolean) => ipcRenderer.invoke(CH.summaryCreate, id, useCloud),
   },
+  update: {
+    install: () => ipcRenderer.invoke(CH.updateInstall),
+    onStatus: (cb) => on(CH.updateStatus, cb),
+  },
+  crash: {
+    count: () => ipcRenderer.invoke(CH.crashCount),
+    open: () => ipcRenderer.invoke(CH.crashOpen),
+    clear: () => ipcRenderer.invoke(CH.crashClear),
+  },
   whisper: {
     status: () => ipcRenderer.invoke(CH.whisperStatus),
     removeModel: (name: WhisperModelName) => ipcRenderer.invoke(CH.whisperRemoveModel, name),

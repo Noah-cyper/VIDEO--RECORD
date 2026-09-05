@@ -25,9 +25,11 @@ mac:
   target: dmg
   category: public.app-category.productivity
   hardenedRuntime: true
-  gatekeeperAssist: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
+  # Bật notarize khi đã có APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID trong môi trường.
+  # Để false thì build vẫn chạy được trên máy không có chứng thư.
+  notarize: false
   extendInfo:
     NSMicrophoneUsageDescription: CallRec cần microphone để ghi lại giọng của bạn trong cuộc gọi.
     NSCameraUsageDescription: CallRec cần camera nếu bạn bật ghi webcam.

@@ -7,10 +7,10 @@ với **âm thanh đầy đủ của cả hai bên**:
 - **Giọng đầu bên kia** — lấy từ *loopback / system audio* (âm thanh đang phát ra loa), không cần bên kia cài gì.
 - **Hình ảnh** — ghi màn hình (cửa sổ cuộc gọi hoặc toàn màn hình) + webcam tuỳ chọn.
 
-> **Trạng thái:** Phase 0-4 đã viết xong code — build sạch, typecheck sạch, 100 test pass (gồm 4 test
-> tích hợp chạy FFmpeg thật). **Chưa chạy thử trên máy có thiết bị âm thanh thật**, nên phần bắt âm
-> loopback vẫn ở mức "đúng theo API", chưa phải "đã nghe được tiếng". Việc đầu tiên cần làm là chạy
-> checklist test thủ công. Phase 5 (ký số, notarize, phát hành) chưa làm.
+> **Trạng thái:** toàn bộ Phase 0-5 đã viết xong code, trừ ký số (cần chứng thư trả phí).
+> Build sạch, typecheck sạch, 100 test pass, bản đóng gói chạy được.
+> **Chưa chạy thử trên máy có thiết bị âm thanh thật**, nên phần bắt âm loopback vẫn ở mức
+> "đúng theo API", chưa phải "đã nghe được tiếng" — đó là việc đầu tiên cần làm.
 
 ---
 
@@ -81,7 +81,7 @@ src/
 | 2 — Video + đồng bộ | Code xong, **chưa qua GATE C** | Offset đo bằng `performance.now()`, bù bằng `-itsoffset` |
 | 3 — UI + thư viện | Code xong | Overlay không tắt được, tray, phím tắt, thư viện, cài đặt |
 | 4 — Transcript | Code xong | whisper.cpp riêng từng track, tìm toàn văn, xuất txt/srt/md, tóm tắt |
-| 5 — Phát hành | Một phần | Có cấu hình electron-builder + CI; chưa ký số, chưa notarize |
+| 5 — Phát hành | Code xong, trừ ký số | Đóng gói, tự cập nhật, crash dump cục bộ, CI release, tài liệu người dùng |
 
 ### Đã kiểm chứng được gì
 
@@ -91,6 +91,7 @@ src/
 | 96 unit test (máy trạng thái, offset, đặt tên, tham số ffmpeg/whisper, trộn transcript, tóm tắt) | Pass |
 | 4 test tích hợp chạy FFmpeg thật, kiểm tra file đích | Pass — MP4 ra đúng 1 video + **2 audio track có nhãn**, tách WAV 16 kHz đúng từng track |
 | `npm run smoke` — bật app thật dưới Xvfb | Pass — cửa sổ load, contextBridge hoạt động, renderer dựng đủ 3 tab, không lỗi console |
+| `electron-builder` dựng bản đóng gói | Pass — sidecar FFmpeg nằm đúng `resources/ffmpeg/`, app đã đóng gói khởi động được |
 
 ### Chưa kiểm chứng được — việc đầu tiên cần làm
 
@@ -101,6 +102,17 @@ không có card âm thanh, không có Windows/macOS. Cụ thể những thứ c�
 - Độ lệch thật giữa ba luồng sau 60 phút (NFR-02).
 - CPU khi ghi 1080p30 (NFR-01).
 - Luồng cấp quyền trên macOS và tình huống cần khởi động lại app.
+- Toàn bộ tính năng gỡ băng: chưa có binary whisper.cpp trong môi trường này nên phần
+  `runWhisper` chưa từng chạy thật (phần dựng tham số và diễn giải kết quả thì có test).
+
+Và hai việc cần chứng thư trả phí, không làm được nếu không mua:
+
+- **Ký số Windows** (R-02) — thiếu thì SmartScreen cảnh báo mỗi lần cài.
+- **Ký số + notarize macOS** (R-03) — thiếu thì Gatekeeper chặn.
+
+Workflow `.github/workflows/release.yml` đã dựng sẵn chỗ cắm chứng thư: thêm các secret
+`CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`
+là electron-builder tự ký, không phải sửa code.
 
 Chạy checklist ở [`docs/01-workflow.md`](docs/01-workflow.md#checklist-test-thủ-công-chạy-trước-mỗi-lần-lên-gate)
 trước khi coi Phase 0-2 là qua gate.
@@ -116,6 +128,7 @@ trước khi coi Phase 0-2 là qua gate.
 | [`docs/04-pipeline-va-luu-tru.md`](docs/04-pipeline-va-luu-tru.md) | Encode, đồng bộ A/V, cấu trúc file, transcript & tóm tắt |
 | [`docs/05-backlog.md`](docs/05-backlog.md) | Backlog chi tiết theo task, có ước lượng |
 | [`docs/06-transcript.md`](docs/06-transcript.md) | Gỡ băng, tìm kiếm toàn văn, tóm tắt, xử lý khoá API |
+| [`docs/07-huong-dan-su-dung.md`](docs/07-huong-dan-su-dung.md) | **Hướng dẫn cho người dùng cuối** + xử lý sự cố |
 
 ---
 

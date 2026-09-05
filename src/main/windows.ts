@@ -44,6 +44,11 @@ export function getMainWindow(): BrowserWindow | null {
   return mainWindow
 }
 
+/** Cập nhật, thoát app hay bất cứ thao tác gián đoạn nào đều phải hỏi cái này trước. */
+export function isBusyRecording(): boolean {
+  return indicatorRequired(lastState)
+}
+
 /**
  * Overlay là ràng buộc pháp lý FR-08, không phải tiện ích: nó không đóng được bằng tay và
  * chỉ biến mất khi trạng thái rời khỏi nhóm đang ghi.
