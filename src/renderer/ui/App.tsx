@@ -70,7 +70,7 @@ export function App() {
         ))}
 
         {tab === 'record' && <RecordView settings={settings} onSettings={patchSettings} />}
-        {tab === 'library' && <LibraryView />}
+        {tab === 'library' && <LibraryView settings={settings} />}
         {tab === 'settings' && (
           <SettingsView
             settings={settings}

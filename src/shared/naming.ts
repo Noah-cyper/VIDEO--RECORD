@@ -3,13 +3,18 @@ import { QUALITY } from './types'
 
 const pad = (n: number, w = 2) => String(n).padStart(w, '0')
 
-/** Bỏ dấu tiếng Việt rồi rút về ký tự an toàn cho tên thư mục trên mọi hệ điều hành. */
-export function slugify(input: string, maxLen = 60): string {
-  const s = input
+/** Bỏ dấu tiếng Việt, giữ nguyên khoảng trắng và chữ hoa thường. */
+export function foldDiacritics(input: string): string {
+  return input
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/đ/g, 'd')
     .replace(/Đ/g, 'D')
+}
+
+/** Bỏ dấu tiếng Việt rồi rút về ký tự an toàn cho tên thư mục trên mọi hệ điều hành. */
+export function slugify(input: string, maxLen = 60): string {
+  const s = foldDiacritics(input)
     .replace(/[^a-zA-Z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, maxLen)

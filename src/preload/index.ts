@@ -1,6 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { Bookmark, CaptureAlert, ExportProgress, QualityPreset, RecordState, Settings, SessionManifest } from '@shared/types'
-import { CH, type CallrecApi, type CloseSessionInput, type MainCommand, type OpenSessionInput, type RegisterStreamInput, type WriteChunkInput } from '@shared/ipc'
+import type { WhisperModelName } from '@shared/whisper'
+import {
+  CH, type CallrecApi, type CloseSessionInput, type MainCommand, type OpenSessionInput,
+  type RegisterStreamInput, type TranscriptFormat, type TranscriptProgress, type WriteChunkInput,
+} from '@shared/ipc'
 
 function on<T>(channel: string, cb: (payload: T) => void): () => void {
   const handler = (_e: Electron.IpcRendererEvent, payload: T) => cb(payload)
@@ -34,6 +38,7 @@ const api: CallrecApi & { onOrphans(cb: (m: SessionManifest[]) => void): () => v
   },
   library: {
     list: () => ipcRenderer.invoke(CH.libraryList),
+    get: (id: string) => ipcRenderer.invoke(CH.libraryGet, id),
     search: (q: string) => ipcRenderer.invoke(CH.librarySearch, q),
     rename: (id: string, title: string) => ipcRenderer.invoke(CH.libraryRename, id, title),
     remove: (id: string) => ipcRenderer.invoke(CH.libraryRemove, id),
@@ -45,6 +50,24 @@ const api: CallrecApi & { onOrphans(cb: (m: SessionManifest[]) => void): () => v
     get: () => ipcRenderer.invoke(CH.settingsGet),
     set: (patch: Partial<Settings>) => ipcRenderer.invoke(CH.settingsSet, patch),
     pickDir: () => ipcRenderer.invoke(CH.settingsPickDir),
+    setApiKey: (key: string) => ipcRenderer.invoke(CH.settingsSetApiKey, key),
+    clearApiKey: () => ipcRenderer.invoke(CH.settingsClearApiKey),
+  },
+  transcript: {
+    start: (id: string, model: WhisperModelName) => ipcRenderer.invoke(CH.transcriptStart, id, model),
+    cancel: (id: string) => ipcRenderer.invoke(CH.transcriptCancel, id),
+    get: (id: string) => ipcRenderer.invoke(CH.transcriptGet, id),
+    export: (id: string, format: TranscriptFormat) => ipcRenderer.invoke(CH.transcriptExport, id, format),
+    searchAll: (query: string) => ipcRenderer.invoke(CH.transcriptSearchAll, query),
+    onProgress: (cb: (p: TranscriptProgress) => void) => on(CH.transcriptProgress, cb),
+  },
+  summary: {
+    get: (id: string) => ipcRenderer.invoke(CH.summaryGet, id),
+    create: (id: string, useCloud: boolean) => ipcRenderer.invoke(CH.summaryCreate, id, useCloud),
+  },
+  whisper: {
+    status: () => ipcRenderer.invoke(CH.whisperStatus),
+    removeModel: (name: WhisperModelName) => ipcRenderer.invoke(CH.whisperRemoveModel, name),
   },
   onCommand: (cb: (cmd: MainCommand) => void) => on(CH.commandFromMain, cb),
   onIndicator: (cb) => on(CH.stateChanged, cb),

@@ -2,6 +2,9 @@ import type {
   AudioDevice, Bookmark, CaptureAlert, CaptureSource, DiskStatus, ExportProgress,
   QualityPreset, Recording, RecordState, SessionManifest, Settings, StreamKind,
 } from './types'
+import type { Speaker, Transcript } from './transcript'
+import type { StoredSummary } from './summary'
+import type { WhisperModelName } from './whisper'
 
 /** Danh sách kênh cố định. Renderer không có nodeIntegration, mọi đặc quyền đi qua đây. */
 export const CH = {
@@ -25,6 +28,7 @@ export const CH = {
   exportProgress: 'export:progress',
 
   libraryList: 'library:list',
+  libraryGet: 'library:get',
   librarySearch: 'library:search',
   libraryRename: 'library:rename',
   libraryRemove: 'library:remove',
@@ -35,6 +39,21 @@ export const CH = {
   settingsGet: 'settings:get',
   settingsSet: 'settings:set',
   settingsPickDir: 'settings:pickDir',
+  settingsSetApiKey: 'settings:setApiKey',
+  settingsClearApiKey: 'settings:clearApiKey',
+
+  transcriptStart: 'transcript:start',
+  transcriptCancel: 'transcript:cancel',
+  transcriptProgress: 'transcript:progress',
+  transcriptGet: 'transcript:get',
+  transcriptExport: 'transcript:export',
+  transcriptSearchAll: 'transcript:searchAll',
+
+  summaryGet: 'summary:get',
+  summaryCreate: 'summary:create',
+
+  whisperStatus: 'whisper:status',
+  whisperRemoveModel: 'whisper:removeModel',
 
   stateChanged: 'record:stateChanged',
   alert: 'record:alert',
@@ -76,6 +95,32 @@ export interface PermissionStatus {
   needsRestart: boolean
 }
 
+export interface TranscriptProgress {
+  recordingId: string
+  phase: 'model' | 'extracting' | 'transcribing' | 'done' | 'error'
+  percent: number
+  track?: Speaker
+  message?: string
+}
+
+export interface WhisperStatus {
+  binaryAvailable: boolean
+  installedModels: WhisperModelName[]
+  /** Khoá API đã lưu chưa - chỉ trả về true/false, không bao giờ trả về chính khoá. */
+  apiKeyConfigured: boolean
+  secureStorageAvailable: boolean
+}
+
+export interface TranscriptHitDto {
+  recordingId: string
+  recordingTitle: string
+  atMs: number
+  speaker: Speaker
+  text: string
+}
+
+export type TranscriptFormat = 'txt' | 'srt' | 'md'
+
 /** Lệnh phát từ main (phím tắt toàn cục, menu khay) xuống renderer. */
 export type MainCommand = 'toggle-record' | 'pause' | 'stop' | 'bookmark'
 
@@ -105,6 +150,7 @@ export interface CallrecApi {
   }
   library: {
     list(): Promise<Recording[]>
+    get(id: string): Promise<Recording | undefined>
     search(query: string): Promise<Recording[]>
     rename(id: string, title: string): Promise<void>
     remove(id: string): Promise<void>
@@ -117,6 +163,24 @@ export interface CallrecApi {
     get(): Promise<Settings>
     set(patch: Partial<Settings>): Promise<Settings>
     pickDir(): Promise<string | null>
+    setApiKey(key: string): Promise<WhisperStatus>
+    clearApiKey(): Promise<WhisperStatus>
+  }
+  transcript: {
+    start(recordingId: string, model: WhisperModelName): Promise<Transcript | null>
+    cancel(recordingId: string): Promise<void>
+    get(recordingId: string): Promise<Transcript | null>
+    export(recordingId: string, format: TranscriptFormat): Promise<string | null>
+    searchAll(query: string): Promise<TranscriptHitDto[]>
+    onProgress(cb: (p: TranscriptProgress) => void): () => void
+  }
+  summary: {
+    get(recordingId: string): Promise<StoredSummary | null>
+    create(recordingId: string, useCloud: boolean): Promise<StoredSummary | null>
+  }
+  whisper: {
+    status(): Promise<WhisperStatus>
+    removeModel(name: WhisperModelName): Promise<WhisperStatus>
   }
   onCommand(cb: (cmd: MainCommand) => void): () => void
   /** Cửa sổ overlay dùng kênh này để hiển thị chỉ báo đang ghi. */

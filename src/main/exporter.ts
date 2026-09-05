@@ -70,6 +70,11 @@ export async function exportSession(
     const size = await fs.stat(output).then((s) => s.size, () => 0)
     if (size === 0) throw new Error('FFmpeg tạo ra file rỗng')
 
+    // Thứ tự này phải khớp đúng thứ tự -map trong buildExportArgs (mic trước, system sau).
+    const audioTracks: ('me' | 'them')[] = []
+    if (inputs.mic) audioTracks.push('me')
+    if (inputs.system) audioTracks.push('them')
+
     const recording: Recording = {
       id: sessionId,
       title: title ?? manifest.title ?? folderName,
@@ -80,6 +85,7 @@ export async function exportSession(
       sizeBytes: size,
       hasVideo,
       bookmarks: manifest.bookmarks,
+      audioTracks,
     }
     await fs.writeFile(join(folder, 'metadata.json'), JSON.stringify({ ...manifest, recording }, null, 2), 'utf-8')
     await addRecording(recording)

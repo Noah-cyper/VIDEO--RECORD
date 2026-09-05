@@ -8,6 +8,8 @@ release/
 .env.local
 resources/ffmpeg/*
 !resources/ffmpeg/.gitkeep
+resources/whisper/*
+!resources/whisper/.gitkeep
 models/
 *.webm
 *.mp4

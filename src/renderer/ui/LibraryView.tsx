@@ -1,21 +1,38 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Recording } from '@shared/types'
+import type { Recording, Settings } from '@shared/types'
+import type { TranscriptHitDto } from '@shared/ipc'
+import { SPEAKER_LABEL } from '@shared/transcript'
 import { formatBytes, formatDuration } from '@shared/naming'
+import { TranscriptPanel } from './TranscriptPanel'
 
-export function LibraryView() {
+export function LibraryView({ settings }: { settings: Settings }) {
   const [items, setItems] = useState<Recording[]>([])
   const [query, setQuery] = useState('')
+  const [hits, setHits] = useState<TranscriptHitDto[]>([])
   const [playing, setPlaying] = useState<Recording | null>(null)
   const [mediaSrc, setMediaSrc] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  const open = async (rec: Recording) => {
+  const open = async (rec: Recording, seekMs?: number) => {
     setPlaying(rec)
     setMediaSrc(await window.callrec.library.mediaUrl(rec.id))
+    if (seekMs !== undefined) setPendingSeek(seekMs)
   }
 
-  const refresh = (q = query) =>
+  const [pendingSeek, setPendingSeek] = useState<number | null>(null)
+
+  const seek = (ms: number) => {
+    const video = videoRef.current
+    if (!video) return setPendingSeek(ms)
+    video.currentTime = ms / 1000
+    void video.play().catch(() => undefined)
+  }
+
+  const refresh = (q = query) => {
     void (q ? window.callrec.library.search(q) : window.callrec.library.list()).then(setItems)
+    // Tìm cả trong nội dung đã gỡ băng, không chỉ trong tên bản ghi (T-05).
+    void (q ? window.callrec.transcript.searchAll(q) : Promise.resolve([] as TranscriptHitDto[])).then(setHits)
+  }
 
   useEffect(() => {
     refresh('')
@@ -51,6 +68,7 @@ export function LibraryView() {
       />
 
       {playing && (
+        <>
         <div className="panel col">
           <div className="row spread">
             <strong>{playing.title}</strong>
@@ -58,25 +76,54 @@ export function LibraryView() {
           </div>
           {/* Hai audio track nằm trong cùng file; trình phát chọn track qua menu của chính nó. */}
           {mediaSrc ? (
-            <video ref={videoRef} src={mediaSrc} controls style={{ width: '100%', borderRadius: 8, background: '#000' }} />
+            <video
+              ref={videoRef}
+              src={mediaSrc}
+              controls
+              style={{ width: '100%', borderRadius: 8, background: '#000' }}
+              onLoadedMetadata={(e) => {
+                // Tua tới mốc người dùng chọn trước khi video kịp load; đặt sớm hơn sẽ bị bỏ qua.
+                if (pendingSeek === null) return
+                e.currentTarget.currentTime = pendingSeek / 1000
+                setPendingSeek(null)
+              }}
+            />
           ) : (
             <p className="muted">Không mở được file bản ghi.</p>
           )}
           {playing.bookmarks.length > 0 && (
             <div className="row" style={{ flexWrap: 'wrap' }}>
               {playing.bookmarks.map((b, i) => (
-                <button
-                  key={i}
-                  className="ghost"
-                  onClick={() => {
-                    if (videoRef.current) videoRef.current.currentTime = b.atMs / 1000
-                  }}
-                >
+                <button key={i} className="ghost" onClick={() => seek(b.atMs)}>
                   {formatDuration(b.atMs)} · {b.label}
                 </button>
               ))}
             </div>
           )}
+        </div>
+        <TranscriptPanel recording={playing} settings={settings} onSeek={seek} />
+        </>
+      )}
+
+      {hits.length > 0 && (
+        <div className="panel col">
+          <strong>Tìm thấy trong nội dung cuộc gọi ({hits.length})</strong>
+          {hits.slice(0, 25).map((h, i) => (
+            <button
+              key={`${h.recordingId}-${i}`}
+              className="hit"
+              onClick={() => {
+                // Bản ghi có thể không nằm trong danh sách đang lọc (tên không khớp truy vấn
+                // nhưng nội dung thì khớp), nên phải lấy thẳng theo id.
+                void window.callrec.library.get(h.recordingId).then((rec) => rec && open(rec, h.atMs))
+              }}
+            >
+              <span className="seg-meta">
+                {h.recordingTitle} · {formatDuration(h.atMs)} · {SPEAKER_LABEL[h.speaker]}
+              </span>
+              <span>{h.text}</span>
+            </button>
+          ))}
         </div>
       )}
 

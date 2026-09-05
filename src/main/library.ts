@@ -46,12 +46,16 @@ export async function searchRecordings(query: string): Promise<Recording[]> {
   )
 }
 
-export async function renameRecording(id: string, title: string): Promise<void> {
+export async function patchRecording(id: string, patch: Partial<Recording>): Promise<void> {
   const items = await readIndex()
-  const target = items.find((r) => r.id === id)
-  if (!target) return
-  target.title = title
+  const index = items.findIndex((r) => r.id === id)
+  if (index < 0) return
+  items[index] = { ...items[index], ...patch, id }
   await writeIndex(items)
+}
+
+export async function renameRecording(id: string, title: string): Promise<void> {
+  await patchRecording(id, { title })
 }
 
 export async function removeRecording(id: string): Promise<void> {

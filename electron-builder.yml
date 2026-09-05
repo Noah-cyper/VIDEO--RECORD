@@ -11,6 +11,10 @@ extraResources:
   - from: resources/ffmpeg
     to: ffmpeg
     filter: ['**/*']
+  # Sidecar whisper.cpp cho tính năng gỡ băng; thiếu thì nút gỡ băng bị vô hiệu hoá.
+  - from: resources/whisper
+    to: whisper
+    filter: ['**/*']
 win:
   target: nsis
   artifactName: ${productName}-${version}-setup.${ext}

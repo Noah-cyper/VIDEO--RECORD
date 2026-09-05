@@ -1,8 +1,9 @@
 # 05 — Backlog
 
-> **Cập nhật:** phần code của Phase 0-3 đã viết xong (xem README). Các task S-*, C-*, V-*, U-* đã có
-> code và test tự động; riêng những task cần thiết bị âm thanh thật (S-02, S-03, S-04, C-11, V-07)
-> vẫn phải chạy tay trên Windows/macOS mới coi là xong. Phase 4 và phần lớn Phase 5 chưa làm.
+> **Cập nhật:** phần code của Phase 0-4 đã viết xong (xem README). Các task S-*, C-*, V-*, U-*, T-*
+> đã có code và test tự động; riêng những task cần thiết bị âm thanh thật (S-02, S-03, S-04, C-11,
+> V-07) và những task cần binary whisper.cpp (T-01, T-02) vẫn phải chạy tay mới coi là xong.
+> Phần lớn Phase 5 chưa làm.
 
 Ước lượng theo **điểm** (1 điểm ≈ nửa ngày làm việc). Ưu tiên: P0 bắt buộc cho MVP,
 P1 quan trọng, P2 để sau.

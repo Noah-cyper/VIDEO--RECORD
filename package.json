@@ -19,6 +19,7 @@
     "package:mac": "npm run build && electron-builder --mac"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.124.0",
     "electron-updater": "^6.3.9"
   },
   "devDependencies": {

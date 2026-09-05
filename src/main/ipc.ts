@@ -1,7 +1,17 @@
 import { dialog, ipcMain } from 'electron'
 import { join } from 'node:path'
 import type { Bookmark, QualityPreset, RecordState, Settings } from '@shared/types'
-import { CH, type CloseSessionInput, type OpenSessionInput, type RegisterStreamInput, type WriteChunkInput } from '@shared/ipc'
+import { promises as fsp } from 'node:fs'
+import {
+  CH, type CloseSessionInput, type OpenSessionInput, type RegisterStreamInput,
+  type TranscriptFormat, type TranscriptHitDto, type WhisperStatus, type WriteChunkInput,
+} from '@shared/ipc'
+import { toMarkdown, toSrt, toTxt } from '@shared/transcript'
+import { WHISPER_MODELS, type WhisperModelName } from '@shared/whisper'
+import { readTranscript, searchAllTranscripts, transcribeRecording } from './transcribe'
+import { CloudSummaryUnavailable, readSummary, summarizeRecording } from './summarize'
+import { modelInstalled, removeModel, whisperAvailable } from './whisper'
+import { clearApiKey, hasApiKey, secureStorageAvailable, setApiKey } from './secrets'
 import * as storage from './storage'
 import * as library from './library'
 import { diskStatus, exportSession, extractAudio } from './exporter'
@@ -11,6 +21,15 @@ import { listSources, pickSource, pickedSourceName } from './sources'
 import { broadcast, getMainWindow, syncIndicator } from './windows'
 import { mediaUrl } from './media-protocol'
 import { updateTray } from './tray'
+
+async function whisperStatus(): Promise<WhisperStatus> {
+  return {
+    binaryAvailable: await whisperAvailable(),
+    installedModels: (Object.keys(WHISPER_MODELS) as WhisperModelName[]).filter(modelInstalled),
+    apiKeyConfigured: await hasApiKey(),
+    secureStorageAvailable: secureStorageAvailable(),
+  }
+}
 
 export function registerIpc(): void {
   ipcMain.handle(CH.sourcesList, () => listSources())
@@ -42,6 +61,7 @@ export function registerIpc(): void {
   )
 
   ipcMain.handle(CH.libraryList, () => library.listRecordings())
+  ipcMain.handle(CH.libraryGet, (_e, id: string) => library.getRecording(id))
   ipcMain.handle(CH.librarySearch, (_e, q: string) => library.searchRecordings(q))
   ipcMain.handle(CH.libraryRename, (_e, id: string, title: string) => library.renameRecording(id, title))
   ipcMain.handle(CH.libraryRemove, (_e, id: string) => library.removeRecording(id))
@@ -57,6 +77,86 @@ export function registerIpc(): void {
   })
 
   ipcMain.handle(CH.settingsGet, () => getSettings())
+  ipcMain.handle(CH.settingsSetApiKey, async (_e, key: string) => {
+    await setApiKey(key)
+    return whisperStatus()
+  })
+  ipcMain.handle(CH.settingsClearApiKey, async () => {
+    await clearApiKey()
+    return whisperStatus()
+  })
+
+  // Một bản ghi chỉ chạy một tiến trình gỡ băng; giữ controller để nút Huỷ có tác dụng thật.
+  const running = new Map<string, AbortController>()
+
+  ipcMain.handle(CH.transcriptStart, async (_e, id: string, model: WhisperModelName) => {
+    if (running.has(id)) return null
+    const controller = new AbortController()
+    running.set(id, controller)
+    try {
+      const settings = await getSettings()
+      return await transcribeRecording(
+        id,
+        model,
+        settings.language,
+        (p) => broadcast(CH.transcriptProgress, p),
+        controller.signal,
+      )
+    } finally {
+      running.delete(id)
+    }
+  })
+  ipcMain.handle(CH.transcriptCancel, (_e, id: string) => {
+    running.get(id)?.abort()
+    running.delete(id)
+  })
+  ipcMain.handle(CH.transcriptGet, async (_e, id: string) => {
+    const rec = await library.getRecording(id)
+    return rec ? readTranscript(rec) : null
+  })
+  ipcMain.handle(CH.transcriptExport, async (_e, id: string, format: TranscriptFormat) => {
+    const rec = await library.getRecording(id)
+    if (!rec) return null
+    const transcript = await readTranscript(rec)
+    if (!transcript) return null
+    const body =
+      format === 'srt' ? toSrt(transcript.segments)
+      : format === 'md' ? toMarkdown(transcript.segments, rec.title)
+      : toTxt(transcript.segments)
+    const out = join(rec.folder, `transcript.${format}`)
+    await fsp.writeFile(out, body, 'utf-8')
+    return out
+  })
+  ipcMain.handle(CH.transcriptSearchAll, async (_e, query: string): Promise<TranscriptHitDto[]> => {
+    const hits = await searchAllTranscripts(await library.listRecordings(), query)
+    return hits.map((h) => ({
+      recordingId: h.recording.id,
+      recordingTitle: h.recording.title,
+      atMs: h.atMs,
+      speaker: h.speaker,
+      text: h.text,
+    }))
+  })
+
+  ipcMain.handle(CH.summaryGet, (_e, id: string) => readSummary(id))
+  ipcMain.handle(CH.summaryCreate, async (_e, id: string, useCloud: boolean) => {
+    try {
+      return await summarizeRecording(id, useCloud)
+    } catch (err) {
+      // Người dùng cần biết vì sao đường qua API không chạy, không phải nhận một ô trống.
+      if (err instanceof CloudSummaryUnavailable) {
+        broadcast(CH.alert, { kind: 'stream-error', message: err.message })
+        return summarizeRecording(id, false)
+      }
+      throw err
+    }
+  })
+
+  ipcMain.handle(CH.whisperStatus, () => whisperStatus())
+  ipcMain.handle(CH.whisperRemoveModel, async (_e, name: WhisperModelName) => {
+    await removeModel(name)
+    return whisperStatus()
+  })
   ipcMain.handle(CH.settingsSet, (_e, patch: Partial<Settings>) => setSettings(patch))
   ipcMain.handle(CH.settingsPickDir, async () => {
     const win = getMainWindow()

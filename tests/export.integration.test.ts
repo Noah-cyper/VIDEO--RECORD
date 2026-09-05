@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { buildExportArgs, videoCodecFor } from '@shared/ffmpeg'
+import { readFile } from 'node:fs/promises'
+import { buildExportArgs, buildWavExtractArgs, videoCodecFor } from '@shared/ffmpeg'
 
 const run = promisify(execFile)
 
@@ -81,6 +82,31 @@ maybe('xuất file thật bằng ffmpeg', () => {
 
     const info = await probe(output)
     expect(info.match(/Stream #0:\d+.*: Audio:/g) ?? []).toHaveLength(2)
+  }, 120_000)
+
+  it('tách được từng track ra WAV 16 kHz mono cho whisper, và hai track khác nhau thật', async () => {
+    const output = join(dir, 'two-track.mp4')
+    await run(bin!, buildExportArgs({
+      inputs: { mic: inputs.mic, system: inputs.system },
+      offsetsMs: { mic: 0, system: 0 },
+      output,
+    }), { maxBuffer: 1 << 24 })
+
+    const wav0 = join(dir, 't0.wav')
+    const wav1 = join(dir, 't1.wav')
+    await run(bin!, buildWavExtractArgs(output, wav0, 0))
+    await run(bin!, buildWavExtractArgs(output, wav1, 1))
+
+    for (const wav of [wav0, wav1]) {
+      const info = await probe(wav)
+      expect(info).toContain('16000 Hz')
+      expect(info).toContain('mono')
+    }
+
+    // Track 0 là sine 440 Hz, track 1 là 880 Hz. Nội dung phải khác nhau - nếu -map 0:a:N sai
+    // thì cả hai file sẽ giống hệt và transcript sẽ gán cùng một giọng cho cả hai bên.
+    const [a, b] = await Promise.all([readFile(wav0), readFile(wav1)])
+    expect(a.equals(b)).toBe(false)
   }, 120_000)
 
   it('VP8 không copy thẳng vào MP4 được - đây là lý do phải chọn codec theo mimeType', async () => {

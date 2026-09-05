@@ -81,11 +81,19 @@ export interface Recording {
   sizeBytes: number
   hasVideo: boolean
   bookmarks: Bookmark[]
+  /**
+   * Thứ tự audio track trong file đích. Khi thiếu mic thì track 0 là đối phương chứ không phải
+   * mình - không lưu lại thì transcript sẽ gán nhãn ngược cho cả cuộc gọi.
+   */
+  audioTracks: ('me' | 'them')[]
   transcriptFile?: string
+  summaryFile?: string
 }
 
 export interface Settings {
   recordingsDir: string
+  /** Model whisper.cpp dùng cho gỡ băng; đổi model không ảnh hưởng bản ghi đã có. */
+  whisperModel: 'tiny' | 'base' | 'small' | 'medium'
   quality: QualityPreset
   micDeviceId: string | null
   language: 'vi' | 'en'

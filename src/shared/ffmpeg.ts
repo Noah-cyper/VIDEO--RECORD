@@ -94,6 +94,18 @@ export function buildAudioExtractArgs(input: string, output: string, track = 0):
   return ['-y', '-hide_banner', '-loglevel', 'error', '-i', input, '-map', `0:a:${track}`, '-c:a', 'aac', '-b:a', '128k', output]
 }
 
+/** Tách một audio track ra WAV 16 kHz mono - định dạng duy nhất whisper.cpp nhận. */
+export function buildWavExtractArgs(input: string, output: string, track: number): string[] {
+  return [
+    '-y', '-hide_banner', '-loglevel', 'error',
+    '-i', input,
+    '-map', `0:a:${track}`,
+    '-ac', '1', '-ar', '16000',
+    '-c:a', 'pcm_s16le',
+    output,
+  ]
+}
+
 export interface FfmpegProgress {
   outTimeMs: number
   speed: number

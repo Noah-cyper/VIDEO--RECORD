@@ -9,6 +9,7 @@ function defaults(): Settings {
   return {
     recordingsDir: join(app.getPath('videos'), 'CallRec'),
     quality: '1080p30',
+    whisperModel: 'small',
     micDeviceId: null,
     language: 'vi',
     playConsentNotice: true,

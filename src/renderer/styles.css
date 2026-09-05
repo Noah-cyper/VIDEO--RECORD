@@ -120,3 +120,22 @@ body.overlay { background: transparent; }
 .dot.paused { background: var(--warn); animation: none; }
 @keyframes blink { 50% { opacity: .25; } }
 .overlay-time { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 62px; }
+
+/* Biên bản gỡ băng */
+.transcript { display: flex; flex-direction: column; gap: 6px; max-height: 420px; overflow: auto; padding-right: 4px; }
+.segment {
+  display: flex; flex-direction: column; gap: 3px;
+  text-align: left; background: var(--panel-2); border: 1px solid var(--line);
+  border-left: 3px solid var(--line); border-radius: 8px; padding: 8px 10px;
+}
+.segment.me { border-left-color: var(--accent); }
+.segment.them { border-left-color: var(--ok); }
+.segment.overlap { border-style: dashed; }
+.seg-meta { font-size: 11px; color: var(--muted); }
+
+.hit { display: flex; flex-direction: column; gap: 3px; text-align: left; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+
+.summary-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.summary-md { white-space: pre-wrap; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 0; font: inherit; }
+.link { background: none; border: none; padding: 0; color: var(--accent); font-variant-numeric: tabular-nums; cursor: pointer; }
+.badge { margin-left: 8px; font-size: 11px; background: var(--warn); color: #1a1a1a; border-radius: 999px; padding: 1px 8px; }

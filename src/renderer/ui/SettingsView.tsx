@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import type { Settings } from '@shared/types'
-import type { PermissionStatus } from '@shared/ipc'
+import type { PermissionStatus, WhisperStatus } from '@shared/ipc'
+import { WHISPER_MODELS, type WhisperModelName } from '@shared/whisper'
 
 export function SettingsView({
   settings,
@@ -12,6 +14,18 @@ export function SettingsView({
   onSettings: (patch: Partial<Settings>) => void
   onRequestPermissions: () => void
 }) {
+  const [whisper, setWhisper] = useState<WhisperStatus | null>(null)
+  const [apiKey, setApiKeyInput] = useState('')
+
+  useEffect(() => {
+    void window.callrec.whisper.status().then(setWhisper)
+  }, [])
+
+  const saveApiKey = async () => {
+    setWhisper(await window.callrec.settings.setApiKey(apiKey))
+    setApiKeyInput('')
+  }
+
   const pickDir = async () => {
     const dir = await window.callrec.settings.pickDir()
     if (dir) onSettings({ recordingsDir: dir })
@@ -75,6 +89,27 @@ export function SettingsView({
           </span>
         </label>
 
+        <div className="field">
+          <label htmlFor="whisper-model">Model gỡ băng</label>
+          <select
+            id="whisper-model"
+            value={settings.whisperModel}
+            onChange={(e) => onSettings({ whisperModel: e.target.value as WhisperModelName })}
+          >
+            {(Object.keys(WHISPER_MODELS) as WhisperModelName[]).map((name) => (
+              <option key={name} value={name}>
+                {WHISPER_MODELS[name].label} — {WHISPER_MODELS[name].sizeMb} MB
+                {whisper?.installedModels.includes(name) ? ' (đã tải)' : ''}
+              </option>
+            ))}
+          </select>
+          <span className="muted" style={{ fontSize: 12 }}>
+            {whisper?.binaryAvailable
+              ? 'Model tự tải về lần đầu dùng và lưu lại cho những lần sau.'
+              : 'Chưa tìm thấy whisper.cpp — xem hướng dẫn cài ở docs/06-transcript.md.'}
+          </span>
+        </div>
+
         <label className="check">
           <input
             type="checkbox"
@@ -89,6 +124,45 @@ export function SettingsView({
             </span>
           </span>
         </label>
+
+        {settings.allowCloudSummary && (
+          <div className="field">
+            <label htmlFor="api-key">Khoá API Anthropic</label>
+            {whisper?.secureStorageAvailable === false ? (
+              <div className="alert error">
+                <span>
+                  Hệ điều hành này không cung cấp kho khoá an toàn, nên CallRec từ chối lưu khoá API.
+                  Tóm tắt qua API sẽ không dùng được.
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className="row">
+                  <input
+                    id="api-key"
+                    type="password"
+                    placeholder={whisper?.apiKeyConfigured ? 'Đã lưu một khoá' : 'sk-ant-...'}
+                    value={apiKey}
+                    onChange={(e) => setApiKeyInput(e.target.value)}
+                  />
+                  <button onClick={() => void saveApiKey()} disabled={!apiKey.trim()}>Lưu</button>
+                  {whisper?.apiKeyConfigured && (
+                    <button
+                      className="ghost"
+                      onClick={() => void window.callrec.settings.clearApiKey().then(setWhisper)}
+                    >
+                      Xoá
+                    </button>
+                  )}
+                </div>
+                <span className="muted" style={{ fontSize: 12 }}>
+                  Khoá được mã hoá bằng kho khoá của hệ điều hành và không bao giờ được gửi ngược
+                  về phần giao diện.
+                </span>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
