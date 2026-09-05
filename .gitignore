@@ -12,3 +12,4 @@ models/
 *.webm
 *.mp4
 *.wav
+*.tsbuildinfo

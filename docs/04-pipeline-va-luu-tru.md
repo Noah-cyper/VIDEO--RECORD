@@ -58,8 +58,8 @@ ffmpeg \
   -map 2:v -map "[a_me]" -map "[a_them]" \
   -c:v copy \
   -c:a aac -b:a 128k \
-  -metadata:s:a:0 title="Toi" -metadata:s:a:0 language=vie \
-  -metadata:s:a:1 title="Doi phuong" -metadata:s:a:1 language=vie \
+  -metadata:s:a:0 title="Toi" -metadata:s:a:0 handler_name="Toi" -metadata:s:a:0 language=vie \
+  -metadata:s:a:1 title="Doi phuong" -metadata:s:a:1 handler_name="Doi phuong" -metadata:s:a:1 language=vie \
   -movflags +faststart \
   recording.mp4
 ```
@@ -70,7 +70,9 @@ Ghi chú:
   Nếu cần H.264 mà nguồn là VP9 thì phải encode lại, và đó là lý do nên bật tăng tốc phần cứng
   ngay từ lúc ghi.
 - `-movflags +faststart` — cho phép phát ngay khi mới tải một phần, cần thiết nếu sau này chia sẻ file.
-- Đặt `title` cho từng track để trình phát hiển thị đúng tên, người dùng biết đang nghe ai.
+- Nhãn track: MP4 **không** lưu `title` cho từng stream — chỗ nhãn thật sự được ghi là
+  `handler_name`. Phải đặt cả hai: `handler_name` cho MP4/M4A, `title` cho MKV/WebM nếu sau này
+  đổi container. (Đã kiểm chứng bằng `tests/export.integration.test.ts`.)
 
 Hiển thị tiến độ bằng cách phân tích dòng `out_time_ms=` từ `ffmpeg -progress pipe:1`.
 

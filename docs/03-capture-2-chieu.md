@@ -215,7 +215,26 @@ Quyền Screen Recording chỉ có hiệu lực sau khi **khởi động lại �
 người dùng sẽ cấp quyền xong, bấm ghi, và nhận về màn hình đen. Phải phát hiện trạng thái này
 và chủ động đề nghị khởi động lại app.
 
-### 4.6. Bluetooth làm tụt chất lượng
+### 4.6. Codec của MediaRecorder không phải lúc nào cũng nhét được vào MP4
+
+`MediaRecorder` chỉ cho ghi H.264 trên một số máy; chỗ còn lại trả về VP8 hoặc VP9. VP8 **không**
+nhét được vào container MP4, còn VP9 thì cần cờ experimental. Nếu cứ mặc định `-c:v copy` sang `.mp4`,
+FFmpeg sẽ thất bại đúng vào lúc người dùng vừa ghi xong một cuộc gọi quan trọng.
+
+Cách xử lý: lưu `mimeType` thực tế của `MediaRecorder` vào `session.json`, rồi ở bước xuất file mới
+quyết định — H.264 thì `copy` (nhanh, vài chục giây cho một giờ ghi), còn lại thì encode lại sang
+H.264 (chậm hơn nhưng ra file mở được ở mọi nơi). Xem `videoCodecFor()` trong `src/shared/ffmpeg.ts`.
+
+### 4.7. MP4 không lưu tên track ở `title`
+
+Đặt `-metadata:s:a:0 title="Toi"` trên container MP4 thì thẻ đó bị bỏ đi lặng lẽ — không báo lỗi,
+chỉ đơn giản là không có trong file. Chỗ MP4 thật sự lưu nhãn track là `handler_name`.
+
+Vì nhãn track chính là thứ cho người nghe biết đang nghe ai, mất nó là mất một nửa giá trị của việc
+tách hai track ngay từ đầu. Phải đặt cả `handler_name` (cho MP4/M4A) lẫn `title` (cho MKV/WebM).
+Đã kiểm chứng bằng `tests/export.integration.test.ts`.
+
+### 4.8. Bluetooth làm tụt chất lượng
 
 Khi micro Bluetooth được kích hoạt, macOS/Windows chuyển tai nghe sang profile HFP/HSP —
 chất lượng âm ra loa tụt xuống mức điện thoại (8–16 kHz), và loopback ghi lại đúng cái tiếng tệ đó.

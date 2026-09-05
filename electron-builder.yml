@@ -1,0 +1,34 @@
+appId: com.noahcyper.callrec
+productName: CallRec
+directories:
+  buildResources: build
+  output: release
+files:
+  - out/**
+  - package.json
+extraResources:
+  # Sidecar FFmpeg đi kèm app; thiếu file này thì bước xuất file sẽ báo FfmpegMissingError.
+  - from: resources/ffmpeg
+    to: ffmpeg
+    filter: ['**/*']
+win:
+  target: nsis
+  artifactName: ${productName}-${version}-setup.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+mac:
+  target: dmg
+  category: public.app-category.productivity
+  hardenedRuntime: true
+  gatekeeperAssist: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    NSMicrophoneUsageDescription: CallRec cần microphone để ghi lại giọng của bạn trong cuộc gọi.
+    NSCameraUsageDescription: CallRec cần camera nếu bạn bật ghi webcam.
+linux:
+  target: AppImage
+  category: AudioVideo
+publish:
+  provider: github
