@@ -55,3 +55,47 @@ jobs:
           name: installer-${{ matrix.os }}
           path: release/*.*
           if-no-files-found: error
+
+  # Chỉ mở release ra cho trình cập nhật thấy khi đã đủ file của MỌI nền tảng. Không có bước này
+  # thì máy nào xong trước sẽ công bố một bản phát hành còn dở dang.
+  publish:
+    needs: release
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const { version } = JSON.parse(fs.readFileSync('package.json', 'utf8'))
+            const tag = `v${version}`
+            const { owner, repo } = context.repo
+
+            const list = await github.rest.repos.listReleases({ owner, repo, per_page: 100 })
+            const target = list.data.find((r) => r.tag_name === tag)
+            if (!target) throw new Error(`Không tìm thấy release ${tag}`)
+
+            const names = target.assets.map((a) => a.name)
+            // Kiểm đúng thứ trình cập nhật cần, thay vì tin vào việc job build đã xanh.
+            const required = {
+              'manifest Windows (latest.yml)': names.includes('latest.yml'),
+              'bản cài Windows (.exe)': names.some((n) => n.endsWith('.exe')),
+              'manifest macOS (latest-mac.yml)': names.includes('latest-mac.yml'),
+            }
+            const missing = Object.entries(required).filter(([, ok]) => !ok).map(([k]) => k)
+            if (missing.length > 0) {
+              throw new Error(
+                `${tag} thiếu: ${missing.join(', ')}. Giữ nguyên trạng thái nháp để trình cập nhật ` +
+                  'không thấy một bản phát hành dở dang.',
+              )
+            }
+
+            if (!target.draft) {
+              core.info(`${tag} đã ở trạng thái phát hành.`)
+              return
+            }
+            await github.rest.repos.updateRelease({ owner, repo, release_id: target.id, draft: false })
+            core.info(`Đã phát hành ${tag} với ${names.length} file.`)
