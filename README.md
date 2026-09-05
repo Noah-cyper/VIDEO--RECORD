@@ -92,6 +92,7 @@ src/
 | 4 test tích hợp chạy FFmpeg thật, kiểm tra file đích | Pass — MP4 ra đúng 1 video + **2 audio track có nhãn**, tách WAV 16 kHz đúng từng track |
 | `npm run smoke` — bật app thật dưới Xvfb | Pass — cửa sổ load, contextBridge hoạt động, renderer dựng đủ 3 tab, đổi Việt→Anh qua đúng ô chọn thì nhãn đổi thật, không lỗi console |
 | `electron-builder` dựng bản đóng gói | Pass — sidecar FFmpeg nằm đúng `resources/ffmpeg/`, app đã đóng gói khởi động được |
+| Rà bảo mật bề mặt IPC | 6 lỗ hổng đã sửa, xem [`docs/08-bao-mat.md`](docs/08-bao-mat.md) |
 
 ### Chưa kiểm chứng được — việc đầu tiên cần làm
 
@@ -129,6 +130,7 @@ trước khi coi Phase 0-2 là qua gate.
 | [`docs/05-backlog.md`](docs/05-backlog.md) | Backlog chi tiết theo task, có ước lượng |
 | [`docs/06-transcript.md`](docs/06-transcript.md) | Gỡ băng, tìm kiếm toàn văn, tóm tắt, xử lý khoá API |
 | [`docs/07-huong-dan-su-dung.md`](docs/07-huong-dan-su-dung.md) | **Hướng dẫn cho người dùng cuối** + xử lý sự cố |
+| [`docs/08-bao-mat.md`](docs/08-bao-mat.md) | Mô hình đe doạ, các lỗ hổng đã sửa, rủi ro còn lại |
 
 ---
 

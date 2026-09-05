@@ -1,7 +1,8 @@
 import { net, protocol } from 'electron'
 import { pathToFileURL } from 'node:url'
-import { resolve, sep } from 'node:path'
+import { resolve } from 'node:path'
 import { getSettings } from './settings'
+import { isInside } from './paths'
 
 export const MEDIA_SCHEME = 'callrec-media'
 
@@ -25,8 +26,7 @@ export function installMediaProtocol(): void {
       return new Response('Bad request', { status: 400 })
     }
 
-    const root = resolve((await getSettings()).recordingsDir)
-    if (target !== root && !target.startsWith(root + sep)) {
+    if (!isInside((await getSettings()).recordingsDir, target)) {
       return new Response('Forbidden', { status: 403 })
     }
     return net.fetch(pathToFileURL(target).toString())

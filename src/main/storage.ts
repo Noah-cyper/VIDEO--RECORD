@@ -3,7 +3,7 @@ import { createWriteStream, WriteStream } from 'node:fs'
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type { Bookmark, RecordState, SessionManifest, StreamKind } from '@shared/types'
-import { makeSessionId } from '@shared/naming'
+import { isValidSessionId, makeSessionId } from '@shared/naming'
 import type { OpenSessionInput, RegisterStreamInput } from '@shared/ipc'
 import { readJson, writeJson, exists } from './jsonstore'
 
@@ -14,7 +14,12 @@ const FILE_OF: Record<StreamKind, string> = {
 }
 
 export const sessionsRoot = () => join(app.getPath('userData'), 'sessions')
-export const sessionDir = (id: string) => join(sessionsRoot(), id)
+
+/** Cửa duy nhất từ id sang đường dẫn. Id sai định dạng thì dừng ngay, không tạo đường dẫn nào. */
+export function sessionDir(id: string): string {
+  if (!isValidSessionId(id)) throw new Error(`Session id không hợp lệ: ${JSON.stringify(id)}`)
+  return join(sessionsRoot(), id)
+}
 const manifestPath = (id: string) => join(sessionDir(id), 'session.json')
 
 /** Giữ stream mở suốt phiên: mở/đóng lại mỗi 5 giây sẽ tạo hàng nghìn syscall vô ích. */
@@ -40,6 +45,7 @@ export async function openSession(input: OpenSessionInput): Promise<SessionManif
 }
 
 export async function readManifest(id: string): Promise<SessionManifest | null> {
+  if (!isValidSessionId(id)) return null
   return await readJson<SessionManifest | null>(manifestPath(id), null)
 }
 
@@ -51,6 +57,7 @@ async function patchManifest(id: string, fn: (m: SessionManifest) => void): Prom
 }
 
 export async function registerStream(input: RegisterStreamInput): Promise<void> {
+  if (!(input.kind in FILE_OF)) throw new Error(`Loại luồng không hợp lệ: ${JSON.stringify(input.kind)}`)
   await patchManifest(input.sessionId, (m) => {
     m.streams[input.kind] = {
       file: FILE_OF[input.kind],
@@ -64,11 +71,13 @@ export async function registerStream(input: RegisterStreamInput): Promise<void> 
 }
 
 export async function writeChunk(id: string, kind: StreamKind, data: ArrayBuffer): Promise<void> {
+  if (!(kind in FILE_OF)) throw new Error(`Loại luồng không hợp lệ: ${JSON.stringify(kind)}`)
+  const dir = sessionDir(id)
   const k = key(id, kind)
   let ws = writers.get(k)
   if (!ws) {
-    await fs.mkdir(sessionDir(id), { recursive: true })
-    ws = createWriteStream(join(sessionDir(id), FILE_OF[kind]), { flags: 'a' })
+    await fs.mkdir(dir, { recursive: true })
+    ws = createWriteStream(join(dir, FILE_OF[kind]), { flags: 'a' })
     writers.set(k, ws)
   }
   await new Promise<void>((resolve, reject) => {
@@ -132,8 +141,10 @@ export async function findOrphans(): Promise<SessionManifest[]> {
 }
 
 export async function discardSession(id: string): Promise<void> {
+  // sessionDir() ném lỗi trước khi có đường dẫn nào, nên xoá đệ quy không bao giờ chạm ra ngoài.
+  const dir = sessionDir(id)
   await closeWriters(id)
-  await fs.rm(sessionDir(id), { recursive: true, force: true })
+  await fs.rm(dir, { recursive: true, force: true })
 }
 
 /** Chỉ xoá file thô SAU KHI đã xác nhận MP4 mở được - xoá sớm là cách nhanh nhất để mất bản ghi. */

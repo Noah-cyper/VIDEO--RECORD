@@ -44,39 +44,43 @@ app.whenReady().then(async () => {
   const original = await win.webContents.executeJavaScript(
     `window.callrec.settings.get().then((s) => s.language)`,
   )
-  const pickLanguage = (value) => `(() => {
-    const tab = [...document.querySelectorAll('.tabs button')].pop()
-    tab.click()
-    return new Promise((resolve) => setTimeout(() => {
-      const select = document.getElementById('lang')
-      if (!select) return resolve('không thấy ô chọn ngôn ngữ')
-      // React theo dõi value bằng tracker riêng, gán thẳng .value sẽ bị nuốt mất sự kiện.
-      const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set
-      setter.call(select, ${JSON.stringify(value)})
-      select.dispatchEvent(new Event('change', { bubbles: true }))
-      resolve('ok')
-    }, 300))
-  })()`
 
-  const picked = await win.webContents.executeJavaScript(pickLanguage('en'))
-  if (picked !== 'ok') return fail(picked)
-  await new Promise((r) => setTimeout(r, 1200))
-  const english = await win.webContents.executeJavaScript(
-    `[...document.querySelectorAll('.tabs button')].map((b) => b.textContent)`,
-  )
-  await win.webContents.executeJavaScript(pickLanguage(original))
+  const pickLanguage = (value) =>
+    win.webContents.executeJavaScript(`(async () => {
+    const tabs = () => [...document.querySelectorAll('.tabs button')].map((b) => b.textContent)
+    ;[...document.querySelectorAll('.tabs button')].pop().click()
+    await new Promise((r) => setTimeout(r, 300))
+    const select = document.getElementById('lang')
+    if (!select) return { error: 'không thấy ô chọn ngôn ngữ' }
+    // React theo dõi value bằng tracker riêng; gán thẳng .value sẽ bị nuốt mất sự kiện.
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set
+      .call(select, ${JSON.stringify(value)})
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+    // Chờ tới khi cài đặt thực sự ghi xuống đĩa, đừng chỉ chờ React vẽ lại.
+    for (let i = 0; i < 40; i++) {
+      await new Promise((r) => setTimeout(r, 100))
+      const saved = await window.callrec.settings.get()
+      if (saved.language === ${JSON.stringify(value)}) return { tabs: tabs() }
+    }
+    return { error: 'cài đặt ngôn ngữ không được lưu' }
+  })()`).catch((err) => ({ error: `lỗi khi đổi ngôn ngữ: ${err.message}` }))
+
+  const vi = await pickLanguage('vi')
+  const en = await pickLanguage('en')
+  await pickLanguage(original)
 
   clearTimeout(timer)
   const problems = []
   if (!probe.hasBridge) problems.push('contextBridge không lộ ra window.callrec')
   if (probe.tabs.length !== 3) problems.push(`mong đợi 3 tab, nhận được ${JSON.stringify(probe.tabs)}`)
   if (probe.bodyLen < 20) problems.push('renderer không dựng được nội dung')
-  if (english.join(',') !== 'Record,Library,Settings') {
-    problems.push(`đổi sang tiếng Anh không ăn: ${JSON.stringify(english)}`)
+  for (const [want, got] of [['Ghi,Thư viện,Cài đặt', vi], ['Record,Library,Settings', en]]) {
+    if (got.error) problems.push(got.error)
+    else if (got.tabs.join(',') !== want) problems.push(`mong đợi "${want}", nhận "${got.tabs.join(',')}"`)
   }
   if (errors.length > 0) problems.push(`lỗi console: ${errors.join(' | ')}`)
 
   if (problems.length > 0) return fail(problems.join('; '))
-  console.log(`SMOKE OK — vi: ${probe.tabs.join(', ')} | en: ${english.join(', ')}`)
+  console.log(`SMOKE OK — vi: ${vi.tabs?.join(', ')} | en: ${en.tabs?.join(', ')}`)
   app.exit(0)
 })

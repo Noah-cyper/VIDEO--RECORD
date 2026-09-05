@@ -40,6 +40,17 @@ export function makeSessionId(now = new Date(), rand = Math.random()): string {
   return `${stamp}-${suffix}`
 }
 
+/**
+ * Session id đi từ renderer xuống rồi được ghép thẳng vào đường dẫn thư mục. Không kiểm tra thì
+ * một id kiểu `../../..` cho phép ghi đè file bất kỳ và xoá đệ quy thư mục bất kỳ. Mọi thao tác
+ * chạm đĩa phải đi qua hàm này trước.
+ */
+export const SESSION_ID_RE = /^\d{8}T\d{6}-[0-9a-f]{4}$/
+
+export function isValidSessionId(id: unknown): id is string {
+  return typeof id === 'string' && SESSION_ID_RE.test(id)
+}
+
 /** `2026-09-05_1430_Hop-khach-hang`. Không có tên thì lấy tên cửa sổ đã ghi làm tên tạm. */
 export function makeRecordingFolder(startedAt: Date, title?: string, fallbackSource?: string): string {
   const d = startedAt

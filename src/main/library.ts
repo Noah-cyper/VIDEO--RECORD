@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import type { Recording } from '@shared/types'
 import { slugify } from '@shared/naming'
 import { readJson, writeJson, exists } from './jsonstore'
+import { isInside } from './paths'
+import { getSettings } from './settings'
 
 const indexFile = () => join(app.getPath('userData'), 'library.json')
 
@@ -61,7 +63,14 @@ export async function renameRecording(id: string, title: string): Promise<void> 
 export async function removeRecording(id: string): Promise<void> {
   const items = await readIndex()
   const target = items.find((r) => r.id === id)
-  if (target) await fs.rm(target.folder, { recursive: true, force: true })
+  if (target) {
+    // Chỉ số nằm trên đĩa và có thể bị sửa; không kiểm tra thì một entry bịa ra sẽ xoá đệ quy
+    // bất cứ đâu. Ngoài thư mục bản ghi thì gỡ khỏi danh sách nhưng không đụng vào file.
+    const { recordingsDir } = await getSettings()
+    if (isInside(recordingsDir, target.folder)) {
+      await fs.rm(target.folder, { recursive: true, force: true })
+    }
+  }
   await writeIndex(items.filter((r) => r.id !== id))
 }
 

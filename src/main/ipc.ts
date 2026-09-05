@@ -9,6 +9,7 @@ import {
 import { toMarkdown, toSrt, toTxt, type SpeakerLabels } from '@shared/transcript'
 import { translate } from '@shared/i18n'
 import { WHISPER_MODELS, type WhisperModelName } from '@shared/whisper'
+
 import { readTranscript, searchAllTranscripts, transcribeRecording } from './transcribe'
 import { CloudSummaryUnavailable, readSummary, summarizeRecording } from './summarize'
 import { modelInstalled, removeModel, whisperAvailable } from './whisper'
@@ -24,6 +25,14 @@ import { listSources, pickSource, pickedSourceName } from './sources'
 import { broadcast, getMainWindow, syncIndicator } from './windows'
 import { mediaUrl } from './media-protocol'
 import { updateTray } from './tray'
+
+/** Tên model từ renderer được ghép vào đường dẫn file và URL tải, nên phải nằm trong bảng. */
+function assertModel(name: unknown): WhisperModelName {
+  if (typeof name !== 'string' || !(name in WHISPER_MODELS)) {
+    throw new Error(`Model không hợp lệ: ${JSON.stringify(name)}`)
+  }
+  return name as WhisperModelName
+}
 
 async function whisperStatus(): Promise<WhisperStatus> {
   return {
@@ -69,9 +78,12 @@ export function registerIpc(): void {
   ipcMain.handle(CH.libraryRename, (_e, id: string, title: string) => library.renameRecording(id, title))
   ipcMain.handle(CH.libraryRemove, (_e, id: string) => library.removeRecording(id))
   ipcMain.handle(CH.libraryReveal, (_e, id: string) => library.revealRecording(id))
-  ipcMain.handle(CH.libraryExtractAudio, async (_e, id: string, track: number) => {
+  ipcMain.handle(CH.libraryExtractAudio, async (_e, id: string, track: unknown) => {
+    if (!Number.isInteger(track) || (track as number) < 0 || (track as number) > 15) {
+      throw new Error(`Chỉ số track không hợp lệ: ${JSON.stringify(track)}`)
+    }
     const rec = await library.getRecording(id)
-    return rec ? extractAudio(rec.folder, rec.videoFile, track) : null
+    return rec ? extractAudio(rec.folder, rec.videoFile, track as number) : null
   })
 
   ipcMain.handle(CH.libraryMediaUrl, async (_e, id: string) => {
@@ -92,7 +104,8 @@ export function registerIpc(): void {
   // Một bản ghi chỉ chạy một tiến trình gỡ băng; giữ controller để nút Huỷ có tác dụng thật.
   const running = new Map<string, AbortController>()
 
-  ipcMain.handle(CH.transcriptStart, async (_e, id: string, model: WhisperModelName) => {
+  ipcMain.handle(CH.transcriptStart, async (_e, id: string, rawModel: unknown) => {
+    const model = assertModel(rawModel)
     if (running.has(id)) return null
     const controller = new AbortController()
     running.set(id, controller)
@@ -118,6 +131,8 @@ export function registerIpc(): void {
     return rec ? readTranscript(rec) : null
   })
   ipcMain.handle(CH.transcriptExport, async (_e, id: string, format: TranscriptFormat) => {
+    // format đi thẳng vào tên file; không giới hạn thì `../x` ghi ra ngoài thư mục bản ghi.
+    if (!['txt', 'srt', 'md'].includes(format)) throw new Error(`Định dạng không hợp lệ: ${format}`)
     const rec = await library.getRecording(id)
     if (!rec) return null
     const transcript = await readTranscript(rec)
@@ -167,8 +182,8 @@ export function registerIpc(): void {
   ipcMain.handle(CH.crashClear, () => clearCrashDumps())
 
   ipcMain.handle(CH.whisperStatus, () => whisperStatus())
-  ipcMain.handle(CH.whisperRemoveModel, async (_e, name: WhisperModelName) => {
-    await removeModel(name)
+  ipcMain.handle(CH.whisperRemoveModel, async (_e, name: unknown) => {
+    await removeModel(assertModel(name))
     return whisperStatus()
   })
   ipcMain.handle(CH.settingsSet, (_e, patch: Partial<Settings>) => setSettings(patch))

@@ -6,6 +6,14 @@ import { CH } from '@shared/ipc'
 import { indicatorRequired } from '@shared/machine'
 
 const preload = () => join(__dirname, '../preload/index.js')
+
+function safeProtocol(url: string): string {
+  try {
+    return new URL(url).protocol
+  } catch {
+    return ''
+  }
+}
 const devUrl = () => process.env['ELECTRON_RENDERER_URL']
 
 let mainWindow: BrowserWindow | null = null
@@ -22,13 +30,19 @@ export function createMainWindow(): BrowserWindow {
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#12131a',
-    webPreferences: { preload: preload(), sandbox: false, contextIsolation: true, nodeIntegration: false },
+    webPreferences: { preload: preload(), sandbox: true, contextIsolation: true, nodeIntegration: false },
   })
 
   mainWindow.on('ready-to-show', () => mainWindow?.show())
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url)
+    // Chỉ http/https. Mở bừa mọi scheme nghĩa là một link file:// hay ms-msdt: cũng được hệ điều
+    // hành thi hành giúp.
+    if (/^https?:$/.test(safeProtocol(url))) void shell.openExternal(url)
     return { action: 'deny' }
+  })
+  // Chặn luôn điều hướng trong khung: renderer chỉ được ở nguyên trang của nó.
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url !== mainWindow?.webContents.getURL()) event.preventDefault()
   })
   mainWindow.on('closed', () => {
     mainWindow = null
@@ -72,7 +86,7 @@ function createOverlay(): BrowserWindow {
     alwaysOnTop: true,
     transparent: true,
     focusable: false,
-    webPreferences: { preload: preload(), sandbox: false, contextIsolation: true, nodeIntegration: false },
+    webPreferences: { preload: preload(), sandbox: true, contextIsolation: true, nodeIntegration: false },
   })
   win.setAlwaysOnTop(true, 'screen-saver')
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
