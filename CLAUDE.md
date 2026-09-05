@@ -47,6 +47,18 @@ Trước khi coi là xong: `lint`, `typecheck`, `test`, `smoke` — cả bốn.
 - **whisper.cpp**: chỉ cần cho gỡ băng. Đặt ở `resources/whisper/`. Không có thì mọi tính năng
   ghi vẫn chạy, chỉ nút gỡ băng bị vô hiệu hoá.
 
+## Phát hành
+
+`npm version patch` (hoặc sửa tay `package.json`) **trước** mỗi lần dựng, rồi kích hoạt workflow
+`release.yml`. Chạy lại cùng một version sẽ treo ở bước upload vì asset trùng tên trong release
+đã tồn tại.
+
+Bản dựng chỉ làm được trên CI: Windows cần runner Windows (electron-builder đòi wine nếu dựng
+trên Linux), và `ffmpeg-static` chỉ có binary cho đúng hệ đang chạy — `scripts/fetch-ffmpeg.mjs`
+sẽ dừng nếu phát hiện dựng chéo.
+
+Release ở trạng thái draft thì `electron-updater` không nhìn thấy; phải bấm "Publish release".
+
 ## Điều quan trọng nhất cần biết
 
 **Phần bắt âm loopback chưa từng chạy trên máy có thiết bị âm thanh thật.** Toàn bộ code được viết

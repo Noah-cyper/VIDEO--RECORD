@@ -1,5 +1,9 @@
 name: Release
 
+# LƯU Ý: mỗi lần phát hành phải TĂNG version trong package.json trước.
+# Chạy lại cùng một version sẽ khiến electron-builder gặp asset trùng tên trong release đã có
+# và treo ở bước upload (đã gặp thật, phải huỷ job giữa chừng). Version mới thì tạo release mới,
+# không có xung đột.
 on:
   push:
     tags: ['v*']
