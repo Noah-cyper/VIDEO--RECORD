@@ -14,6 +14,22 @@ const vi = {
   'app.save': 'Lưu',
   'app.delete': 'Xoá',
   'app.choose': 'Chọn…',
+  'app.apply': 'Áp dụng',
+  'settings.saveFailed': 'Không lưu được cài đặt: {reason}',
+  'settings.permissionsNotNeeded':
+    'Hệ điều hành này không có cửa xin quyền riêng cho micro và ghi màn hình, nên không cần cấp gì thêm.',
+  'settings.folderHint':
+    'Gõ thẳng đường dẫn rồi bấm Áp dụng nếu hộp thoại chọn thư mục không mở được.',
+  'transcript.phase.translating': 'Đang dịch',
+  'transcript.translate': 'Dịch biên bản',
+  'transcript.translateTo': 'Dịch sang',
+  'transcript.customLanguage': 'Ngôn ngữ khác…',
+  'transcript.customLanguagePlaceholder': 'Tên ngôn ngữ, ví dụ: Tiếng Ý',
+  'transcript.translateRun': 'Dịch',
+  'transcript.viewOriginal': 'Bản gốc',
+  'transcript.viewTranslated': 'Bản dịch ({lang})',
+  'transcript.translateNeedsSetup':
+    'Bật “cho phép gửi transcript tới dịch vụ ngoài” và nhập khoá API ở Cài đặt để dùng chức năng dịch.',
 
   'update.downloaded': 'Đã tải xong bản {version}. Cập nhật sẽ tự cài khi thoát ứng dụng.',
   'update.installNow': 'Cài ngay',
@@ -169,6 +185,22 @@ const en: Record<TranslationKey, string> = {
   'app.save': 'Save',
   'app.delete': 'Delete',
   'app.choose': 'Choose…',
+  'app.apply': 'Apply',
+  'settings.saveFailed': 'Could not save settings: {reason}',
+  'settings.permissionsNotNeeded':
+    'This operating system has no separate permission gate for the microphone or screen recording, so there is nothing to grant.',
+  'settings.folderHint':
+    'Type a path and press Apply if the folder picker will not open.',
+  'transcript.phase.translating': 'Translating',
+  'transcript.translate': 'Translate transcript',
+  'transcript.translateTo': 'Translate into',
+  'transcript.customLanguage': 'Another language…',
+  'transcript.customLanguagePlaceholder': 'Language name, e.g. Italian',
+  'transcript.translateRun': 'Translate',
+  'transcript.viewOriginal': 'Original',
+  'transcript.viewTranslated': 'Translation ({lang})',
+  'transcript.translateNeedsSetup':
+    'Turn on “allow sending transcripts to an external service” and enter an API key in Settings to use translation.',
 
   'update.downloaded': 'Version {version} is ready. It will install when you quit the app.',
   'update.installNow': 'Install now',

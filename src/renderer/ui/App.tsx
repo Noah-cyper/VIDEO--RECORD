@@ -22,6 +22,7 @@ export function App() {
   const [orphans, setOrphans] = useState<SessionManifest[]>([])
   const [update, setUpdate] = useState<UpdateStatus | null>(null)
   const [updateError, setUpdateError] = useState<string | null>(null)
+  const [settingsError, setSettingsError] = useState<string | null>(null)
 
   useEffect(() => {
     void window.callrec.settings.get().then(setSettings)
@@ -35,8 +36,13 @@ export function App() {
     }
   }, [])
 
+  // Nuốt lỗi ở đây từng khiến "không lưu được" trở thành một bí ẩn không có manh mối nào.
   const patchSettings = useCallback((patch: Partial<Settings>) => {
-    void window.callrec.settings.set(patch).then(setSettings)
+    setSettingsError(null)
+    void window.callrec.settings
+      .set(patch)
+      .then(setSettings)
+      .catch((err: unknown) => setSettingsError(err instanceof Error ? err.message : String(err)))
   }, [])
 
   const recoverOrphan = async (m: SessionManifest) => {
@@ -67,6 +73,8 @@ export function App() {
         updateError={updateError}
         setUpdateError={setUpdateError}
         patchSettings={patchSettings}
+        settingsError={settingsError}
+        clearSettingsError={() => setSettingsError(null)}
         setPermissions={setPermissions}
         recoverOrphan={recoverOrphan}
         discardOrphan={discardOrphan}
@@ -78,6 +86,7 @@ export function App() {
 function Shell({
   tab, setTab, settings, permissions, orphans, update, updateError,
   setUpdateError, patchSettings, setPermissions, recoverOrphan, discardOrphan,
+  settingsError, clearSettingsError,
 }: {
   tab: Tab
   setTab: (t: Tab) => void
@@ -88,6 +97,8 @@ function Shell({
   updateError: string | null
   setUpdateError: (v: string | null) => void
   patchSettings: (patch: Partial<Settings>) => void
+  settingsError: string | null
+  clearSettingsError: () => void
   setPermissions: (p: PermissionStatus) => void
   recoverOrphan: (m: SessionManifest) => Promise<void>
   discardOrphan: (m: SessionManifest) => Promise<void>
@@ -105,6 +116,12 @@ function Shell({
       </nav>
 
       <div className="content col" style={{ gap: 18 }}>
+        {settingsError && (
+          <div className="alert error">
+            <span>{t('settings.saveFailed', { reason: settingsError })}</span>
+            <button className="ghost" onClick={clearSettingsError}>{t('app.close')}</button>
+          </div>
+        )}
         {update?.state === 'downloaded' && (
           <div className="alert">
             <span>

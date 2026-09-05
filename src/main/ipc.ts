@@ -11,6 +11,7 @@ import { translate } from '@shared/i18n'
 import { WHISPER_MODELS, type WhisperModelName } from '@shared/whisper'
 
 import { readTranscript, searchAllTranscripts, transcribeRecording } from './transcribe'
+import { readTranslation, translateRecording } from './translate'
 import { CloudSummaryUnavailable, readSummary, summarizeRecording } from './summarize'
 import { modelInstalled, removeModel, whisperAvailable } from './whisper'
 import { clearApiKey, hasApiKey, secureStorageAvailable, setApiKey } from './secrets'
@@ -168,6 +169,31 @@ export function registerIpc(): void {
     }))
   })
 
+  ipcMain.handle(CH.transcriptTranslate, async (_e, id: string, code: string, languageName: string) => {
+    if (running.has(id)) return null
+    const controller = new AbortController()
+    running.set(id, controller)
+    try {
+      return await translateRecording(
+        id,
+        code,
+        languageName,
+        (p) => broadcast(CH.transcriptProgress, p),
+        controller.signal,
+      )
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      broadcast(CH.transcriptProgress, { recordingId: id, phase: 'error', percent: 0, message })
+      return null
+    } finally {
+      running.delete(id)
+    }
+  })
+  ipcMain.handle(CH.transcriptGetTranslation, async (_e, id: string, code: string) => {
+    const rec = await library.getRecording(id)
+    return rec ? readTranslation(rec, code) : null
+  })
+
   ipcMain.handle(CH.summaryGet, (_e, id: string) => readSummary(id))
   ipcMain.handle(CH.summaryCreate, async (_e, id: string, useCloud: boolean) => {
     try {
@@ -195,9 +221,12 @@ export function registerIpc(): void {
   ipcMain.handle(CH.settingsSet, (_e, patch: Partial<Settings>) => setSettings(patch))
   ipcMain.handle(CH.settingsPickDir, async () => {
     const win = getMainWindow()
-    const res = win
-      ? await dialog.showOpenDialog(win, { properties: ['openDirectory', 'createDirectory'] })
-      : await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] })
+    // defaultPath mở hộp thoại ngay tại thư mục đang dùng, thay vì một chỗ ngẫu nhiên.
+    const options: Electron.OpenDialogOptions = {
+      properties: ['openDirectory', 'createDirectory'],
+      defaultPath: (await getSettings()).recordingsDir,
+    }
+    const res = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
     return res.canceled ? null : res.filePaths[0]
   })
 

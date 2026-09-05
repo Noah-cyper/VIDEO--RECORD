@@ -22,11 +22,17 @@ function screenNeedsRestart(status: Status): boolean {
 }
 
 export function checkPermissions(): PermissionStatus {
+  // Windows và Linux không có cửa xin quyền cho micro/ghi màn hình ở tầng hệ điều hành.
   if (process.platform !== 'darwin') {
-    return { microphone: 'granted', screen: 'granted', needsRestart: false }
+    return { microphone: 'granted', screen: 'granted', needsRestart: false, managed: false }
   }
   const screen = macMedia('screen')
-  return { microphone: macMedia('microphone'), screen, needsRestart: screenNeedsRestart(screen) }
+  return {
+    microphone: macMedia('microphone'),
+    screen,
+    needsRestart: screenNeedsRestart(screen),
+    managed: true,
+  }
 }
 
 export async function requestPermissions(): Promise<PermissionStatus> {

@@ -19,6 +19,9 @@ export function SettingsView({
   const [whisper, setWhisper] = useState<WhisperStatus | null>(null)
   const [apiKey, setApiKeyInput] = useState('')
   const [crashes, setCrashes] = useState(0)
+  const [dirDraft, setDirDraft] = useState(settings.recordingsDir)
+
+  useEffect(() => setDirDraft(settings.recordingsDir), [settings.recordingsDir])
 
   useEffect(() => {
     void window.callrec.whisper.status().then(setWhisper)
@@ -43,7 +46,12 @@ export function SettingsView({
 
       <div className="panel col">
         <strong>{t('settings.permissions')}</strong>
-        {permissions ? (
+        {!permissions ? (
+          <p className="muted">{t('settings.checking')}</p>
+        ) : !permissions.managed ? (
+          // Nút "Cấp quyền" ở đây từng là nút không làm gì trên Windows - thà nói thẳng.
+          <p className="muted">{t('settings.permissionsNotNeeded')}</p>
+        ) : (
           <>
             <p className="muted">
               {t('settings.permissionsState', { mic: permissions.microphone, screen: permissions.screen })}
@@ -53,22 +61,32 @@ export function SettingsView({
                 <span>{t('settings.needsRestart')}</span>
               </div>
             )}
+            <div className="row">
+              <button onClick={onRequestPermissions}>{t('settings.grant')}</button>
+            </div>
           </>
-        ) : (
-          <p className="muted">{t('settings.checking')}</p>
         )}
-        <div className="row">
-          <button onClick={onRequestPermissions}>{t('settings.grant')}</button>
-        </div>
       </div>
 
       <div className="panel col">
         <div className="field">
           <label>{t('settings.folder')}</label>
           <div className="row">
-            <input readOnly value={settings.recordingsDir} />
+            <input
+              id="rec-dir"
+              value={dirDraft}
+              onChange={(e) => setDirDraft(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && onSettings({ recordingsDir: dirDraft })}
+            />
             <button onClick={() => void pickDir()}>{t('app.choose')}</button>
+            <button
+              disabled={dirDraft.trim() === '' || dirDraft === settings.recordingsDir}
+              onClick={() => onSettings({ recordingsDir: dirDraft })}
+            >
+              {t('app.apply')}
+            </button>
           </div>
+          <span className="muted" style={{ fontSize: 12 }}>{t('settings.folderHint')}</span>
         </div>
 
         <div className="field">

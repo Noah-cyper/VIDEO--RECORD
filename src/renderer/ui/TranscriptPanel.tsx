@@ -3,6 +3,7 @@ import type { Recording, Settings } from '@shared/types'
 import type { TranscriptProgress, WhisperStatus } from '@shared/ipc'
 import { speakingTime, type Speaker, type Transcript } from '@shared/transcript'
 import type { StoredSummary } from '@shared/summary'
+import { customLanguageCode, languageLabel, TARGET_LANGUAGES } from '@shared/translate'
 import { formatDuration } from '@shared/naming'
 import { WHISPER_MODELS } from '@shared/whisper'
 import type { TranslationKey } from '@shared/i18n'
@@ -12,6 +13,7 @@ const PHASE_KEY: Record<TranscriptProgress['phase'], TranslationKey> = {
   model: 'transcript.phase.model',
   extracting: 'transcript.phase.extracting',
   transcribing: 'transcript.phase.transcribing',
+  translating: 'transcript.phase.translating',
   done: 'transcript.phase.done',
   error: 'transcript.phase.error',
 }
@@ -34,11 +36,47 @@ export function TranscriptPanel({
   const [progress, setProgress] = useState<TranscriptProgress | null>(null)
   const [busy, setBusy] = useState(false)
   const [filter, setFilter] = useState('')
+  const [targetCode, setTargetCode] = useState('en')
+  const [customName, setCustomName] = useState('')
+  // 'original' hoặc mã ngôn ngữ đang xem; giữ riêng với targetCode để chọn ngôn ngữ dịch
+  // không làm nhảy nội dung đang đọc.
+  const [view, setView] = useState('original')
+  const [translation, setTranslation] = useState<Transcript | null>(null)
 
   const reload = useCallback(async () => {
     setTranscript(await window.callrec.transcript.get(recording.id))
     setSummary(await window.callrec.summary.get(recording.id))
   }, [recording.id])
+
+  const canTranslate = settings.allowCloudSummary && status?.apiKeyConfigured === true
+
+  const showTranslation = useCallback(async (code: string) => {
+    if (code === 'original') return setView('original')
+    const got = await window.callrec.transcript.getTranslation(recording.id, code)
+    if (got) {
+      setTranslation(got)
+      setView(code)
+    }
+  }, [recording.id])
+
+  const translate = async () => {
+    const isCustom = targetCode === 'custom'
+    const name = isCustom ? customName.trim() : languageLabel(targetCode)
+    if (!name) return
+    const code = isCustom ? customLanguageCode(name) : targetCode
+
+    setBusy(true)
+    setProgress({ recordingId: recording.id, phase: 'translating', percent: 0 })
+    try {
+      const got = await window.callrec.transcript.translate(recording.id, code, name)
+      if (got) {
+        setTranslation(got)
+        setView(code)
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
 
   useEffect(() => {
     void reload()
@@ -107,9 +145,12 @@ export function TranscriptPanel({
 
   const talk = speakingTime(transcript.segments)
   const total = talk.me + talk.them || 1
+  // Bản dịch giữ nguyên mốc thời gian nên tua vẫn đúng dù đang xem ngôn ngữ nào.
+  const active = view !== 'original' && translation ? translation.segments : transcript.segments
   const shown = filter
-    ? transcript.segments.filter((s) => s.text.toLowerCase().includes(filter.toLowerCase()))
-    : transcript.segments
+    ? active.filter((s) => s.text.toLowerCase().includes(filter.toLowerCase()))
+    : active
+  const available = recording.translations ?? []
 
   return (
     <div className="panel col">
@@ -122,6 +163,26 @@ export function TranscriptPanel({
           })}
         </span>
       </div>
+
+      {(available.length > 0 || view !== 'original') && (
+        <div className="row" style={{ flexWrap: 'wrap' }}>
+          <button
+            className={view === 'original' ? '' : 'ghost'}
+            onClick={() => void showTranslation('original')}
+          >
+            {t('transcript.viewOriginal')}
+          </button>
+          {available.map((code) => (
+            <button
+              key={code}
+              className={view === code ? '' : 'ghost'}
+              onClick={() => void showTranslation(code)}
+            >
+              {t('transcript.viewTranslated', { lang: languageLabel(code) })}
+            </button>
+          ))}
+        </div>
+      )}
 
       <input placeholder={t('transcript.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
 
@@ -141,6 +202,44 @@ export function TranscriptPanel({
           </button>
         ))}
         {shown.length === 0 && <p className="muted">{t('transcript.noMatch')}</p>}
+      </div>
+
+      <div className="col" style={{ gap: 8 }}>
+        <strong>{t('transcript.translate')}</strong>
+        {canTranslate ? (
+          <div className="row" style={{ flexWrap: 'wrap' }}>
+            <label htmlFor="translate-to" className="muted" style={{ fontSize: 13 }}>
+              {t('transcript.translateTo')}
+            </label>
+            <select
+              id="translate-to"
+              value={targetCode}
+              style={{ maxWidth: 200 }}
+              onChange={(e) => setTargetCode(e.target.value)}
+            >
+              {TARGET_LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>{l.label}</option>
+              ))}
+              <option value="custom">{t('transcript.customLanguage')}</option>
+            </select>
+            {targetCode === 'custom' && (
+              <input
+                placeholder={t('transcript.customLanguagePlaceholder')}
+                value={customName}
+                style={{ maxWidth: 240 }}
+                onChange={(e) => setCustomName(e.target.value)}
+              />
+            )}
+            <button
+              onClick={() => void translate()}
+              disabled={busy || (targetCode === 'custom' && customName.trim() === '')}
+            >
+              {t('transcript.translateRun')}
+            </button>
+          </div>
+        ) : (
+          <span className="muted" style={{ fontSize: 12 }}>{t('transcript.translateNeedsSetup')}</span>
+        )}
       </div>
 
       <div className="row" style={{ flexWrap: 'wrap' }}>

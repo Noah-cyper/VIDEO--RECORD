@@ -60,6 +60,9 @@ const api: CallrecApi & { onOrphans(cb: (m: SessionManifest[]) => void): () => v
     get: (id: string) => ipcRenderer.invoke(CH.transcriptGet, id),
     export: (id: string, format: TranscriptFormat) => ipcRenderer.invoke(CH.transcriptExport, id, format),
     searchAll: (query: string) => ipcRenderer.invoke(CH.transcriptSearchAll, query),
+    translate: (id: string, code: string, languageName: string) =>
+      ipcRenderer.invoke(CH.transcriptTranslate, id, code, languageName),
+    getTranslation: (id: string, code: string) => ipcRenderer.invoke(CH.transcriptGetTranslation, id, code),
     onProgress: (cb: (p: TranscriptProgress) => void) => on(CH.transcriptProgress, cb),
   },
   summary: {

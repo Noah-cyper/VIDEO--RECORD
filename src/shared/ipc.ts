@@ -49,6 +49,8 @@ export const CH = {
   transcriptGet: 'transcript:get',
   transcriptExport: 'transcript:export',
   transcriptSearchAll: 'transcript:searchAll',
+  transcriptTranslate: 'transcript:translate',
+  transcriptGetTranslation: 'transcript:getTranslation',
 
   summaryGet: 'summary:get',
   summaryCreate: 'summary:create',
@@ -99,13 +101,15 @@ export interface CloseSessionInput {
 export interface PermissionStatus {
   microphone: 'granted' | 'denied' | 'not-determined' | 'restricted' | 'unknown'
   screen: 'granted' | 'denied' | 'not-determined' | 'restricted' | 'unknown'
+  /** Chỉ macOS mới thật sự có cửa xin quyền. Nơi khác thì nút "Cấp quyền" là nút không làm gì. */
+  managed: boolean
   /** macOS chỉ áp dụng quyền ghi màn hình sau khi khởi động lại app (docs/03 mục 4.5). */
   needsRestart: boolean
 }
 
 export interface TranscriptProgress {
   recordingId: string
-  phase: 'model' | 'extracting' | 'transcribing' | 'done' | 'error'
+  phase: 'model' | 'extracting' | 'transcribing' | 'translating' | 'done' | 'error'
   percent: number
   track?: Speaker
   message?: string
@@ -187,6 +191,8 @@ export interface CallrecApi {
     get(recordingId: string): Promise<Transcript | null>
     export(recordingId: string, format: TranscriptFormat): Promise<string | null>
     searchAll(query: string): Promise<TranscriptHitDto[]>
+    translate(recordingId: string, code: string, languageName: string): Promise<Transcript | null>
+    getTranslation(recordingId: string, code: string): Promise<Transcript | null>
     onProgress(cb: (p: TranscriptProgress) => void): () => void
   }
   summary: {

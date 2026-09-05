@@ -88,6 +88,8 @@ export interface Recording {
   audioTracks: ('me' | 'them')[]
   transcriptFile?: string
   summaryFile?: string
+  /** Mã ngôn ngữ đã dịch sẵn; mỗi mã tương ứng một file transcript.<code>.json cạnh bản ghi. */
+  translations?: string[]
 }
 
 export interface Settings {

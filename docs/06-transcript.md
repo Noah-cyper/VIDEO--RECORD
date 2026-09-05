@@ -148,7 +148,29 @@ của hệ điều hành) và ghi vào `<userData>/secrets.bin`. Máy nào khôn
 Khoá không bao giờ được gửi ngược qua IPC về phần giao diện. Renderer chỉ biết `apiKeyConfigured:
 true/false`.
 
-## 7. Xuất
+## 7. Dịch biên bản
+
+Sau khi gỡ băng, có thể dịch toàn bộ biên bản sang ngôn ngữ khác: danh sách có sẵn Việt, Anh, Nhật,
+Hàn, Trung, Pháp, Đức, Tây Ban Nha, Thái, Nga — và một ô nhập tự do cho bất kỳ ngôn ngữ nào khác.
+
+Bản dịch **giữ nguyên mốc thời gian và nhãn người nói**, nên nhấn vào một câu vẫn tua đúng chỗ.
+Nó được lưu thành `transcript.<mã>.json` cạnh bản ghi, không đè lên bản gốc; giao diện có nút
+chuyển qua lại giữa bản gốc và từng bản dịch.
+
+### Vì sao dịch theo mẻ
+
+Gửi cả buổi gọi một lượt thì mô hình dễ gộp dòng hoặc bỏ dòng, mà bản dịch lệch một dòng là **mọi
+mốc thời gian sau đó sai hết**. Nên transcript được cắt thành mẻ ~4000 ký tự, mỗi mẻ yêu cầu trả về
+đúng một mảng JSON có số phần tử bằng số dòng gửi đi. Số phần tử không khớp thì **từ chối ghép** và
+báo lỗi rõ mẻ nào — thà không có bản dịch còn hơn có một bản dịch lệch mốc mà không ai phát hiện.
+
+### Điều kiện
+
+Dịch dùng cùng một cánh cửa với tóm tắt qua API: phải **bật công tắc** "cho phép gửi transcript tới
+dịch vụ ngoài" **và** đã nhập khoá API. Dịch gửi toàn bộ lời thoại ra ngoài — còn nhiều hơn tóm tắt —
+nên không có lý do gì nới lỏng hơn. Chưa đủ điều kiện thì giao diện nói rõ cần bật gì.
+
+## 8. Xuất
 
 | Định dạng | Dùng khi |
 |---|---|

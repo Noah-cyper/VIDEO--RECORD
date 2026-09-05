@@ -98,6 +98,15 @@ hai bên nói chồng lên nhau. Sau đó bạn có thể:
 - Xuất ra `.txt`, `.srt` hoặc `.md`.
 - Bấm **Tóm tắt trên máy** để lấy các ý chính và danh sách việc cần làm.
 
+### Dịch sang ngôn ngữ khác
+
+Gỡ băng xong, phần **Dịch biên bản** cho chọn ngôn ngữ đích (hoặc gõ tên ngôn ngữ bất kỳ). Bản dịch
+giữ nguyên mốc thời gian nên nhấn vào câu nào vẫn tua đúng chỗ đó, và bản gốc không bị mất — có nút
+chuyển qua lại.
+
+Chức năng này gửi lời thoại ra dịch vụ bên ngoài nên phải tự bật trong Cài đặt và nhập khoá API,
+giống như tóm tắt qua API.
+
 ## 5. Xử lý sự cố
 
 ### Không nghe thấy tiếng đầu bên kia
@@ -135,6 +144,21 @@ và nghe bằng tai nghe có dây.
 
 Mở lại CallRec — nó sẽ phát hiện phiên chưa hoàn tất và mời bạn **Xuất file**. Phần đã ghi vẫn còn,
 mất nhiều nhất là vài giây cuối.
+
+### Đổi thư mục lưu không được
+
+Bấm **Chọn…** để mở hộp thoại. Nếu hộp thoại không mở được vì lý do nào đó, gõ thẳng đường dẫn vào ô
+rồi bấm **Áp dụng** — ô đó sửa tay được.
+
+Ứng dụng sẽ thử tạo và ghi thử vào thư mục ngay lúc đó. Nếu không được (thư mục chỉ đọc, ổ mạng đã
+ngắt, thiếu quyền) thì báo lỗi kèm nguyên nhân thật của hệ điều hành. Lưu ý không chọn gốc ổ đĩa
+(`D:\`) — ứng dụng từ chối vì lệnh xoá một bản ghi ở đó sẽ quét sạch cả phân vùng.
+
+### Nút "Cấp quyền" không làm gì
+
+Trên Windows và Linux thì đúng là không làm gì, vì hai hệ này không có cửa xin quyền riêng cho micro
+và ghi màn hình. Từ bản 0.1.1 nút đó không hiện nữa, thay bằng một dòng nói rõ. Chỉ macOS mới cần
+cấp quyền thật.
 
 ### Không đủ dung lượng
 
