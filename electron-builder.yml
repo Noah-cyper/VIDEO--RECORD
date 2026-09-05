@@ -50,6 +50,8 @@ publish:
   provider: github
   owner: Noah-cyper
   repo: VIDEO--RECORD
-  # electron-updater chỉ thấy release đã phát hành, không thấy draft. Muốn app tự cập nhật thì
-  # bản phát hành phải ở trạng thái release.
-  releaseType: release
+  # Draft trong lúc dựng, rồi job "publish" mới chuyển sang phát hành khi ĐỦ file của mọi nền
+  # tảng. Để release ở trạng thái phát hành ngay từ job đầu tiên thì máy nào xong trước sẽ mở
+  # release ra cho trình cập nhật thấy, trong khi file của nền tảng kia còn đang tải lên -
+  # người dùng Windows bấm kiểm tra đúng lúc đó sẽ nhận "đang dùng bản mới nhất" dù không phải.
+  releaseType: draft

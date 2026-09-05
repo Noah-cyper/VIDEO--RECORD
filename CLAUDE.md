@@ -57,7 +57,10 @@ Bản dựng chỉ làm được trên CI: Windows cần runner Windows (electro
 trên Linux), và `ffmpeg-static` chỉ có binary cho đúng hệ đang chạy — `scripts/fetch-ffmpeg.mjs`
 sẽ dừng nếu phát hiện dựng chéo.
 
-Release ở trạng thái draft thì `electron-updater` không nhìn thấy; phải bấm "Publish release".
+Release được dựng ở trạng thái draft, và job `publish` chỉ chuyển sang phát hành khi đã đủ file
+của mọi nền tảng (`latest.yml`, `.exe`, `latest-mac.yml`). Đừng quay lại kiểu phát hành ngay từ
+job build: máy nào xong trước sẽ mở release cho trình cập nhật thấy trong khi nền tảng kia còn
+đang tải file lên, và người dùng bấm kiểm tra đúng lúc đó sẽ nhận "đang dùng bản mới nhất" sai.
 
 ## Điều quan trọng nhất cần biết
 
