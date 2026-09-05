@@ -16,12 +16,21 @@ extraResources:
     to: whisper
     filter: ['**/*']
 win:
-  target: nsis
-  artifactName: ${productName}-${version}-setup.${ext}
+  # zip là đường lui khi SmartScreen chặn installer chưa ký: giải nén là chạy được ngay.
+  target:
+    - nsis
+    - zip
+  icon: build/icon.png
+  artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  perMachine: false
+  # Cài cho từng người dùng nên không cần quyền quản trị, đỡ một lớp cảnh báo nữa.
+  artifactName: ${productName}-${version}-setup.${ext}
+  shortcutName: CallRec
 mac:
+  icon: build/icon.png
   target: dmg
   category: public.app-category.productivity
   hardenedRuntime: true
@@ -34,7 +43,12 @@ mac:
     NSMicrophoneUsageDescription: CallRec cần microphone để ghi lại giọng của bạn trong cuộc gọi.
     NSCameraUsageDescription: CallRec cần camera nếu bạn bật ghi webcam.
 linux:
+  icon: build/icon.png
   target: AppImage
   category: AudioVideo
 publish:
   provider: github
+  owner: Noah-cyper
+  repo: VIDEO--RECORD
+  # Draft: bản build chưa ký và chưa chạy trên thiết bị thật, không nên tự động phát hành công khai.
+  releaseType: draft

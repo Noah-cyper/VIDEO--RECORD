@@ -3,6 +3,8 @@ name: Release
 on:
   push:
     tags: ['v*']
+  # Cho phép dựng lại mà không cần đẩy tag mới, hữu ích khi chỉ sửa cấu hình đóng gói.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -31,7 +33,9 @@ jobs:
         shell: bash
         run: node scripts/fetch-ffmpeg.mjs
 
-      - run: npm run ${{ matrix.script }}
+      # `--` để npm chuyển cờ xuống electron-builder ở cuối chuỗi lệnh; tránh cú pháp shell
+      # riêng của từng hệ điều hành vì job này chạy cả trên cmd.exe lẫn bash.
+      - run: npm run ${{ matrix.script }} -- --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Ký số: đặt các secret này trong repo settings thì electron-builder tự ký.
@@ -42,7 +46,9 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
-      - uses: actions/upload-artifact@v4
+      # always(): bước publish hỏng thì vẫn phải lấy được file cài, đừng mất cả lượt build.
+      - if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: installer-${{ matrix.os }}
           path: release/*.*
