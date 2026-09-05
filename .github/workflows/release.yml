@@ -38,13 +38,11 @@ jobs:
       - run: npm run ${{ matrix.script }} -- --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Ký số: đặt các secret này trong repo settings thì electron-builder tự ký.
-          # Chưa có thì bản cài vẫn dựng được, chỉ bị SmartScreen/Gatekeeper cảnh báo.
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # KHÔNG khai CSC_LINK khi chưa có chứng thư. GitHub Actions luôn đặt biến kể cả khi
+          # secret rỗng, và electron-builder hiểu chuỗi rỗng là "có đường dẫn chứng thư" rồi đi
+          # tìm file ngay tại thư mục gốc -> "not a file" và hỏng cả job macOS.
+          # Khi nào có chứng thư thì thêm lại CSC_LINK, CSC_KEY_PASSWORD, APPLE_* ở đây.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       # always(): bước publish hỏng thì vẫn phải lấy được file cài, đừng mất cả lượt build.
       - if: always()

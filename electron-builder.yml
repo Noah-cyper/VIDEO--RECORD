@@ -50,5 +50,6 @@ publish:
   provider: github
   owner: Noah-cyper
   repo: VIDEO--RECORD
-  # Draft: bản build chưa ký và chưa chạy trên thiết bị thật, không nên tự động phát hành công khai.
-  releaseType: draft
+  # electron-updater chỉ thấy release đã phát hành, không thấy draft. Muốn app tự cập nhật thì
+  # bản phát hành phải ở trạng thái release.
+  releaseType: release
