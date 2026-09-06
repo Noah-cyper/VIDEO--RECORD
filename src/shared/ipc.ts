@@ -17,7 +17,6 @@ export const CH = {
   sessionOpen: 'session:open',
   sessionWriteChunk: 'session:writeChunk',
   sessionRegisterStream: 'session:registerStream',
-  sessionSetState: 'session:setState',
   sessionBookmark: 'session:bookmark',
   sessionClose: 'session:close',
   sessionOrphans: 'session:orphans',
@@ -75,7 +74,6 @@ export const CH = {
   stateChanged: 'record:stateChanged',
   alert: 'record:alert',
   commandFromMain: 'record:command',
-  consentPlay: 'record:playConsent',
 } as const
 
 export interface OpenSessionInput {
@@ -182,7 +180,6 @@ export interface CallrecApi {
     open(input: OpenSessionInput): Promise<SessionManifest>
     registerStream(input: RegisterStreamInput): Promise<void>
     writeChunk(input: WriteChunkInput): Promise<void>
-    setState(sessionId: string, state: RecordState, error?: string): Promise<void>
     bookmark(sessionId: string, bookmark: Bookmark): Promise<void>
     close(input: CloseSessionInput): Promise<Recording | null>
     orphans(): Promise<SessionManifest[]>

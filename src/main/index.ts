@@ -1,4 +1,5 @@
 import { app, BrowserWindow } from 'electron'
+import { CH } from '@shared/ipc'
 import { createMainWindow, getMainWindow } from './windows'
 import { installDisplayMediaHandler } from './sources'
 import { registerIpc } from './ipc'
@@ -37,7 +38,7 @@ if (!app.requestSingleInstanceLock()) {
     const orphans = await findOrphans()
     if (orphans.length > 0) {
       getMainWindow()?.webContents.once('did-finish-load', () => {
-        getMainWindow()?.webContents.send('session:orphansFound', orphans)
+        getMainWindow()?.webContents.send(CH.sessionOrphansFound, orphans)
       })
     }
 

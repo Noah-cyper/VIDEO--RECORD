@@ -26,7 +26,6 @@ const api: CallrecApi & { onOrphans(cb: (m: SessionManifest[]) => void): () => v
     open: (input: OpenSessionInput) => ipcRenderer.invoke(CH.sessionOpen, input),
     registerStream: (input: RegisterStreamInput) => ipcRenderer.invoke(CH.sessionRegisterStream, input),
     writeChunk: (input: WriteChunkInput) => ipcRenderer.invoke(CH.sessionWriteChunk, input),
-    setState: (id: string, state: RecordState, error?: string) => ipcRenderer.invoke(CH.sessionSetState, id, state, error),
     bookmark: (id: string, bookmark: Bookmark) => ipcRenderer.invoke(CH.sessionBookmark, id, bookmark),
     close: (input: CloseSessionInput) => ipcRenderer.invoke(CH.sessionClose, input),
     orphans: () => ipcRenderer.invoke(CH.sessionOrphans),

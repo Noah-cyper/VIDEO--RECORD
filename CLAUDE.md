@@ -25,7 +25,7 @@ loopback/system audio (giọng đầu bên kia), kèm video màn hình.
 
 ```bash
 npm run dev        # chạy app
-npm test           # 170 test; cần ffmpeg-static (đã có trong devDependencies)
+npm test           # 174 test; cần ffmpeg-static (đã có trong devDependencies)
 npm run typecheck
 npm run lint
 npm run smoke      # bật app thật dưới Xvfb, kiểm cả việc đổi ngôn ngữ
@@ -38,6 +38,9 @@ Trước khi coi là xong: `lint`, `typecheck`, `test`, `smoke` — cả bốn.
 - `src/shared/` — logic thuần, **không** import electron. Đây là phần có unit test.
 - `src/main/` — chạm hệ điều hành và đĩa cứng.
 - `src/preload/` — `contextBridge`, danh sách kênh cố định. Không thêm API tổng quát.
+  `tests/ipc-surface.test.ts` canh: mọi kênh khai báo phải được main dùng, mọi kênh preload gọi
+  invoke phải có handler, và không được lộ hàm nhận channel tuỳ ý. Kênh chết là cánh cửa mở
+  không ai canh — dự án này đã để lọt hai lần.
 - `src/renderer/` — Web API media và giao diện.
 
 ## Sidecar

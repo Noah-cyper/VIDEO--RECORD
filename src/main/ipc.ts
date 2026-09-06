@@ -62,9 +62,6 @@ export function registerIpc(): void {
   ipcMain.handle(CH.sessionWriteChunk, (_e, input: WriteChunkInput) =>
     storage.writeChunk(input.sessionId, input.kind, input.data),
   )
-  ipcMain.handle(CH.sessionSetState, (_e, id: string, state: RecordState, error?: string) =>
-    storage.setState(id, state, error),
-  )
   ipcMain.handle(CH.sessionBookmark, (_e, id: string, bookmark: Bookmark) => storage.addBookmark(id, bookmark))
   ipcMain.handle(CH.sessionOrphans, () => storage.findOrphans())
   ipcMain.handle(CH.sessionDiscard, (_e, id: string) => storage.discardSession(id))
