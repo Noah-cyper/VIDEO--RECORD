@@ -106,6 +106,12 @@ export interface Settings {
   autoInstallUpdates: boolean
   /** Không bao giờ mặc định bật: gửi dữ liệu ra ngoài phải là hành động có ý thức (NFR-06). */
   allowCloudSummary: boolean
+  /** Phụ đề trực tiếp trong lúc ghi. Tách khỏi gỡ băng: đây là thứ chạy song song với bản ghi. */
+  liveCaptions: boolean
+  /** '' = chỉ hiện nguyên văn; 'en' = whisper dịch ngay trên máy; mã khác = phải đi qua API. */
+  liveTarget: string
+  /** Model riêng cho phụ đề: bản gỡ băng chọn theo độ chính xác, bản trực tiếp chọn theo tốc độ. */
+  liveModel: 'tiny' | 'base' | 'small' | 'medium'
 }
 
 export interface DiskStatus {

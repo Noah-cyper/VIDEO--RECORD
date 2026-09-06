@@ -1,6 +1,7 @@
 import type { AudioDevice, CaptureAlert, QualityPreset, StreamKind } from '@shared/types'
 import { QUALITY } from '@shared/types'
 import { computeOffsets, type StreamStart } from '@shared/time'
+import { LiveTap, type SegmentSink } from './livetap'
 
 const CHUNK_MS = 5000
 const SILENCE_ALERT_MS = 30_000
@@ -94,6 +95,8 @@ export interface StartOptions {
   quality: QualityPreset
   micDeviceId: string | null
   withVideo: boolean
+  /** Có thì bật nhánh phụ đề trực tiếp; không có thì engine chạy y như trước, không tốn gì thêm. */
+  onLiveSegment?: SegmentSink
 }
 
 export class CaptureEngine {
@@ -101,6 +104,7 @@ export class CaptureEngine {
   private streams: MediaStream[] = []
   private audioCtx: AudioContext | null = null
   private meters = new Map<'mic' | 'system', Meter>()
+  private taps: LiveTap[] = []
   private timer: number | null = null
   private alerted = new Set<string>()
 
@@ -160,6 +164,12 @@ export class CaptureEngine {
     this.audioCtx = new AudioContext()
     if (micTrack) this.meters.set('mic', new Meter(this.audioCtx, micTrack))
     if (systemTrack) this.meters.set('system', new Meter(this.audioCtx, systemTrack))
+
+    // Nhãn người nói của phụ đề lấy từ track y hệt cách transcript làm, nên không có chuyện đoán nhầm.
+    if (opts.onLiveSegment) {
+      if (micTrack) this.taps.push(new LiveTap(this.audioCtx, micTrack, 'me', t0, opts.onLiveSegment))
+      if (systemTrack) this.taps.push(new LiveTap(this.audioCtx, systemTrack, 'them', t0, opts.onLiveSegment))
+    }
     this.startMetering()
   }
 
@@ -191,10 +201,12 @@ export class CaptureEngine {
 
   pause(): void {
     for (const r of this.recorders.values()) if (r.state === 'recording') r.pause()
+    for (const t of this.taps) t.setPaused(true)
   }
 
   resume(): void {
     for (const r of this.recorders.values()) if (r.state === 'paused') r.resume()
+    for (const t of this.taps) t.setPaused(false)
   }
 
   /** requestData trước khi stop để chunk cuối không bị mất. */
@@ -216,6 +228,8 @@ export class CaptureEngine {
     )
     this.recorders.clear()
     this.meters.clear()
+    for (const t of this.taps) t.stop()
+    this.taps = []
     for (const s of this.streams) for (const t of s.getTracks()) t.stop()
     this.streams = []
     await this.audioCtx?.close().catch(() => undefined)

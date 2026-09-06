@@ -212,6 +212,31 @@ const vi = {
   'overlay.paused': 'Tạm dừng',
   'overlay.saving': 'Đang lưu',
 
+
+  'live.title': 'Phụ đề trực tiếp',
+  'live.enable': 'Hiện phụ đề trong lúc ghi',
+  'live.hint':
+    'Nghe ké hai luồng rồi gỡ băng từng đoạn ngay trong lúc ghi. Phụ đề tới chậm 2-6 giây tuỳ máy, và đây là bản nghe nhanh - biên bản chính xác vẫn là bản gỡ băng sau khi ghi xong.',
+  'live.target': 'Dịch phụ đề sang',
+  'live.targetOff': 'Không dịch — chỉ hiện nguyên văn',
+  'live.targetLocal': '{lang} — dịch ngay trên máy, không cần mạng',
+  'live.targetCloud': '{lang} — qua API, lời thoại rời khỏi máy này',
+  'live.preparing': 'Đang tải model phụ đề về máy, lần đầu có thể mất một lúc. Bản ghi bắt đầu ngay sau đó.',
+  'live.waiting': 'Đang nghe… phụ đề hiện ra khi có người nói.',
+  'live.off': 'Phụ đề đang tắt. Bật ở ô trên rồi bắt đầu ghi.',
+  'live.pending': 'đang dịch…',
+  'live.noBinary': 'Chưa có whisper.cpp nên không chạy được phụ đề trực tiếp. Việc ghi vẫn diễn ra bình thường.',
+  'live.cloudOff':
+    'Dịch phụ đề sang ngôn ngữ này phải gửi lời thoại ra ngoài. Bật mục cho phép ở Cài đặt và nhập khoá API, hoặc chọn dịch sang tiếng Anh để chạy hẳn trên máy.',
+  'live.badTarget': 'Ngôn ngữ phụ đề không hợp lệ.',
+  'live.modelFailed': 'Không chuẩn bị được model phụ đề: {reason}',
+  'live.busy': 'Không bật được phụ đề trực tiếp.',
+  'live.behind':
+    'Máy không theo kịp nên một đoạn phụ đề đã bị bỏ. Bản ghi không mất gì; chọn model phụ đề nhẹ hơn nếu bị thường xuyên.',
+  'settings.liveModel': 'Model phụ đề trực tiếp',
+  'settings.liveModelHint':
+    'Model này chạy song song với việc ghi nên phải nhẹ: tiny và base kịp thời gian thực, small trở lên sẽ tụt lại trên máy yếu. Không liên quan tới model gỡ băng sau khi ghi.',
+
   'speaker.me': 'Tôi',
   'speaker.them': 'Đối phương',
 } as const
@@ -425,6 +450,31 @@ const en: Record<TranslationKey, string> = {
   'overlay.recording': 'Recording',
   'overlay.paused': 'Paused',
   'overlay.saving': 'Saving',
+
+
+  'live.title': 'Live captions',
+  'live.enable': 'Show captions while recording',
+  'live.hint':
+    'Taps both streams and transcribes them segment by segment while you record. Captions lag 2-6 seconds depending on the machine, and this is the quick read - the accurate record is still the transcript made after the call.',
+  'live.target': 'Translate captions into',
+  'live.targetOff': 'No translation — original wording only',
+  'live.targetLocal': '{lang} — translated on this machine, no network needed',
+  'live.targetCloud': '{lang} — via the API, the speech leaves this machine',
+  'live.preparing': 'Downloading the caption model; the first time takes a while. Recording starts right after.',
+  'live.waiting': 'Listening… captions appear once somebody speaks.',
+  'live.off': 'Captions are off. Turn them on above, then start recording.',
+  'live.pending': 'translating…',
+  'live.noBinary': 'whisper.cpp is missing, so live captions cannot run. Recording itself is unaffected.',
+  'live.cloudOff':
+    'Translating captions into this language sends the speech off this machine. Enable that in Settings and add an API key, or pick English to keep everything local.',
+  'live.badTarget': 'That caption language is not valid.',
+  'live.modelFailed': 'Could not prepare the caption model: {reason}',
+  'live.busy': 'Could not turn on live captions.',
+  'live.behind':
+    'This machine fell behind, so one caption segment was dropped. Nothing is missing from the recording; pick a lighter caption model if it keeps happening.',
+  'settings.liveModel': 'Live caption model',
+  'settings.liveModelHint':
+    'This model runs alongside the recording, so it has to be light: tiny and base keep up in real time, small and above fall behind on slower machines. Unrelated to the transcription model used after the call.',
 
   'speaker.me': 'Me',
   'speaker.them': 'Other party',

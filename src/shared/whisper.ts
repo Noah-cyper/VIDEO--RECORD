@@ -32,6 +32,8 @@ export interface WhisperArgs {
   outputPrefix: string
   language: string
   threads?: number
+  /** whisper.cpp chỉ dịch được sang tiếng Anh; dùng cho phụ đề trực tiếp không cần mạng. */
+  translate?: boolean
 }
 
 export function buildWhisperArgs(opts: WhisperArgs): string[] {
@@ -42,6 +44,7 @@ export function buildWhisperArgs(opts: WhisperArgs): string[] {
     '-oj',
     '-of', opts.outputPrefix,
     '-t', String(opts.threads ?? 4),
+    ...(opts.translate ? ['-tr'] : []),
     // -pp để đọc được tiến độ; -np bỏ phần in transcript ra stdout cho đỡ rác.
     '-pp',
     '-np',

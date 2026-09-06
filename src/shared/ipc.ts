@@ -2,6 +2,7 @@ import type {
   AudioDevice, Bookmark, CaptureAlert, CaptureSource, DiskStatus, ExportProgress,
   QualityPreset, Recording, RecordState, SessionManifest, Settings, StreamKind,
 } from './types'
+import type { LiveCaption } from './live'
 import type { Speaker, Transcript } from './transcript'
 import type { StoredSummary } from './summary'
 import type { WhisperModelName } from './whisper'
@@ -50,6 +51,11 @@ export const CH = {
   transcriptSearchAll: 'transcript:searchAll',
   transcriptTranslate: 'transcript:translate',
   transcriptGetTranslation: 'transcript:getTranslation',
+
+  liveStart: 'live:start',
+  liveStop: 'live:stop',
+  liveAudio: 'live:audio',
+  liveCaption: 'live:caption',
 
   summaryGet: 'summary:get',
   summaryCreate: 'summary:create',
@@ -110,6 +116,29 @@ export interface PermissionStatus {
   managed: boolean
   /** macOS chỉ áp dụng quyền ghi màn hình sau khi khởi động lại app (docs/03 mục 4.5). */
   needsRestart: boolean
+}
+
+export interface LiveStartInput {
+  sessionId: string
+  /** Mã ngôn ngữ đích, '' nếu chỉ muốn phụ đề nguyên văn. */
+  target: string
+  model: WhisperModelName
+}
+
+export interface LiveAudioInput {
+  sessionId: string
+  speaker: Speaker
+  atMs: number
+  /** PCM 16 bit mono 16 kHz. Gửi thô chứ không gửi WebM: main không phải giải mã lại. */
+  pcm: ArrayBuffer
+}
+
+export type LiveFailure = 'no-binary' | 'cloud-off' | 'bad-target' | 'model' | 'busy'
+
+export interface LiveStartResult {
+  ok: boolean
+  reason?: LiveFailure
+  message?: string
 }
 
 export interface TranscriptProgress {
@@ -217,6 +246,13 @@ export interface CallrecApi {
     translate(recordingId: string, code: string, languageName: string): Promise<Transcript | null>
     getTranslation(recordingId: string, code: string): Promise<Transcript | null>
     onProgress(cb: (p: TranscriptProgress) => void): () => void
+  }
+  live: {
+    start(input: LiveStartInput): Promise<LiveStartResult>
+    stop(): Promise<void>
+    /** send chứ không invoke: đợi main trả lời cho từng đoạn tiếng là tự chuốc thêm độ trễ. */
+    audio(input: LiveAudioInput): void
+    onCaption(cb: (caption: LiveCaption) => void): () => void
   }
   summary: {
     get(recordingId: string): Promise<StoredSummary | null>

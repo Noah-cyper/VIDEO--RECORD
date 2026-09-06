@@ -179,3 +179,65 @@ nên không có lý do gì nới lỏng hơn. Chưa đủ điều kiện thì gi
 | `.md` | Biên bản có định dạng, đánh dấu rõ chỗ nói chồng |
 
 File được ghi ngay cạnh bản ghi trong cùng thư mục.
+
+## 9. Phụ đề trực tiếp (dịch theo thời gian thực)
+
+Gỡ băng ở các mục trên chạy **sau** khi ghi xong. Phụ đề trực tiếp chạy **trong lúc** đang ghi:
+nghe ké hai luồng, gỡ băng từng đoạn ngắn rồi dịch ngay, hiện ở màn hình Ghi và trên ô chỉ báo.
+
+### Đường đi của một câu
+
+```
+mic / loopback ─▶ LiveTap (renderer)   cắt đoạn theo khoảng lặng, hạ 16 kHz, PCM 16 bit
+                        │
+                        ▼  live:audio (send, không đợi trả lời)
+                  hàng đợi ở main      tối đa 3 đoạn, đầy thì bỏ đoạn cũ nhất
+                        │
+                        ▼  một tiến trình whisper.cpp tại một thời điểm
+                   nguyên văn ──▶ live:caption  (hiện ngay)
+                        │
+                        ▼  (chỉ khi chọn ngôn ngữ ngoài tiếng Anh)
+                   API dịch ───▶ live:caption cùng id  (thay tại chỗ)
+```
+
+`LiveTap` là nhánh **song song**, không nằm trên đường ghi: nó nghe cùng `MediaStreamTrack` qua
+một `ScriptProcessorNode` nối vào `GainNode` với gain 0. Phụ đề hỏng hay bị tắt không ảnh hưởng
+gì tới file bản ghi, và mic với loopback vẫn là hai đường riêng — nhãn `Tôi` / `Đối phương` của
+phụ đề lấy từ track, đúng như biên bản gỡ băng sau này.
+
+Gain 0 là bắt buộc, không phải cho gọn: `ScriptProcessorNode` chỉ chạy khi có đường tới
+`destination`, mà nối thẳng ra loa thì micro nghe lại tiếng loa thành vòng hú — và tiếng hú đó
+đi vào luồng loopback, tức là vào chính bản ghi.
+
+### Cắt đoạn ở đâu
+
+Cắt theo khoảng lặng (im 700 ms là dứt câu), không theo đồng hồ cố định: cắt giữa câu thì whisper
+mất vế sau và đoán bừa, còn chờ đủ 8 giây mới cắt thì phụ đề luôn trễ 8 giây kể cả khi người ta
+chỉ nói một từ. Nói liên tục không nghỉ thì vẫn bị cắt cưỡng bức ở 8 giây. Giữ lại 3 khung trước
+lúc phát hiện có tiếng, nếu không âm đầu của từ đầu tiên bị cụt.
+
+### Ba đường dịch
+
+| Chọn | Chạy ở đâu | Điều kiện |
+|---|---|---|
+| Không dịch | — | Chỉ hiện nguyên văn |
+| Tiếng Anh | Ngay trên máy, cờ `-tr` của whisper.cpp | Không cần mạng, không cần khoá API |
+| Ngôn ngữ khác | API | Phải bật gửi ra dịch vụ ngoài **và** có khoá API, giống hệt tóm tắt |
+
+whisper.cpp chỉ dịch được đúng một hướng là sang tiếng Anh. Muốn tiếng Nhật, tiếng Trung… thì
+buộc phải qua API, và khi đó **lời thoại rời khỏi máy này** — mặc định tắt (NFR-06), giao diện
+nói thẳng điều đó ở ngay dòng chọn ngôn ngữ.
+
+Ở chế độ tiếng Anh, whisper trả về thẳng bản tiếng Anh nên không có nguyên văn để đối chiếu:
+chạy hai lượt để có cả hai sẽ tốn gấp đôi CPU, không đáng. Ở chế độ API thì có cả hai — nguyên
+văn hiện ngay, bản dịch thay vào chỗ đó vài giây sau.
+
+### Giới hạn phải nói trước
+
+- **Trễ 2-6 giây** tuỳ máy và model. Đây là bản nghe nhanh để bám cuộc gọi, không phải biên bản.
+  Biên bản chính xác vẫn là bản gỡ băng chạy sau khi ghi xong, với model lớn hơn.
+- **Model riêng, chọn nhẹ**: mặc định `tiny`. `small` trở lên sẽ tụt lại trên máy yếu vì nó tranh
+  CPU với chính việc ghi hình (NFR-01).
+- **Máy không theo kịp thì bỏ đoạn cũ nhất** và báo ra giao diện. Bản ghi không mất gì — chỉ phụ
+  đề bị thiếu, vì phụ đề trễ hai phút thì vô dụng.
+- Không có whisper.cpp thì phụ đề không bật được, nhưng **việc ghi vẫn chạy bình thường**.

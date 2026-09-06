@@ -3,13 +3,15 @@ import { join } from 'node:path'
 import type { Bookmark, QualityPreset, RecordState, Settings } from '@shared/types'
 import { promises as fsp } from 'node:fs'
 import {
-  CH, type CloseSessionInput, type OpenSessionInput, type RegisterStreamInput,
-  type TranscriptFormat, type TranscriptHitDto, type WhisperStatus, type WriteChunkInput,
+  CH, type CloseSessionInput, type LiveAudioInput, type LiveStartInput, type OpenSessionInput,
+  type RegisterStreamInput, type TranscriptFormat, type TranscriptHitDto, type WhisperStatus,
+  type WriteChunkInput,
 } from '@shared/ipc'
 import { toMarkdown, toSrt, toTxt, type SpeakerLabels } from '@shared/transcript'
 import { translate } from '@shared/i18n'
 import { WHISPER_MODELS, type WhisperModelName } from '@shared/whisper'
 
+import { pushLiveAudio, startLive, stopLive } from './live'
 import { readTranscript, searchAllTranscripts, transcribeRecording } from './transcribe'
 import { readTranslation, translateRecording } from './translate'
 import { CloudSummaryUnavailable, readSummary, summarizeRecording } from './summarize'
@@ -190,6 +192,24 @@ export function registerIpc(): void {
   ipcMain.handle(CH.transcriptGetTranslation, async (_e, id: string, code: string) => {
     const rec = await library.getRecording(id)
     return rec ? readTranslation(rec, code) : null
+  })
+
+  ipcMain.handle(CH.liveStart, (_e, input: LiveStartInput) =>
+    startLive({ ...input, model: assertModel(input?.model) }),
+  )
+  ipcMain.handle(CH.liveStop, () => stopLive())
+  // send chứ không handle: mỗi đoạn tiếng mà phải chờ main trả lời là tự thêm độ trễ vào phụ đề.
+  ipcMain.on(CH.liveAudio, (_e, input: LiveAudioInput) => {
+    // Kiểm ở đây chỉ là lớp ngoài; pushLiveAudio kiểm lại vì nó mới là nơi biết phiên nào đang chạy.
+    if (!input || typeof input.sessionId !== 'string') return
+    // Nhận cả ArrayBuffer lẫn view: kênh này không trả lời được, nên gói sai kiểu sẽ rơi vào im
+    // lặng tuyệt đối - không có phụ đề mà cũng không có lỗi để lần ra.
+    const pcm: unknown = input.pcm
+    const buffer =
+      pcm instanceof ArrayBuffer ? Buffer.from(pcm)
+      : ArrayBuffer.isView(pcm) ? Buffer.from(pcm.buffer, pcm.byteOffset, pcm.byteLength)
+      : null
+    if (buffer) pushLiveAudio(input.sessionId, input.speaker, input.atMs, buffer)
   })
 
   ipcMain.handle(CH.summaryGet, (_e, id: string) => readSummary(id))

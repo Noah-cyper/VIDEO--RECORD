@@ -111,6 +111,8 @@ export interface TranscribeOptions {
   language: string
   onProgress?: (percent: number) => void
   signal?: AbortSignal
+  /** Dịch thẳng sang tiếng Anh trong lúc nhận dạng, dùng cho phụ đề trực tiếp không cần mạng. */
+  translate?: boolean
 }
 
 /** Trả về nội dung JSON thô của whisper.cpp; việc diễn giải để cho @shared/transcript lo. */
@@ -121,6 +123,7 @@ export async function runWhisper(opts: TranscribeOptions): Promise<string> {
     wavPath: opts.wavPath,
     outputPrefix,
     language: opts.language,
+    translate: opts.translate,
     threads: Math.max(2, Math.min(8, cpus().length - 1)),
   })
 

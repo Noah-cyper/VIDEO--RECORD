@@ -25,7 +25,7 @@ loopback/system audio (giọng đầu bên kia), kèm video màn hình.
 
 ```bash
 npm run dev        # chạy app
-npm test           # 174 test; cần ffmpeg-static (đã có trong devDependencies)
+npm test           # 197 test; cần ffmpeg-static (đã có trong devDependencies)
 npm run typecheck
 npm run lint
 npm run smoke      # bật app thật dưới Xvfb, kiểm cả việc đổi ngôn ngữ
@@ -79,6 +79,8 @@ và kiểm trong container không có card âm thanh, không có Windows/macOS. 
 - Độ lệch A/V sau 60 phút, mức CPU khi ghi 1080p30
 - Luồng cấp quyền macOS
 - `runWhisper` (chưa có binary whisper.cpp trong môi trường dựng)
+- Phụ đề trực tiếp: độ trễ thật, mức CPU khi vừa ghi 1080p30 vừa chạy whisper, và `ScriptProcessorNode`
+  có bị Chromium bóp ga khi cửa sổ ẩn lúc ghi ngầm hay không
 
 Trước khi hứa hẹn gì với người dùng, chạy checklist ở
 `docs/01-workflow.md#checklist-test-thủ-công-chạy-trước-mỗi-lần-lên-gate` trên máy thật.

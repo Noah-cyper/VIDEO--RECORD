@@ -42,6 +42,8 @@ Cần một ứng dụng **độc lập với nền tảng gọi**: cứ có âm
 - **FR-12** — Tóm tắt cuộc gọi và trích các đầu việc.
 - **FR-13** — Đánh dấu mốc thời gian (bookmark) ngay trong lúc ghi bằng phím tắt.
 - **FR-14** — Xuất riêng file audio (MP3/M4A) cho bản ghi chỉ cần tiếng.
+- **FR-15** — Phụ đề trực tiếp trong lúc ghi, có tuỳ chọn dịch sang ngôn ngữ khác, nhãn người nói
+  vẫn lấy từ track.
 
 ## 4. Yêu cầu phi chức năng (NFR)
 

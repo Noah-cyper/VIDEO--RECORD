@@ -152,6 +152,43 @@ app.whenReady().then(async () => {
     }
   })()`).catch((err) => ({ error: `lỗi khi kiểm cài đặt: ${err.message}` }))
 
+  // Phụ đề trực tiếp: bật được từ giao diện, và kênh live phải từ chối giá trị bịa thay vì im lặng.
+  // Cố tình dùng mã ngôn ngữ không có thật để khỏi chạm vào whisper - smoke không được tải model.
+  const liveChecks = await win.webContents.executeJavaScript(`(async () => {
+    const original = (await window.callrec.settings.get()).liveCaptions
+    ;[...document.querySelectorAll('.tabs button')][0].click()
+    await new Promise((r) => setTimeout(r, 300))
+
+    const check = document.querySelector('.check input[type=checkbox]')
+    if (!check) return { error: 'không thấy ô bật phụ đề trực tiếp' }
+    if (!check.checked) check.click()
+
+    let enabled = false
+    for (let i = 0; i < 40; i++) {
+      await new Promise((r) => setTimeout(r, 100))
+      enabled = (await window.callrec.settings.get()).liveCaptions
+      if (enabled) break
+    }
+    const hasTarget = document.getElementById('live-target') !== null
+
+    let rejectedBadTarget = false
+    try {
+      await window.callrec.settings.set({ liveTarget: 'khong-co-that' })
+    } catch {
+      rejectedBadTarget = true
+    }
+
+    const started = await window.callrec.live.start({
+      sessionId: 'smoke', target: 'khong-co-that', model: 'tiny',
+    })
+    // Gói tiếng của một phiên không tồn tại phải bị bỏ qua, không được làm main chết.
+    window.callrec.live.audio({ sessionId: 'khong-ton-tai', speaker: 'me', atMs: 0, pcm: new ArrayBuffer(64) })
+    await window.callrec.live.stop()
+    await window.callrec.settings.set({ liveCaptions: original })
+    const aliveAfter = typeof (await window.callrec.settings.get()).liveTarget === 'string'
+    return { enabled, hasTarget, rejectedBadTarget, startReason: started.reason, aliveAfter }
+  })()`).catch((err) => ({ error: `lỗi khi kiểm phụ đề trực tiếp: ${err.message}` }))
+
   // Ghi ngầm: cửa sổ phải ẩn/hiện được qua IPC, và throttling phải tắt - Chromium bóp ga cửa sổ
   // bị ẩn, mà ghi ngầm thì đồng hồ và vòng ghi chunk vẫn phải chạy đều.
   const throttling = win.webContents.backgroundThrottling
@@ -174,6 +211,16 @@ app.whenReady().then(async () => {
   for (const [want, got] of [['Ghi,Thư viện,Cài đặt', vi], ['Record,Library,Settings', en]]) {
     if (got.error) problems.push(got.error)
     else if (got.tabs.join(',') !== want) problems.push(`mong đợi "${want}", nhận "${got.tabs.join(',')}"`)
+  }
+  if (liveChecks.error) problems.push(liveChecks.error)
+  else {
+    if (!liveChecks.enabled) problems.push('bật phụ đề trực tiếp nhưng cài đặt không được lưu')
+    if (!liveChecks.hasTarget) problems.push('bật phụ đề rồi mà không có ô chọn ngôn ngữ dịch')
+    if (!liveChecks.rejectedBadTarget) problems.push('mã ngôn ngữ bịa vẫn được nhận vào cài đặt')
+    if (liveChecks.startReason !== 'bad-target') {
+      problems.push(`live.start với ngôn ngữ bịa phải trả về bad-target, nhận ${liveChecks.startReason}`)
+    }
+    if (!liveChecks.aliveAfter) problems.push('gửi gói tiếng rác xong main không trả lời nữa')
   }
   if (settingsChecks.error) problems.push(settingsChecks.error)
   else {
@@ -209,6 +256,7 @@ app.whenReady().then(async () => {
       `lỗi hiện ra được: ${settingsChecks.errorShown} | ` +
       `ffmpeg: ${settingsChecks.ffmpegOk} | ` +
       `tự kiểm tra thiết bị: ${selfTest.verdicts ?? 0} kết luận | ` +
+      `phụ đề trực tiếp: bật OK, chặn ngôn ngữ bịa OK | ` +
       `ghi ngầm: ẩn/hiện ${hidden && shownAgain ? 'OK' : 'HỎNG'}, throttling=${throttling} | ` +
       `cập nhật: v${settingsChecks.updateVersion} → ${settingsChecks.updateState}`,
   )

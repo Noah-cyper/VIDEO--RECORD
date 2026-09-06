@@ -3,6 +3,9 @@ import type { CaptureAlert, QualityPreset, Recording, StreamKind } from '@shared
 import type { ExportProgress } from '@shared/types'
 import { elapsedMs as computeElapsed } from '@shared/time'
 import { initialContext, reduce, type RecordContext, type RecordEvent } from '@shared/machine'
+import { mergeCaption, type LiveCaption } from '@shared/live'
+import type { LiveFailure } from '@shared/ipc'
+import type { WhisperModelName } from '@shared/whisper'
 import { CaptureEngine, playConsentNotice, type Levels } from '../capture/engine'
 
 export interface RecorderOptions {
@@ -11,6 +14,17 @@ export interface RecorderOptions {
   language: 'vi' | 'en'
   playConsent: boolean
   hideWhileRecording: boolean
+  liveCaptions: boolean
+  liveTarget: string
+  liveModel: WhisperModelName
+}
+
+const LIVE_FAILURE_KEY: Record<LiveFailure, string> = {
+  'no-binary': 'live.noBinary',
+  'cloud-off': 'live.cloudOff',
+  'bad-target': 'live.badTarget',
+  model: 'live.modelFailed',
+  busy: 'live.busy',
 }
 
 export function useRecorder(options: RecorderOptions) {
@@ -20,6 +34,8 @@ export function useRecorder(options: RecorderOptions) {
   const [progress, setProgress] = useState<ExportProgress | null>(null)
   const [lastRecording, setLastRecording] = useState<Recording | null>(null)
   const [elapsed, setElapsed] = useState(0)
+  const [captions, setCaptions] = useState<LiveCaption[]>([])
+  const [liveOn, setLiveOn] = useState(false)
 
   const engineRef = useRef<CaptureEngine | null>(null)
   const sessionRef = useRef<string | null>(null)
@@ -65,6 +81,10 @@ export function useRecorder(options: RecorderOptions) {
     [],
   )
   useEffect(() => window.callrec.onAlert(pushAlert), [pushAlert])
+  useEffect(
+    () => window.callrec.live.onCaption((c) => setCaptions((prev) => mergeCaption(prev, c))),
+    [],
+  )
 
   const selectSource = useCallback(
     async (sourceId: string) => {
@@ -94,6 +114,34 @@ export function useRecorder(options: RecorderOptions) {
     const session = await window.callrec.session.open({ quality: opts.quality })
     sessionRef.current = session.id
 
+    // Bật phụ đề TRƯỚC khi ghi: lần đầu còn phải tải model, mà tải giữa buổi thì mất đúng đoạn đầu.
+    let live = false
+    if (opts.liveCaptions) {
+      // Model chưa có thì bước sau đứng im vài chục giây để tải; nói trước chứ đừng để người dùng
+      // ngồi nhìn nút không phản ứng rồi bấm lại.
+      const status = await window.callrec.whisper.status()
+      const needsDownload = !status.installedModels.includes(opts.liveModel)
+      if (needsDownload) pushAlert({ kind: 'info', messageKey: 'live.preparing' })
+
+      const res = await window.callrec.live.start({
+        sessionId: session.id,
+        target: opts.liveTarget,
+        model: opts.liveModel,
+      })
+      live = res.ok
+      if (needsDownload) setAlerts((prev) => prev.filter((a) => a.messageKey !== 'live.preparing'))
+      if (!res.ok) {
+        // Hỏng phụ đề không phải lý do để không ghi được cuộc gọi; báo rồi ghi tiếp.
+        pushAlert({
+          kind: 'info',
+          messageKey: LIVE_FAILURE_KEY[res.reason ?? 'busy'],
+          params: { reason: res.message ?? '' },
+        })
+      }
+    }
+    setCaptions([])
+    setLiveOn(live)
+
     const engine = new CaptureEngine({
       onChunk: (kind: StreamKind, data) => {
         const id = sessionRef.current
@@ -121,8 +169,20 @@ export function useRecorder(options: RecorderOptions) {
         quality: opts.quality,
         micDeviceId: opts.micDeviceId,
         withVideo: opts.quality !== 'audio-only',
+        onLiveSegment: live
+          ? (speaker, atMs, pcm) => {
+              const id = sessionRef.current
+              // Cắt đúng phần đang dùng: buffer của Int16Array có thể lớn hơn số mẫu thật.
+              if (id) {
+                const pcmBuffer = (pcm.buffer as ArrayBuffer).slice(0, pcm.byteLength)
+                window.callrec.live.audio({ sessionId: id, speaker, atMs, pcm: pcmBuffer })
+              }
+            }
+          : undefined,
       })
     } catch (err) {
+      void window.callrec.live.stop()
+      setLiveOn(false)
       await window.callrec.session.discard(session.id)
       sessionRef.current = null
       send({ type: 'FAIL', error: err instanceof Error ? err.message : String(err) })
@@ -155,6 +215,8 @@ export function useRecorder(options: RecorderOptions) {
       ? computeElapsed(ctxRef.current.startedAtMs, performance.now(), ctxRef.current.pauses)
       : elapsed
     send({ type: 'STOP' })
+    void window.callrec.live.stop()
+    setLiveOn(false)
     await engineRef.current?.stop()
     engineRef.current = null
     if (!id) return send({ type: 'FINALIZED' })
@@ -182,6 +244,7 @@ export function useRecorder(options: RecorderOptions) {
   const reset = useCallback(() => {
     setProgress(null)
     setElapsed(0)
+    setCaptions([])
     send({ type: 'RESET' })
   }, [send])
 
@@ -204,7 +267,7 @@ export function useRecorder(options: RecorderOptions) {
   const busy = useMemo(() => ['recording', 'paused', 'finalizing'].includes(ctx.state), [ctx.state])
 
   return {
-    ctx, levels, alerts, progress, elapsed, lastRecording, canStart, busy,
+    ctx, levels, alerts, progress, elapsed, lastRecording, canStart, busy, captions, liveOn,
     selectSource, start, pause, stop, bookmark, reset, dismissAlert,
   }
 }

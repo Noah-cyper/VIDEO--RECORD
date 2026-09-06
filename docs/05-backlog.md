@@ -99,6 +99,7 @@ P1 quan trọng, P2 để sau.
 | X-04 | ~~Cắt đầu/cuối bản ghi~~ — đã làm | Không phá bản gốc: cắt ra một bản ghi mới |
 | X-05 | ~~Xuất riêng file audio MP3/M4A~~ — đã làm | FR-14 |
 | X-06 | Hỗ trợ Linux | Ưu tiên thấp |
+| X-07 | ~~Phụ đề trực tiếp + dịch theo thời gian thực~~ — đã làm | FR-15, xem `docs/06-transcript.md` mục 9 |
 
 ---
 

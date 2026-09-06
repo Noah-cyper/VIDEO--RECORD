@@ -2,6 +2,8 @@ import { app } from 'electron'
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type { Settings } from '@shared/types'
+import { WHISPER_MODELS } from '@shared/whisper'
+import { TARGET_LANGUAGES } from '@shared/translate'
 import { readJson, writeJson } from './jsonstore'
 import { isUsableRecordingsDir, normalizeRecordingsDir } from './paths'
 
@@ -18,6 +20,9 @@ function defaults(): Settings {
     hideWhileRecording: true,
     autoInstallUpdates: true,
     allowCloudSummary: false,
+    liveCaptions: false,
+    liveTarget: '',
+    liveModel: 'tiny',
   }
 }
 
@@ -57,6 +62,15 @@ export async function setSettings(patch: Partial<Settings>): Promise<Settings> {
     // Tạo và thử ghi thật. Thư mục chỉ-đọc hay ổ mạng đã ngắt sẽ lộ ra NGAY ở đây, thay vì
     // im lặng cho tới lúc người dùng ghi xong một cuộc gọi rồi mới hỏng ở bước xuất file.
     await assertWritable(next.recordingsDir)
+  }
+  // Mã ngôn ngữ đích của phụ đề đi thẳng vào prompt gửi ra dịch vụ ngoài; chỉ nhận mã app tự khai.
+  if (patch.liveTarget !== undefined && patch.liveTarget !== '') {
+    if (!TARGET_LANGUAGES.some((l) => l.code === patch.liveTarget)) {
+      throw new Error(`Ngôn ngữ phụ đề không hợp lệ: ${JSON.stringify(patch.liveTarget)}`)
+    }
+  }
+  if (patch.liveModel !== undefined && !(patch.liveModel in WHISPER_MODELS)) {
+    throw new Error(`Model phụ đề không hợp lệ: ${JSON.stringify(patch.liveModel)}`)
   }
   // Gửi nội dung cuộc gọi ra ngoài phải là hành động có ý thức, không bật ngầm được (NFR-06).
   if (patch.allowCloudSummary === undefined) next.allowCloudSummary = current.allowCloudSummary

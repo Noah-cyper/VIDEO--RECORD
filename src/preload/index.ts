@@ -2,9 +2,11 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { Bookmark, CaptureAlert, ExportProgress, QualityPreset, RecordState, Settings, SessionManifest } from '@shared/types'
 import type { WhisperModelName } from '@shared/whisper'
 import {
-  CH, type CallrecApi, type CloseSessionInput, type MainCommand, type OpenSessionInput,
-  type RegisterStreamInput, type TranscriptFormat, type TranscriptProgress, type WriteChunkInput,
+  CH, type CallrecApi, type CloseSessionInput, type LiveAudioInput, type LiveStartInput,
+  type MainCommand, type OpenSessionInput, type RegisterStreamInput, type TranscriptFormat,
+  type TranscriptProgress, type WriteChunkInput,
 } from '@shared/ipc'
+import type { LiveCaption } from '@shared/live'
 
 function on<T>(channel: string, cb: (payload: T) => void): () => void {
   const handler = (_e: Electron.IpcRendererEvent, payload: T) => cb(payload)
@@ -63,6 +65,12 @@ const api: CallrecApi & { onOrphans(cb: (m: SessionManifest[]) => void): () => v
       ipcRenderer.invoke(CH.transcriptTranslate, id, code, languageName),
     getTranslation: (id: string, code: string) => ipcRenderer.invoke(CH.transcriptGetTranslation, id, code),
     onProgress: (cb: (p: TranscriptProgress) => void) => on(CH.transcriptProgress, cb),
+  },
+  live: {
+    start: (input: LiveStartInput) => ipcRenderer.invoke(CH.liveStart, input),
+    stop: () => ipcRenderer.invoke(CH.liveStop),
+    audio: (input: LiveAudioInput) => ipcRenderer.send(CH.liveAudio, input),
+    onCaption: (cb: (caption: LiveCaption) => void) => on(CH.liveCaption, cb),
   },
   summary: {
     get: (id: string) => ipcRenderer.invoke(CH.summaryGet, id),

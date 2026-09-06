@@ -194,6 +194,23 @@ export function SettingsView({
           </span>
         </div>
 
+        <div className="field">
+          <label htmlFor="live-model">{t('settings.liveModel')}</label>
+          <select
+            id="live-model"
+            value={settings.liveModel}
+            onChange={(e) => onSettings({ liveModel: e.target.value as WhisperModelName })}
+          >
+            {(Object.keys(WHISPER_MODELS) as WhisperModelName[]).map((name) => (
+              <option key={name} value={name}>
+                {WHISPER_MODELS[name].label} — {WHISPER_MODELS[name].sizeMb} MB
+                {whisper?.installedModels.includes(name) ? ` (${t('settings.modelDownloaded')})` : ''}
+              </option>
+            ))}
+          </select>
+          <span className="muted" style={{ fontSize: 12 }}>{t('settings.liveModelHint')}</span>
+        </div>
+
         <label className="check">
           <input
             type="checkbox"
