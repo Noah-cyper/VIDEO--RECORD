@@ -9,7 +9,8 @@ import { app, BrowserWindow } from 'electron'
 const pkgVersion = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8')).version
 
 const errors = []
-const timeoutMs = Number(process.env.SMOKE_TIMEOUT_MS ?? 30000)
+// Bài tự kiểm tra thiết bị nghe 4 giây, cộng các bước đổi ngôn ngữ và cài đặt -> 30s là quá sát.
+const timeoutMs = Number(process.env.SMOKE_TIMEOUT_MS ?? 90000)
 
 function fail(reason) {
   console.error(`SMOKE FAIL: ${reason}`)
@@ -41,6 +42,22 @@ app.whenReady().then(async () => {
     hasBridge: typeof window.callrec === 'object',
     bodyLen: document.body.innerText.trim().length,
   }))()`)
+
+  // Nút "Kiểm tra thiết bị" phải thật sự nối tới hàm chạy được. Môi trường này không có card âm
+  // thanh nên kết luận sẽ là thiếu thiết bị - đúng như vậy mới chứng minh cả đường đi đã chạy.
+  const selfTest = await win.webContents.executeJavaScript(`(async () => {
+    const button = [...document.querySelectorAll('button')].find(
+      (b) => ['Kiểm tra thiết bị', 'Test devices'].includes(b.textContent.trim()),
+    )
+    if (!button) return { error: 'không thấy nút Kiểm tra thiết bị' }
+    button.click()
+    for (let i = 0; i < 80; i++) {
+      await new Promise((r) => setTimeout(r, 250))
+      const alerts = [...document.querySelectorAll('.alert')].map((a) => a.textContent.trim())
+      if (button.disabled === false && alerts.length > 0) return { verdicts: alerts.length }
+    }
+    return { error: 'bấm kiểm tra thiết bị nhưng không có kết luận nào' }
+  })()`).catch((err) => ({ error: `lỗi khi kiểm tra thiết bị: ${err.message}` }))
 
   // Đổi ngôn ngữ bằng đúng cái select người dùng bấm, không gọi tắt qua IPC: chỉ đường này mới
   // chứng minh i18n nối thật tới giao diện chứ không chỉ có từ điển nằm trong file.
@@ -147,6 +164,7 @@ app.whenReady().then(async () => {
 
   clearTimeout(timer)
   const problems = []
+  if (selfTest.error) problems.push(selfTest.error)
   if (throttling !== false) problems.push(`backgroundThrottling phải tắt, đang là ${throttling}`)
   if (!hidden) problems.push('gọi window.hide() nhưng cửa sổ vẫn hiện')
   if (!shownAgain) problems.push('gọi window.show() nhưng cửa sổ không hiện lại')
@@ -190,6 +208,7 @@ app.whenReady().then(async () => {
       `gốc ổ đĩa → ${settingsChecks.rootNormalized} | ` +
       `lỗi hiện ra được: ${settingsChecks.errorShown} | ` +
       `ffmpeg: ${settingsChecks.ffmpegOk} | ` +
+      `tự kiểm tra thiết bị: ${selfTest.verdicts ?? 0} kết luận | ` +
       `ghi ngầm: ẩn/hiện ${hidden && shownAgain ? 'OK' : 'HỎNG'}, throttling=${throttling} | ` +
       `cập nhật: v${settingsChecks.updateVersion} → ${settingsChecks.updateState}`,
   )

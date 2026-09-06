@@ -2,8 +2,19 @@ import { useEffect, useState } from 'react'
 import type { CaptureSource, Settings } from '@shared/types'
 import { formatDuration } from '@shared/naming'
 import { listMics } from '../capture/engine'
+import { runSelfTest, type SelfTestOutcome } from '../capture/selftest'
+import { formatReport, type SelfTestVerdict } from '@shared/selftest'
 import { useRecorder } from '../state/useRecorder'
 import { useT, type Translator } from './i18n'
+import type { TranslationKey } from '@shared/i18n'
+
+const VERDICT_KEY: Record<SelfTestVerdict, TranslationKey> = {
+  ok: 'selftest.ok',
+  'mic-missing': 'selftest.micMissing',
+  'mic-silent': 'selftest.micSilent',
+  'system-missing': 'selftest.systemMissing',
+  'system-silent': 'selftest.systemSilent',
+}
 import { alertText } from './alertText'
 
 function Meter({ label, value }: { label: string; value: number }) {
@@ -22,6 +33,9 @@ function Meter({ label, value }: { label: string; value: number }) {
 export function RecordView({ settings, onSettings }: { settings: Settings; onSettings: (p: Partial<Settings>) => void }) {
   const t: Translator = useT()
   const [sources, setSources] = useState<CaptureSource[]>([])
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<SelfTestOutcome | null>(null)
+  const [copied, setCopied] = useState(false)
   const [mics, setMics] = useState<{ deviceId: string; label: string }[]>([])
   const r = useRecorder({
     quality: settings.quality,
@@ -32,6 +46,26 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
   })
 
   const refreshSources = () => void window.callrec.sources.list().then(setSources)
+
+  const selfTest = async () => {
+    setTesting(true)
+    setTestResult(null)
+    setCopied(false)
+    try {
+      setTestResult(await runSelfTest(settings.micDeviceId))
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  const copyDiagnostics = async () => {
+    if (!testResult) return
+    const { currentVersion } = await window.callrec.update.get()
+    await navigator.clipboard.writeText(
+      formatReport({ version: currentVersion, platform: navigator.userAgent, ...testResult }),
+    )
+    setCopied(true)
+  }
 
   useEffect(() => {
     refreshSources()
@@ -101,6 +135,28 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
 
         <Meter label={t('record.meterMe')} value={r.levels.mic} />
         <Meter label={t('record.meterThem')} value={r.levels.system} />
+
+        {/* Đặt ngay dưới hai thanh mức âm vì đây đúng là chỗ người dùng sinh nghi khi thấy chúng phẳng. */}
+        {!recording && (
+          <div className="col" style={{ gap: 8 }}>
+            <div className="row">
+              <button onClick={() => void selfTest()} disabled={testing}>{t('selftest.run')}</button>
+              {testResult && (
+                <button className="ghost" onClick={() => void copyDiagnostics()}>
+                  {copied ? t('selftest.copied') : t('selftest.copy')}
+                </button>
+              )}
+            </div>
+            <span className="muted" style={{ fontSize: 12 }}>
+              {testing ? t('selftest.running') : t('selftest.hint')}
+            </span>
+            {testResult?.verdicts.map((v) => (
+              <div key={v} className={v === 'ok' ? 'alert' : 'alert error'}>
+                <span>{t(VERDICT_KEY[v])}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {state === 'finalizing' && (
           <p className="muted">{t('record.exporting', { percent: r.progress?.percent ?? 0 })}</p>

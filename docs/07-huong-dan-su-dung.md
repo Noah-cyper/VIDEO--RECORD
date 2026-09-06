@@ -19,6 +19,15 @@ bản cài chưa được ký số — xem mục 6.
 
 ### Kiểm tra một lượt
 
+Nhanh nhất là bấm **Kiểm tra thiết bị** ngay dưới hai thanh mức âm. Nó nghe 4 giây rồi nói thẳng
+máy anh có bắt được tiếng cả hai bên hay không, và nếu không thì thiếu ở bên nào.
+
+Trong lúc kiểm tra hãy để một video phát ra loa và nói vài tiếng vào micro. Nếu kết quả có vấn đề,
+bấm **Sao chép chẩn đoán** rồi gửi lại — nó chỉ chứa tên thiết bị và mức tín hiệu, không có nội
+dung bản ghi hay đường dẫn cá nhân.
+
+### Hoặc kiểm tra thủ công
+
 Trước cuộc gọi quan trọng, hãy thử một lần:
 
 1. Mở một video YouTube bất kỳ cho có tiếng ra loa.

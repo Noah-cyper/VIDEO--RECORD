@@ -1,6 +1,6 @@
 {
   "name": "callrec",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Ghi âm và ghi hình cuộc gọi trên máy tính với âm thanh cả hai bên",
   "main": "./out/main/index.js",
   "author": "Noah-cyper",
