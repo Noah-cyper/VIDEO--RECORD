@@ -65,6 +65,7 @@ export const CH = {
   crashOpen: 'crash:open',
   crashClear: 'crash:clear',
 
+  ffmpegStatus: 'ffmpeg:status',
   whisperStatus: 'whisper:status',
   whisperRemoveModel: 'whisper:removeModel',
 
@@ -231,6 +232,7 @@ export interface CallrecApi {
     open(): Promise<void>
     clear(): Promise<void>
   }
+  ffmpeg: { available(): Promise<boolean> }
   whisper: {
     status(): Promise<WhisperStatus>
     removeModel(name: WhisperModelName): Promise<WhisperStatus>

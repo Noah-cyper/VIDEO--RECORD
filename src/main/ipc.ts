@@ -14,6 +14,7 @@ import { readTranscript, searchAllTranscripts, transcribeRecording } from './tra
 import { readTranslation, translateRecording } from './translate'
 import { CloudSummaryUnavailable, readSummary, summarizeRecording } from './summarize'
 import { modelInstalled, removeModel, whisperAvailable } from './whisper'
+import { ffmpegAvailable } from './ffmpeg'
 import { clearApiKey, hasApiKey, secureStorageAvailable, setApiKey } from './secrets'
 import { checkForUpdates, installUpdate, openReleasesPage, snapshot } from './updater'
 import { clearCrashDumps, countCrashDumps, openCrashDumpDir } from './crash'
@@ -216,6 +217,7 @@ export function registerIpc(): void {
   ipcMain.handle(CH.crashOpen, () => openCrashDumpDir())
   ipcMain.handle(CH.crashClear, () => clearCrashDumps())
 
+  ipcMain.handle(CH.ffmpegStatus, () => ffmpegAvailable())
   ipcMain.handle(CH.whisperStatus, () => whisperStatus())
   ipcMain.handle(CH.whisperRemoveModel, async (_e, name: unknown) => {
     await removeModel(assertModel(name))

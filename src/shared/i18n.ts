@@ -86,6 +86,13 @@ const vi = {
   'record.silenceMic': 'Micro không thu được tiếng suốt 30 giây. Kiểm tra thiết bị đầu vào.',
   'record.silenceSystem': 'Không nghe thấy tiếng đầu bên kia suốt 30 giây. Kiểm tra thiết bị phát.',
   'record.exportFailed': 'Không xuất được file. File thô vẫn được giữ lại.',
+  'record.noFfmpeg':
+    'Không tìm thấy FFmpeg nên ghi xong sẽ không xuất được file. Chưa bắt đầu ghi, để anh khỏi mất buổi ghi.',
+  'settings.tools': 'Công cụ đi kèm',
+  'settings.ffmpegOk': 'FFmpeg: sẵn sàng',
+  'settings.ffmpegMissing': 'FFmpeg: KHÔNG tìm thấy — sẽ không xuất được file sau khi ghi',
+  'settings.whisperOk': 'whisper.cpp: sẵn sàng',
+  'settings.whisperMissing': 'whisper.cpp: không có — chỉ ảnh hưởng tính năng gỡ băng',
 
   'library.search': 'Tìm theo tên hoặc ngày…',
   'library.empty': 'Chưa có bản ghi nào.',
@@ -271,6 +278,13 @@ const en: Record<TranslationKey, string> = {
   'record.silenceMic': 'The microphone has been silent for 30 seconds. Check your input device.',
   'record.silenceSystem': 'No sound from the other party for 30 seconds. Check your output device.',
   'record.exportFailed': 'Export failed. The raw files were kept.',
+  'record.noFfmpeg':
+    'FFmpeg was not found, so a recording could not be exported. Recording was not started, to avoid losing it.',
+  'settings.tools': 'Bundled tools',
+  'settings.ffmpegOk': 'FFmpeg: ready',
+  'settings.ffmpegMissing': 'FFmpeg: NOT found — recordings cannot be exported',
+  'settings.whisperOk': 'whisper.cpp: ready',
+  'settings.whisperMissing': 'whisper.cpp: missing — only affects transcription',
 
   'library.search': 'Search by name or date…',
   'library.empty': 'No recordings yet.',

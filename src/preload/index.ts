@@ -81,6 +81,7 @@ const api: CallrecApi & { onOrphans(cb: (m: SessionManifest[]) => void): () => v
     open: () => ipcRenderer.invoke(CH.crashOpen),
     clear: () => ipcRenderer.invoke(CH.crashClear),
   },
+  ffmpeg: { available: () => ipcRenderer.invoke(CH.ffmpegStatus) },
   whisper: {
     status: () => ipcRenderer.invoke(CH.whisperStatus),
     removeModel: (name: WhisperModelName) => ipcRenderer.invoke(CH.whisperRemoveModel, name),

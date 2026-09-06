@@ -48,6 +48,7 @@ export function SettingsView({
   const [crashes, setCrashes] = useState(0)
   const [dirDraft, setDirDraft] = useState(settings.recordingsDir)
   const [update, setUpdate] = useState<UpdateStatus | null>(null)
+  const [ffmpegOk, setFfmpegOk] = useState<boolean | null>(null)
   const [installError, setInstallError] = useState<string | null>(null)
 
   useEffect(() => setDirDraft(settings.recordingsDir), [settings.recordingsDir])
@@ -56,6 +57,7 @@ export function SettingsView({
     void window.callrec.whisper.status().then(setWhisper)
     void window.callrec.crash.count().then(setCrashes)
     void window.callrec.update.get().then(setUpdate)
+    void window.callrec.ffmpeg.available().then(setFfmpegOk)
     return window.callrec.update.onStatus(setUpdate)
   }, [])
 
@@ -224,6 +226,21 @@ export function SettingsView({
             )}
           </div>
         )}
+      </div>
+
+      <div className="panel col">
+        <strong>{t('settings.tools')}</strong>
+        {/* FFmpeg thiếu là hỏng cả việc ghi; whisper thiếu chỉ hỏng gỡ băng. Phân biệt rõ hai mức. */}
+        {ffmpegOk === null ? (
+          <p className="muted">{t('settings.checking')}</p>
+        ) : ffmpegOk ? (
+          <p className="muted">{t('settings.ffmpegOk')}</p>
+        ) : (
+          <div className="alert error"><span>{t('settings.ffmpegMissing')}</span></div>
+        )}
+        <p className="muted">
+          {t(whisper?.binaryAvailable ? 'settings.whisperOk' : 'settings.whisperMissing')}
+        </p>
       </div>
 
       <div className="panel col">

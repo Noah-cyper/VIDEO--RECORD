@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { CaptureAlert, ExportProgress, QualityPreset, Recording, StreamKind } from '@shared/types'
+import type { CaptureAlert, QualityPreset, Recording, StreamKind } from '@shared/types'
+import type { ExportProgress } from '@shared/types'
 import { elapsedMs as computeElapsed } from '@shared/time'
 import { initialContext, reduce, type RecordContext, type RecordEvent } from '@shared/machine'
 import { CaptureEngine, playConsentNotice, type Levels } from '../capture/engine'
@@ -52,7 +53,16 @@ export function useRecorder(options: RecorderOptions) {
     window.callrec.reportState(ctx.state, elapsed)
   }, [ctx.state, elapsed])
 
-  useEffect(() => window.callrec.exportRecording.onProgress(setProgress), [])
+  // Giữ ref vì stop() đọc tiến độ trong callback, nơi state có thể đã cũ.
+  const progressRef = useRef<ExportProgress | null>(null)
+  useEffect(
+    () =>
+      window.callrec.exportRecording.onProgress((p) => {
+        progressRef.current = p
+        setProgress(p)
+      }),
+    [],
+  )
   useEffect(() => window.callrec.onAlert(pushAlert), [pushAlert])
 
   const selectSource = useCallback(
@@ -65,6 +75,12 @@ export function useRecorder(options: RecorderOptions) {
 
   const start = useCallback(async () => {
     const opts = optionsRef.current
+    // Thiếu FFmpeg thì ghi xong cũng không xuất được file. Chặn ở đây để người dùng biết TRƯỚC,
+    // chứ không phải sau khi đã ghi xong một cuộc gọi rồi mất nó.
+    if (!(await window.callrec.ffmpeg.available())) {
+      pushAlert({ kind: 'stream-error', messageKey: 'record.noFfmpeg' })
+      return
+    }
     const disk = await window.callrec.disk.status(opts.quality)
     if (!disk.canRecord) {
       pushAlert({ kind: 'disk-low', messageKey: 'record.diskFull' })
@@ -143,7 +159,9 @@ export function useRecorder(options: RecorderOptions) {
     const recording = await window.callrec.session.close({ sessionId: id, durationMs: finalElapsed })
     sessionRef.current = null
     setLastRecording(recording)
-    send(recording ? { type: 'FINALIZED' } : { type: 'FAIL', error: 'record.exportFailed' })
+    // Lý do thật đã về qua kênh tiến độ; hiện nó thay vì một câu chung chung vô dụng.
+    const detail = progressRef.current?.phase === 'error' ? progressRef.current.message : undefined
+    send(recording ? { type: 'FINALIZED' } : { type: 'FAIL', error: detail || 'record.exportFailed' })
   }, [elapsed, send])
 
   const bookmark = useCallback(async () => {

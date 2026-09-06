@@ -56,10 +56,22 @@ export async function exportSession(
   try {
     const videoCodec = videoCodecFor(manifest.streams.video?.mimeType)
     onProgress({ sessionId, phase: 'normalizing', percent: 0 })
-    await runFfmpeg(buildExportArgs({ inputs, offsetsMs, output, videoCodec }), {
-      totalMs: durationMs,
-      onProgress: (percent) => onProgress({ sessionId, phase: 'muxing', percent }),
-    })
+
+    const mux = (codec: 'copy' | 'h264') =>
+      runFfmpeg(buildExportArgs({ inputs, offsetsMs, output, videoCodec: codec }), {
+        totalMs: durationMs,
+        onProgress: (percent) => onProgress({ sessionId, phase: 'muxing', percent }),
+      })
+
+    try {
+      await mux(videoCodec)
+    } catch (err) {
+      // Chromium có thể sinh codec mà container đích không nhận (h264 trong webm là ca hay gặp).
+      // Chép thẳng hỏng thì encode lại: chậm hơn nhiều nhưng cứu được buổi ghi.
+      if (videoCodec !== 'copy' || !hasVideo) throw err
+      onProgress({ sessionId, phase: 'muxing', percent: 0, message: 'Chép thẳng không được, đang encode lại…' })
+      await mux('h264')
+    }
 
     if (hasVideo) {
       onProgress({ sessionId, phase: 'thumbnail', percent: 99 })
@@ -95,7 +107,7 @@ export async function exportSession(
     onProgress({ sessionId, phase: 'done', percent: 100 })
     return recording
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
+    const message = `${err instanceof Error ? err.message : String(err)} — file thô vẫn còn, mở lại ứng dụng sẽ có nút xuất lại.`
     await setState(sessionId, 'error', message)
     // Giữ nguyên thư mục thô để người dùng thử xuất lại, đừng dọn khi chưa có file đích.
     onProgress({ sessionId, phase: 'error', percent: 0, message })

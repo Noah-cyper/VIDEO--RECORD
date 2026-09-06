@@ -22,7 +22,9 @@ export function whisperPath(): string {
   const name = process.platform === 'win32' ? 'whisper-cli.exe' : 'whisper-cli'
   const candidates = app.isPackaged
     ? [join(process.resourcesPath, 'whisper', name)]
-    : [join(app.getAppPath(), 'resources', 'whisper', name)]
+    // Không dùng app.getAppPath() ở đây: chạy chưa đóng gói nó trỏ vào thư mục script, không phải
+    // gốc dự án - đúng lỗi đã làm preflight FFmpeg báo nhầm là thiếu.
+    : [join(process.cwd(), 'resources', 'whisper', name), join(app.getAppPath(), 'resources', 'whisper', name)]
   for (const c of candidates) if (existsSync(c)) return c
   return name
 }

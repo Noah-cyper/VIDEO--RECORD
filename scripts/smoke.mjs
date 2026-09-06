@@ -118,6 +118,7 @@ app.whenReady().then(async () => {
     await window.callrec.settings.set({ recordingsDir: before })
 
     // Nút "Kiểm tra bản mới" phải luôn trả về một trạng thái đọc được, không được im lặng.
+    const ffmpegOk = await window.callrec.ffmpeg.available()
     const beforeCheck = await window.callrec.update.get()
     const afterCheck = await window.callrec.update.check()
 
@@ -128,6 +129,7 @@ app.whenReady().then(async () => {
     return {
       before, saved, wanted, managed: perms.managed, grantButton, errorShown,
       rootNormalized,
+      ffmpegOk,
       updateVersion: beforeCheck.currentVersion,
       updateState: afterCheck.state,
     }
@@ -159,6 +161,8 @@ app.whenReady().then(async () => {
       problems.push(`phiên bản hiện tại sai: hiện ${settingsChecks.updateVersion}, đúng ra là ${pkgVersion}`)
     }
     // Chạy từ mã nguồn thì phải nói rõ là không có kênh cập nhật, chứ không phải đứng im.
+    // Môi trường dựng có ffmpeg-static nên preflight phải trả về true; false nghĩa là đường dẫn hỏng.
+    if (settingsChecks.ffmpegOk !== true) problems.push('preflight FFmpeg báo không có')
     if (settingsChecks.updateState !== 'unsupported') {
       problems.push(`kiểm tra cập nhật trả về trạng thái lạ: ${settingsChecks.updateState}`)
     }
@@ -172,6 +176,7 @@ app.whenReady().then(async () => {
       `nút cấp quyền ẩn đúng: ${!settingsChecks.grantButton} | ` +
       `gốc ổ đĩa → ${settingsChecks.rootNormalized} | ` +
       `lỗi hiện ra được: ${settingsChecks.errorShown} | ` +
+      `ffmpeg: ${settingsChecks.ffmpegOk} | ` +
       `cập nhật: v${settingsChecks.updateVersion} → ${settingsChecks.updateState}`,
   )
   app.exit(0)

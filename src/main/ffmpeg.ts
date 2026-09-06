@@ -5,23 +5,50 @@ import { join } from 'node:path'
 import { parseProgress, percentFrom, type FfmpegProgress } from '@shared/ffmpeg'
 
 /** Sidecar đi kèm app; khi dev thì lấy từ resources/, khi đóng gói thì từ process.resourcesPath. */
-export function ffmpegPath(): string {
+/**
+ * Danh sách nơi đã tìm, trả ra được để thông báo lỗi nói rõ "đã tìm ở đâu" thay vì chỉ "không thấy".
+ * Không dựa vào app.getAppPath(): khi chạy chưa đóng gói nó trỏ vào thư mục của script đang chạy,
+ * không phải gốc dự án.
+ */
+export function ffmpegCandidates(): string[] {
   const name = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'
-  const candidates = app.isPackaged
-    ? [join(process.resourcesPath, 'ffmpeg', name)]
-    : [
-        join(app.getAppPath(), 'resources', 'ffmpeg', name),
-        // ffmpeg-static là devDependency: nhờ nó mà `npm run dev` chạy được ngay, không bắt
-        // lập trình viên tự tải binary. Bản đóng gói không có nó nên nhánh này chỉ dùng khi dev.
-        join(app.getAppPath(), 'node_modules', 'ffmpeg-static', name),
-      ]
-  for (const c of candidates) if (existsSync(c)) return c
-  return name // để PATH lo, hữu ích khi dev trên máy đã cài sẵn ffmpeg
+  if (app.isPackaged) return [join(process.resourcesPath, 'ffmpeg', name)]
+  return [
+    join(process.cwd(), 'resources', 'ffmpeg', name),
+    join(process.cwd(), 'node_modules', 'ffmpeg-static', name),
+    join(app.getAppPath(), 'resources', 'ffmpeg', name),
+    join(app.getAppPath(), 'node_modules', 'ffmpeg-static', name),
+  ]
+}
+
+export function ffmpegPath(): string {
+  for (const c of ffmpegCandidates()) if (existsSync(c)) return c
+  return process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg' // để PATH lo
+}
+
+let available: boolean | null = null
+
+/**
+ * Chạy thử thật, không suy từ đường dẫn. Biết trước khi ghi quan trọng hơn nhiều so với biết
+ * sau khi người dùng đã ghi xong một cuộc gọi và mất nó ở bước xuất file.
+ */
+export async function ffmpegAvailable(): Promise<boolean> {
+  if (available !== null) return available
+  available = await new Promise<boolean>((resolve) => {
+    const child = spawn(ffmpegPath(), ['-version'], { stdio: 'ignore' })
+    child.on('error', () => resolve(false))
+    child.on('close', (code) => resolve(code === 0))
+  })
+  return available
 }
 
 export class FfmpegMissingError extends Error {
   constructor() {
-    super('Không tìm thấy FFmpeg. Đặt binary vào resources/ffmpeg/ hoặc cài FFmpeg vào PATH.')
+    super(
+      'Không tìm thấy FFmpeg. Đã tìm ở:\n' +
+        ffmpegCandidates().map((c) => `  ${c}`).join('\n') +
+        '\nvà trong PATH.',
+    )
     this.name = 'FfmpegMissingError'
   }
 }

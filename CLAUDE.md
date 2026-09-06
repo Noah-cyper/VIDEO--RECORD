@@ -25,7 +25,7 @@ loopback/system audio (giọng đầu bên kia), kèm video màn hình.
 
 ```bash
 npm run dev        # chạy app
-npm test           # 132 test; cần ffmpeg-static (đã có trong devDependencies)
+npm test           # 170 test; cần ffmpeg-static (đã có trong devDependencies)
 npm run typecheck
 npm run lint
 npm run smoke      # bật app thật dưới Xvfb, kiểm cả việc đổi ngôn ngữ
@@ -41,6 +41,10 @@ Trước khi coi là xong: `lint`, `typecheck`, `test`, `smoke` — cả bốn.
 - `src/renderer/` — Web API media và giao diện.
 
 ## Sidecar
+
+Đừng dùng `app.getAppPath()` để dò sidecar: khi chạy chưa đóng gói nó trỏ vào thư mục của script
+đang chạy chứ không phải gốc dự án. Dùng `process.resourcesPath` khi đã đóng gói và `process.cwd()`
+khi chưa.
 
 - **FFmpeg**: bắt buộc. Khi dev tự lấy từ `node_modules/ffmpeg-static`. Khi đóng gói phải nằm ở
   `resources/ffmpeg/`.
