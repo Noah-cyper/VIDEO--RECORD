@@ -15,6 +15,7 @@ function defaults(): Settings {
     micDeviceId: null,
     language: 'vi',
     playConsentNotice: true,
+    hideWhileRecording: true,
     allowCloudSummary: false,
   }
 }

@@ -30,10 +30,25 @@ export function createMainWindow(): BrowserWindow {
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#12131a',
-    webPreferences: { preload: preload(), sandbox: true, contextIsolation: true, nodeIntegration: false },
+    webPreferences: {
+      preload: preload(),
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+      // Bắt buộc cho chế độ ghi ngầm: Chromium bóp ga cửa sổ bị ẩn, và ghi hình thì đồng hồ
+      // cùng vòng ghi chunk phải chạy đều bất kể cửa sổ có hiện hay không.
+      backgroundThrottling: false,
+    },
   })
 
   mainWindow.on('ready-to-show', () => mainWindow?.show())
+
+  // Đóng cửa sổ giữa lúc đang ghi thì lui xuống khay, KHÔNG thoát. Thoát ở đây là mất buổi ghi.
+  mainWindow.on('close', (event) => {
+    if (!isBusyRecording()) return
+    event.preventDefault()
+    mainWindow?.hide()
+  })
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     // Chỉ http/https. Mở bừa mọi scheme nghĩa là một link file:// hay ms-msdt: cũng được hệ điều
     // hành thi hành giúp.
@@ -61,6 +76,18 @@ export function getMainWindow(): BrowserWindow | null {
 /** Cập nhật, thoát app hay bất cứ thao tác gián đoạn nào đều phải hỏi cái này trước. */
 export function isBusyRecording(): boolean {
   return indicatorRequired(lastState)
+}
+
+/** Ghi ngầm: cửa sổ chính lui xuống khay, overlay chỉ báo vẫn ở lại (FR-08). */
+export function hideMainWindow(): void {
+  mainWindow?.hide()
+}
+
+export function showMainWindow(): void {
+  if (!mainWindow) return
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.show()
+  mainWindow.focus()
 }
 
 /**

@@ -81,6 +81,10 @@ const api: CallrecApi & { onOrphans(cb: (m: SessionManifest[]) => void): () => v
     open: () => ipcRenderer.invoke(CH.crashOpen),
     clear: () => ipcRenderer.invoke(CH.crashClear),
   },
+  window: {
+    hide: () => ipcRenderer.invoke(CH.windowHide),
+    show: () => ipcRenderer.invoke(CH.windowShow),
+  },
   ffmpeg: { available: () => ipcRenderer.invoke(CH.ffmpegStatus) },
   whisper: {
     status: () => ipcRenderer.invoke(CH.whisperStatus),

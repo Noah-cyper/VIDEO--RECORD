@@ -100,6 +100,8 @@ export interface Settings {
   micDeviceId: string | null
   language: 'vi' | 'en'
   playConsentNotice: boolean
+  /** Ghi ngầm: tự thu cửa sổ xuống khay khi bắt đầu ghi, để màn hình đang ghi không bị che. */
+  hideWhileRecording: boolean
   /** Không bao giờ mặc định bật: gửi dữ liệu ra ngoài phải là hành động có ý thức (NFR-06). */
   allowCloudSummary: boolean
 }

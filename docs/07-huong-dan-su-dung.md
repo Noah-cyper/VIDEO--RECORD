@@ -37,6 +37,19 @@ Nếu chỉ một thanh nhảy thì xem mục 5.
 4. Một ô nhỏ nổi lên góc màn hình báo đang ghi. **Ô này không tắt được** — đó là chủ đích:
    ai nhìn màn hình bạn cũng phải thấy được là đang có ghi hình.
 
+### Ghi ngầm
+
+Mặc định CallRec **tự thu xuống khay hệ thống** ngay khi bắt đầu ghi, để cửa sổ của nó không che
+màn hình anh đang ghi. Bản ghi vẫn chạy bình thường.
+
+- Mở lại: nhấn icon CallRec ở khay hệ thống, hoặc chuột phải vào icon để dừng/tạm dừng ngay từ đó.
+- Đóng cửa sổ (dấu X) giữa lúc đang ghi **chỉ thu xuống khay**, không làm mất bản ghi. Muốn thoát
+  hẳn thì dừng ghi trước, hoặc chọn Thoát trong menu khay.
+- Ô chỉ báo đang ghi vẫn ở nguyên góc màn hình — nó không tắt được, kể cả ở chế độ ngầm.
+
+Tắt hành vi này ở **Cài đặt → "Tự thu cửa sổ xuống khay khi bắt đầu ghi"** nếu anh muốn giữ cửa sổ
+trên màn hình.
+
 Trong lúc ghi:
 
 | Thao tác | Phím tắt |

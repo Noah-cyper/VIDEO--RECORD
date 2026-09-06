@@ -152,6 +152,19 @@ export function SettingsView({
         <label className="check">
           <input
             type="checkbox"
+            checked={settings.hideWhileRecording}
+            onChange={(e) => onSettings({ hideWhileRecording: e.target.checked })}
+          />
+          <span>
+            {t('settings.hideWhileRecording')}
+            <br />
+            <span className="muted">{t('settings.hideWhileRecordingHint')}</span>
+          </span>
+        </label>
+
+        <label className="check">
+          <input
+            type="checkbox"
             checked={settings.playConsentNotice}
             onChange={(e) => onSettings({ playConsentNotice: e.target.checked })}
           />

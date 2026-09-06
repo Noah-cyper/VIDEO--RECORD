@@ -135,8 +135,21 @@ app.whenReady().then(async () => {
     }
   })()`).catch((err) => ({ error: `lỗi khi kiểm cài đặt: ${err.message}` }))
 
+  // Ghi ngầm: cửa sổ phải ẩn/hiện được qua IPC, và throttling phải tắt - Chromium bóp ga cửa sổ
+  // bị ẩn, mà ghi ngầm thì đồng hồ và vòng ghi chunk vẫn phải chạy đều.
+  const throttling = win.webContents.backgroundThrottling
+  await win.webContents.executeJavaScript('window.callrec.window.hide()')
+  await new Promise((r) => setTimeout(r, 400))
+  const hidden = !win.isVisible()
+  await win.webContents.executeJavaScript('window.callrec.window.show()')
+  await new Promise((r) => setTimeout(r, 400))
+  const shownAgain = win.isVisible()
+
   clearTimeout(timer)
   const problems = []
+  if (throttling !== false) problems.push(`backgroundThrottling phải tắt, đang là ${throttling}`)
+  if (!hidden) problems.push('gọi window.hide() nhưng cửa sổ vẫn hiện')
+  if (!shownAgain) problems.push('gọi window.show() nhưng cửa sổ không hiện lại')
   if (!probe.hasBridge) problems.push('contextBridge không lộ ra window.callrec')
   if (probe.tabs.length !== 3) problems.push(`mong đợi 3 tab, nhận được ${JSON.stringify(probe.tabs)}`)
   if (probe.bodyLen < 20) problems.push('renderer không dựng được nội dung')
@@ -177,6 +190,7 @@ app.whenReady().then(async () => {
       `gốc ổ đĩa → ${settingsChecks.rootNormalized} | ` +
       `lỗi hiện ra được: ${settingsChecks.errorShown} | ` +
       `ffmpeg: ${settingsChecks.ffmpegOk} | ` +
+      `ghi ngầm: ẩn/hiện ${hidden && shownAgain ? 'OK' : 'HỎNG'}, throttling=${throttling} | ` +
       `cập nhật: v${settingsChecks.updateVersion} → ${settingsChecks.updateState}`,
   )
   app.exit(0)

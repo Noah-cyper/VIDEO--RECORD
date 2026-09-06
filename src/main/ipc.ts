@@ -25,7 +25,7 @@ import { diskStatus, exportSession, extractAudio } from './exporter'
 import { getSettings, setSettings } from './settings'
 import { checkPermissions, requestPermissions } from './permissions'
 import { listSources, pickSource, pickedSourceName } from './sources'
-import { broadcast, getMainWindow, syncIndicator } from './windows'
+import { broadcast, getMainWindow, hideMainWindow, showMainWindow, syncIndicator } from './windows'
 import { mediaUrl } from './media-protocol'
 import { updateTray } from './tray'
 
@@ -217,6 +217,8 @@ export function registerIpc(): void {
   ipcMain.handle(CH.crashOpen, () => openCrashDumpDir())
   ipcMain.handle(CH.crashClear, () => clearCrashDumps())
 
+  ipcMain.handle(CH.windowHide, () => hideMainWindow())
+  ipcMain.handle(CH.windowShow, () => showMainWindow())
   ipcMain.handle(CH.ffmpegStatus, () => ffmpegAvailable())
   ipcMain.handle(CH.whisperStatus, () => whisperStatus())
   ipcMain.handle(CH.whisperRemoveModel, async (_e, name: unknown) => {

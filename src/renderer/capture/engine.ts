@@ -182,9 +182,11 @@ export class CaptureEngine {
         if (silentMs === 0) this.alerted.delete(kind)
       }
       this.cb.onLevels(levels)
-      this.timer = requestAnimationFrame(tick)
     }
-    this.timer = requestAnimationFrame(tick)
+    // setInterval chứ không phải requestAnimationFrame: rAF ngừng khi cửa sổ bị ẩn, mà chế độ ghi
+    // ngầm cần cảnh báo "không nghe thấy tiếng đầu bên kia" vẫn hoạt động. 100ms cũng đủ mượt cho
+    // thanh mức âm và nhẹ hơn 60fps.
+    this.timer = window.setInterval(tick, 100)
   }
 
   pause(): void {
@@ -197,7 +199,7 @@ export class CaptureEngine {
 
   /** requestData trước khi stop để chunk cuối không bị mất. */
   async stop(): Promise<void> {
-    if (this.timer !== null) cancelAnimationFrame(this.timer)
+    if (this.timer !== null) window.clearInterval(this.timer)
     this.timer = null
 
     await Promise.all(

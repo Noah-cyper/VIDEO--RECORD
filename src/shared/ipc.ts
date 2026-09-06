@@ -65,6 +65,8 @@ export const CH = {
   crashOpen: 'crash:open',
   crashClear: 'crash:clear',
 
+  windowHide: 'window:hide',
+  windowShow: 'window:show',
   ffmpegStatus: 'ffmpeg:status',
   whisperStatus: 'whisper:status',
   whisperRemoveModel: 'whisper:removeModel',
@@ -232,6 +234,7 @@ export interface CallrecApi {
     open(): Promise<void>
     clear(): Promise<void>
   }
+  window: { hide(): Promise<void>; show(): Promise<void> }
   ffmpeg: { available(): Promise<boolean> }
   whisper: {
     status(): Promise<WhisperStatus>

@@ -88,6 +88,12 @@ const vi = {
   'record.exportFailed': 'Không xuất được file. File thô vẫn được giữ lại.',
   'record.noFfmpeg':
     'Không tìm thấy FFmpeg nên ghi xong sẽ không xuất được file. Chưa bắt đầu ghi, để anh khỏi mất buổi ghi.',
+  'record.minimize': 'Thu nhỏ xuống khay',
+  'record.backgroundHint':
+    'Cửa sổ lui xuống khay, bản ghi vẫn chạy. Mở lại bằng icon khay hệ thống hoặc Ctrl+Shift+R để dừng.',
+  'settings.hideWhileRecording': 'Tự thu cửa sổ xuống khay khi bắt đầu ghi.',
+  'settings.hideWhileRecordingHint':
+    'Để màn hình đang ghi không bị cửa sổ CallRec che. Ô chỉ báo đang ghi vẫn ở lại, và đóng cửa sổ giữa lúc ghi cũng chỉ thu xuống khay chứ không làm mất bản ghi.',
   'settings.tools': 'Công cụ đi kèm',
   'settings.ffmpegOk': 'FFmpeg: sẵn sàng',
   'settings.ffmpegMissing': 'FFmpeg: KHÔNG tìm thấy — sẽ không xuất được file sau khi ghi',
@@ -280,6 +286,12 @@ const en: Record<TranslationKey, string> = {
   'record.exportFailed': 'Export failed. The raw files were kept.',
   'record.noFfmpeg':
     'FFmpeg was not found, so a recording could not be exported. Recording was not started, to avoid losing it.',
+  'record.minimize': 'Minimize to tray',
+  'record.backgroundHint':
+    'The window goes to the tray and recording keeps running. Bring it back from the tray icon, or press Ctrl+Shift+R to stop.',
+  'settings.hideWhileRecording': 'Minimize to the tray when recording starts.',
+  'settings.hideWhileRecordingHint':
+    'Keeps the CallRec window out of the screen you are recording. The recording indicator stays visible, and closing the window mid-recording only hides it — the recording is not lost.',
   'settings.tools': 'Bundled tools',
   'settings.ffmpegOk': 'FFmpeg: ready',
   'settings.ffmpegMissing': 'FFmpeg: NOT found — recordings cannot be exported',

@@ -28,6 +28,7 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
     micDeviceId: settings.micDeviceId,
     language: settings.language,
     playConsent: settings.playConsentNotice,
+    hideWhileRecording: settings.hideWhileRecording,
   })
 
   const refreshSources = () => void window.callrec.sources.list().then(setSources)
@@ -89,11 +90,14 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
               <>
                 <button onClick={r.pause}>{t(state === 'paused' ? 'record.resume' : 'record.pause')}</button>
                 <button onClick={() => void r.bookmark()}>{t('record.bookmark')}</button>
+                <button onClick={() => void window.callrec.window.hide()}>{t('record.minimize')}</button>
                 <button className="danger" onClick={() => void r.stop()}>{t('record.stop')}</button>
               </>
             )}
           </div>
         </div>
+
+        {recording && <span className="muted" style={{ fontSize: 12 }}>{t('record.backgroundHint')}</span>}
 
         <Meter label={t('record.meterMe')} value={r.levels.mic} />
         <Meter label={t('record.meterThem')} value={r.levels.system} />

@@ -10,6 +10,7 @@ export interface RecorderOptions {
   micDeviceId: string | null
   language: 'vi' | 'en'
   playConsent: boolean
+  hideWhileRecording: boolean
 }
 
 export function useRecorder(options: RecorderOptions) {
@@ -133,6 +134,8 @@ export function useRecorder(options: RecorderOptions) {
     send({ type: 'START' })
 
     if (opts.playConsent) void playConsentNotice(opts.language)
+    // Lui xuống khay SAU khi đã bắt đầu ghi, để câu thông báo đồng ý kịp phát ra loa trước.
+    if (opts.hideWhileRecording) void window.callrec.window.hide()
   }, [pushAlert, send])
 
   const pause = useCallback(() => {
@@ -156,6 +159,8 @@ export function useRecorder(options: RecorderOptions) {
     engineRef.current = null
     if (!id) return send({ type: 'FINALIZED' })
 
+    // Ghi xong thì hiện lại cửa sổ: người dùng cần thấy kết quả hoặc lý do hỏng.
+    void window.callrec.window.show()
     const recording = await window.callrec.session.close({ sessionId: id, durationMs: finalElapsed })
     sessionRef.current = null
     setLastRecording(recording)

@@ -47,6 +47,8 @@ if (!app.requestSingleInstanceLock()) {
   })
 
   app.on('window-all-closed', () => {
+    // Đang ghi thì cửa sổ chỉ bị ẩn chứ không đóng, nên nhánh này không chạy; giữ nguyên hành vi
+    // quen thuộc của Windows cho trường hợp còn lại.
     if (process.platform !== 'darwin') app.quit()
   })
 

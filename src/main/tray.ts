@@ -1,7 +1,7 @@
 import { app, globalShortcut, Menu, nativeImage, Tray } from 'electron'
 import type { RecordState } from '@shared/types'
 import { indicatorRequired } from '@shared/machine'
-import { getMainWindow, sendCommand } from './windows'
+import { sendCommand, showMainWindow } from './windows'
 
 let tray: Tray | null = null
 let current: RecordState = 'idle'
@@ -22,7 +22,7 @@ function menu(): Electron.Menu {
     { label: 'Tạm dừng / tiếp tục', enabled: busy, click: () => sendCommand('pause') },
     { label: 'Đánh dấu mốc', enabled: busy, click: () => sendCommand('bookmark') },
     { type: 'separator' },
-    { label: 'Mở CallRec', click: () => getMainWindow()?.show() },
+    { label: 'Mở CallRec', click: () => showMainWindow() },
     { label: 'Thoát', click: () => app.quit() },
   ])
 }
@@ -31,7 +31,7 @@ export function createTray(): void {
   tray = new Tray(icon(false))
   tray.setToolTip('CallRec')
   tray.setContextMenu(menu())
-  tray.on('click', () => getMainWindow()?.show())
+  tray.on('click', () => showMainWindow())
 }
 
 export function updateTray(state: RecordState): void {
