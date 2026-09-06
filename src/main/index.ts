@@ -6,7 +6,7 @@ import { createTray, registerShortcuts, unregisterShortcuts, updateTray } from '
 import { closeAllWriters, findOrphans, hasOpenWriters } from './storage'
 import { installMediaProtocol, registerMediaScheme } from './media-protocol'
 import { initCrashReporter } from './crash'
-import { initUpdater } from './updater'
+import { initUpdater, stopUpdateTimers } from './updater'
 
 // Ghi cuộc gọi là tác vụ chỉ nên có một phiên bản chạy: hai instance sẽ tranh nhau thiết bị.
 // crashReporter phải khởi động trước khi app ready mới bắt được crash lúc khởi động.
@@ -55,6 +55,7 @@ if (!app.requestSingleInstanceLock()) {
   let flushed = false
   app.on('before-quit', (event) => {
     unregisterShortcuts()
+    stopUpdateTimers()
     // Handler đồng bộ: Electron không chờ promise, nên phải hoãn thoát rồi tự exit sau khi
     // flush xong - bỏ bước này là mất tối đa 5 giây cuối của bản ghi (NFR-03).
     if (flushed || !hasOpenWriters()) return

@@ -42,6 +42,11 @@ const vi = {
   'update.downloading': 'Đang tải bản {version} — {percent}%',
   'update.readyToInstall': 'Bản {version} đã tải xong, sẵn sàng cài.',
   'update.install': 'Cài đặt và khởi động lại',
+  'update.autoInstallIn': 'Bản {version} sẽ tự cài và khởi động lại sau {sec} giây.',
+  'update.defer': 'Hoãn',
+  'settings.autoInstall': 'Tự cài bản mới ngay khi tải xong.',
+  'settings.autoInstallHint':
+    'Chỉ cài khi không ghi, và luôn đếm ngược 20 giây để kịp hoãn. Đang ghi thì đợi tới lúc dừng ghi.',
   'update.installBusy': 'Đang ghi — dừng bản ghi trước rồi mới cài được.',
   'update.unsupported': 'Bản chạy từ mã nguồn không có kênh cập nhật; chỉ bản đã cài mới tự cập nhật được.',
   'update.failed': 'Không kiểm tra được bản mới: {reason}',
@@ -240,6 +245,11 @@ const en: Record<TranslationKey, string> = {
   'update.downloading': 'Downloading {version} — {percent}%',
   'update.readyToInstall': 'Version {version} is downloaded and ready to install.',
   'update.install': 'Install and restart',
+  'update.autoInstallIn': 'Version {version} installs and restarts in {sec} seconds.',
+  'update.defer': 'Postpone',
+  'settings.autoInstall': 'Install new versions automatically once downloaded.',
+  'settings.autoInstallHint':
+    'Only while not recording, and always after a 20-second countdown you can cancel. If a recording is running it waits until you stop.',
   'update.installBusy': 'Recording in progress — stop the recording before installing.',
   'update.unsupported': 'Running from source has no update channel; only an installed build updates itself.',
   'update.failed': 'Could not check for updates: {reason}',

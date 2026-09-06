@@ -2,6 +2,15 @@ import { app, shell } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { CH, type UpdateStatus } from '@shared/ipc'
 import { broadcast, isBusyRecording } from './windows'
+import { getSettings } from './settings'
+
+/** Kiểm tra định kỳ; 30 phút đủ nhanh để bản vá tới tay trong ngày mà không quấy máy chủ. */
+const CHECK_INTERVAL_MS = 30 * 60 * 1000
+/** Đếm ngược trước khi tự khởi động lại - đủ để bấm Hoãn nếu đang làm dở việc gì. */
+const AUTO_INSTALL_DELAY_SEC = 20
+
+let periodic: NodeJS.Timeout | null = null
+let countdown: NodeJS.Timeout | null = null
 
 export const RELEASES_URL = 'https://github.com/Noah-cyper/VIDEO--RECORD/releases'
 
@@ -65,10 +74,51 @@ export function initUpdater(): void {
   autoUpdater.on('download-progress', (p) =>
     publish({ state: 'downloading', percent: Math.round(p.percent), bytesPerSecond: p.bytesPerSecond }),
   )
-  autoUpdater.on('update-downloaded', (info) => publish({ state: 'downloaded', version: info.version, percent: 100 }))
+  autoUpdater.on('update-downloaded', (info) => {
+    publish({ state: 'downloaded', version: info.version, percent: 100 })
+    void maybeAutoInstall()
+  })
   autoUpdater.on('error', (err) => publish({ state: 'error', message: explain(err.message) }))
 
   void checkForUpdates()
+  periodic = setInterval(() => void checkForUpdates(), CHECK_INTERVAL_MS)
+}
+
+/**
+ * Tự cài chỉ khi đang rảnh. Đang ghi thì bỏ qua và thử lại lúc dừng ghi - khởi động lại giữa một
+ * cuộc gọi là hỏng đúng thứ ứng dụng này tồn tại để làm.
+ */
+async function maybeAutoInstall(): Promise<void> {
+  if (state.state !== 'downloaded' || countdown) return
+  if (isBusyRecording()) return
+  const { autoInstallUpdates } = await getSettings()
+  if (!autoInstallUpdates) return
+
+  let left = AUTO_INSTALL_DELAY_SEC
+  publish({ autoInstallInSec: left })
+  countdown = setInterval(() => {
+    left -= 1
+    if (left > 0) return publish({ autoInstallInSec: left })
+    cancelAutoInstall()
+    installUpdate()
+  }, 1000)
+}
+
+export function cancelAutoInstall(): void {
+  if (countdown) clearInterval(countdown)
+  countdown = null
+  publish({ autoInstallInSec: undefined })
+}
+
+/** Gọi mỗi khi trạng thái ghi đổi: vừa dừng ghi mà có bản chờ sẵn thì cài luôn. */
+export function onRecordingStateChanged(): void {
+  if (!isBusyRecording()) void maybeAutoInstall()
+}
+
+export function stopUpdateTimers(): void {
+  if (periodic) clearInterval(periodic)
+  periodic = null
+  cancelAutoInstall()
 }
 
 export async function checkForUpdates(): Promise<UpdateStatus> {
@@ -88,6 +138,7 @@ export async function checkForUpdates(): Promise<UpdateStatus> {
 export function installUpdate(): { ok: boolean; reason?: string } {
   if (state.state !== 'downloaded') return { ok: false, reason: 'Chưa tải xong bản cập nhật.' }
   if (isBusyRecording()) return { ok: false, reason: 'Đang ghi — dừng bản ghi trước rồi mới cập nhật được.' }
+  cancelAutoInstall()
   autoUpdater.quitAndInstall()
   return { ok: true }
 }

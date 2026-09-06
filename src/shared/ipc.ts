@@ -60,6 +60,7 @@ export const CH = {
   updateCheck: 'update:check',
   updateGet: 'update:get',
   updateOpenPage: 'update:openPage',
+  updateDefer: 'update:defer',
 
   crashCount: 'crash:count',
   crashOpen: 'crash:open',
@@ -150,6 +151,8 @@ export interface UpdateStatus {
   message?: string
   canInstall: boolean
   busyRecording: boolean
+  /** Số giây còn lại trước khi tự cài; không có nghĩa là không có đếm ngược nào đang chạy. */
+  autoInstallInSec?: number
 }
 
 export interface TranscriptHitDto {
@@ -226,6 +229,7 @@ export interface CallrecApi {
     get(): Promise<UpdateStatus>
     check(): Promise<UpdateStatus>
     install(): Promise<{ ok: boolean; reason?: string }>
+    defer(): Promise<void>
     openPage(): Promise<void>
     onStatus(cb: (s: UpdateStatus) => void): () => void
   }

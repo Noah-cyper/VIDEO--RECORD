@@ -16,7 +16,7 @@ import { CloudSummaryUnavailable, readSummary, summarizeRecording } from './summ
 import { modelInstalled, removeModel, whisperAvailable } from './whisper'
 import { ffmpegAvailable } from './ffmpeg'
 import { clearApiKey, hasApiKey, secureStorageAvailable, setApiKey } from './secrets'
-import { checkForUpdates, installUpdate, openReleasesPage, snapshot } from './updater'
+import { cancelAutoInstall, checkForUpdates, installUpdate, onRecordingStateChanged, openReleasesPage, snapshot } from './updater'
 import { clearCrashDumps, countCrashDumps, openCrashDumpDir } from './crash'
 import { trimRecording } from './trim'
 import * as storage from './storage'
@@ -211,6 +211,7 @@ export function registerIpc(): void {
 
   ipcMain.handle(CH.updateInstall, () => installUpdate())
   ipcMain.handle(CH.updateGet, () => snapshot())
+  ipcMain.handle(CH.updateDefer, () => cancelAutoInstall())
   ipcMain.handle(CH.updateCheck, () => checkForUpdates())
   ipcMain.handle(CH.updateOpenPage, () => openReleasesPage())
   ipcMain.handle(CH.crashCount, () => countCrashDumps())
@@ -241,5 +242,7 @@ export function registerIpc(): void {
   ipcMain.on(CH.stateChanged, (_e, state: RecordState, elapsedMs: number) => {
     syncIndicator(state, elapsedMs)
     updateTray(state)
+    // Vừa dừng ghi mà có bản cập nhật chờ sẵn thì đây là lúc cài được.
+    onRecordingStateChanged()
   })
 }

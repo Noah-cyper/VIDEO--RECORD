@@ -292,6 +292,19 @@ export function SettingsView({
             {t('update.openPage')}
           </button>
         </div>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={settings.autoInstallUpdates}
+            onChange={(e) => onSettings({ autoInstallUpdates: e.target.checked })}
+          />
+          <span>
+            {t('settings.autoInstall')}
+            <br />
+            <span className="muted">{t('settings.autoInstallHint')}</span>
+          </span>
+        </label>
+
         {update?.state === 'downloaded' && update.busyRecording && (
           <span className="muted" style={{ fontSize: 12 }}>{t('update.installBusy')}</span>
         )}

@@ -102,6 +102,8 @@ export interface Settings {
   playConsentNotice: boolean
   /** Ghi ngầm: tự thu cửa sổ xuống khay khi bắt đầu ghi, để màn hình đang ghi không bị che. */
   hideWhileRecording: boolean
+  /** Tự cài bản mới sau khi tải xong, khi không ghi. Vẫn có đếm ngược để kịp hoãn. */
+  autoInstallUpdates: boolean
   /** Không bao giờ mặc định bật: gửi dữ liệu ra ngoài phải là hành động có ý thức (NFR-06). */
   allowCloudSummary: boolean
 }

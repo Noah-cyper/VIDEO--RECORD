@@ -74,6 +74,7 @@ const api: CallrecApi & { onOrphans(cb: (m: SessionManifest[]) => void): () => v
     check: () => ipcRenderer.invoke(CH.updateCheck),
     openPage: () => ipcRenderer.invoke(CH.updateOpenPage),
     install: () => ipcRenderer.invoke(CH.updateInstall),
+    defer: () => ipcRenderer.invoke(CH.updateDefer),
     onStatus: (cb) => on(CH.updateStatus, cb),
   },
   crash: {

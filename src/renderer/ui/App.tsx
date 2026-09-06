@@ -126,9 +126,16 @@ function Shell({
         {update?.state === 'downloaded' && (
           <div className="alert">
             <span>
-              {t('update.downloaded', { version: update.version ?? '' })}
+              {update.autoInstallInSec !== undefined
+                ? t('update.autoInstallIn', { version: update.version ?? '', sec: update.autoInstallInSec })
+                : t('update.downloaded', { version: update.version ?? '' })}
               {updateError ? ` ${updateError}` : ''}
             </span>
+            {update.autoInstallInSec !== undefined && (
+              <button className="ghost" onClick={() => void window.callrec.update.defer()}>
+                {t('update.defer')}
+              </button>
+            )}
             <button
               onClick={() =>
                 void window.callrec.update.install().then((r) => setUpdateError(r.ok ? null : (r.reason ?? null)))

@@ -16,6 +16,7 @@ function defaults(): Settings {
     language: 'vi',
     playConsentNotice: true,
     hideWhileRecording: true,
+    autoInstallUpdates: true,
     allowCloudSummary: false,
   }
 }
