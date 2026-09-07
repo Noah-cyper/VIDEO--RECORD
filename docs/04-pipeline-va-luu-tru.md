@@ -155,6 +155,15 @@ Bậc 3 gần như tức thì và không mất chất lượng: WebM chứa đư
 MediaRecorder vừa sinh ra. Nó nằm sau bậc 2 vì MP4 mở được ở nhiều nơi hơn, nhưng khi encode lại
 hỏng — hoặc đứng im quá 2 phút và bị watchdog dừng — thì đây là đường ra nhanh nhất.
 
+Watchdog của FFmpeg là chưa đủ: các thao tác đĩa **trước** khi gọi FFmpeg cũng treo được. Ghi thử
+vào thư mục đích và đóng file thô đều có hạn 10 giây — ổ USB bị rút giữa chừng làm lời gọi `fs`
+treo hàng phút mà không báo lỗi gì, và một lời gọi treo ở đó nghĩa là giao diện đứng ở
+"Đang xuất file… 0%" trước cả khi FFmpeg kịp chạy. Quá hạn thì thôi chờ: thư mục đích chuyển sang
+chỗ dự phòng, file thô coi như đã đóng (phần đã ghi nằm sẵn trên đĩa rồi, cùng lắm mất chunk cuối).
+
+Và luôn có đường thoát bằng tay: nút **Huỷ xuất file** ngay cạnh thanh tiến độ. Huỷ đi vào đúng
+nhánh lỗi nên phần đã ghi vẫn được cứu thành file thô, không mất gì.
+
 Watchdog cần thiết vì không có nó, một lần FFmpeg treo là giao diện đứng vĩnh viễn ở
 "Đang xuất file… 0%" mà không có đường thoát nào. Watchdog chỉ bật ở các lệnh có `-progress`;
 lệnh ngắn như tạo thumbnail không in gì nên không canh được theo cách này.

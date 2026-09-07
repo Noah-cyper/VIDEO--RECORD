@@ -6,7 +6,10 @@ import type { Bookmark, RecordState, SessionManifest, StreamKind } from '@shared
 import { isValidSessionId, makeSessionId } from '@shared/naming'
 import { needsRecovery } from '@shared/machine'
 import type { OpenSessionInput, RegisterStreamInput } from '@shared/ipc'
+import { withTimeout } from '@shared/async'
 import { readJson, writeJson, exists } from './jsonstore'
+
+const CLOSE_TIMEOUT_MS = 10_000
 
 const FILE_OF: Record<StreamKind, string> = {
   mic: 'mic.webm',
@@ -114,6 +117,11 @@ export async function closeAllWriters(): Promise<void> {
   await Promise.all(pending)
 }
 
+/**
+ * Đóng stream có thể treo khi ổ đích không phản hồi (ổ USB rút giữa chừng). Chờ mãi ở đây nghĩa
+ * là đứng luôn trước khi kịp gọi FFmpeg - mà phần đã ghi thì đã nằm trên đĩa rồi, cùng lắm mất
+ * chunk cuối. Thôi chờ rồi đi tiếp vẫn hơn đứng im.
+ */
 export async function closeWriters(id: string): Promise<void> {
   const pending: Promise<void>[] = []
   for (const [k, ws] of writers) {
@@ -121,7 +129,7 @@ export async function closeWriters(id: string): Promise<void> {
     writers.delete(k)
     pending.push(new Promise((resolve) => ws.end(() => resolve())))
   }
-  await Promise.all(pending)
+  await withTimeout(Promise.all(pending), CLOSE_TIMEOUT_MS, 'Đóng file thô').catch(() => undefined)
 }
 
 /**

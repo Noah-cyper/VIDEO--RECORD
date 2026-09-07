@@ -201,12 +201,18 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
         )}
 
         {state === 'finalizing' && (
-          <p className="muted">
-            {t('record.exporting', { percent: r.progress?.percent ?? 0 })}
+          <div className="row spread">
+            <span className="muted">
+              {t('record.exporting', { percent: r.progress?.percent ?? 0 })}
             {/* 0% kéo dài mà không nói đang làm gì thì trông y như treo - mà có lúc đúng là đang
                 encode lại thật. Thông báo từ exporter phải hiện ra đây. */}
-            {r.progress?.message ? ` — ${r.progress.message}` : ''}
-          </p>
+              {r.progress?.message ? ` — ${r.progress.message}` : ''}
+            </span>
+            {/* Không bao giờ để người dùng bị kẹt ở đây: huỷ vẫn cứu được phần đã ghi thành file thô. */}
+            <button className="ghost" onClick={() => void window.callrec.exportRecording.cancel()}>
+              {t('record.cancelExport')}
+            </button>
+          </div>
         )}
         {state === 'error' && (
           <div className="alert error">

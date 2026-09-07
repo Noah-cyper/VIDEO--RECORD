@@ -68,12 +68,28 @@ export function registerIpc(): void {
   ipcMain.handle(CH.sessionBookmark, (_e, id: string, bookmark: Bookmark) => storage.addBookmark(id, bookmark))
   ipcMain.handle(CH.sessionOrphans, () => storage.findOrphans())
   ipcMain.handle(CH.sessionDiscard, (_e, id: string) => storage.discardSession(id))
+  // Giữ controller để nút Huỷ có tác dụng thật; cùng lúc chỉ có một phiên đang xuất file.
+  const exporting = new Map<string, AbortController>()
+  const runExport = async (id: string, durationMs: number, title?: string) => {
+    exporting.get(id)?.abort()
+    const controller = new AbortController()
+    exporting.set(id, controller)
+    try {
+      return await exportSession(id, durationMs, title, (p) => broadcast(CH.exportProgress, p), controller.signal)
+    } finally {
+      exporting.delete(id)
+    }
+  }
+
   ipcMain.handle(CH.sessionClose, (_e, input: CloseSessionInput) =>
-    exportSession(input.sessionId, input.durationMs, input.title, (p) => broadcast(CH.exportProgress, p)),
+    runExport(input.sessionId, input.durationMs, input.title),
   )
   ipcMain.handle(CH.exportStart, (_e, id: string, durationMs: number, title?: string) =>
-    exportSession(id, durationMs, title, (p) => broadcast(CH.exportProgress, p)),
+    runExport(id, durationMs, title),
   )
+  ipcMain.handle(CH.exportCancel, () => {
+    for (const controller of exporting.values()) controller.abort()
+  })
 
   ipcMain.handle(CH.libraryList, () => library.listRecordings())
   ipcMain.handle(CH.libraryGet, (_e, id: string) => library.getRecording(id))
