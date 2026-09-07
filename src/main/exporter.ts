@@ -6,7 +6,7 @@ import type { DiskStatus, ExportProgress, QualityPreset, Recording, SessionManif
 import { CH } from '@shared/ipc'
 import { assessDisk, makeRecordingFolder, pickRoot, uniqueFolder } from '@shared/naming'
 import {
-  buildAudioExtractArgs, buildExportArgs, buildThumbnailArgs, filterUsableInputs,
+  buildAudioExtractArgs, buildExportArgs, buildRemuxArgs, buildThumbnailArgs, filterUsableInputs,
   inputsFromManifest, rawRescuePlan, videoCodecFor,
 } from '@shared/ffmpeg'
 import { translate } from '@shared/i18n'
@@ -172,11 +172,14 @@ export async function exportSession(
     }
 
     const hasVideo = Boolean(inputs.video)
-    const mux = (out: string, ins: typeof inputs, codec: 'copy' | 'h264') =>
-      runFfmpeg(buildExportArgs({ inputs: ins, offsetsMs, output: out, videoCodec: codec }), {
-        totalMs: durationMs,
-        onProgress: (percent) => onProgress({ sessionId, phase: 'muxing', percent }),
-      })
+    const progress = (message?: string) => ({
+      totalMs: durationMs,
+      // Encode lại một buổi ghi dài có thể mất vài phút, nhưng đứng im quá 2 phút là treo thật.
+      stallMs: 120_000,
+      onProgress: (percent: number) => onProgress({ sessionId, phase: 'muxing' as const, percent, message }),
+    })
+    const mux = (out: string, ins: typeof inputs, codec: 'copy' | 'h264', message?: string) =>
+      runFfmpeg(buildExportArgs({ inputs: ins, offsetsMs, output: out, videoCodec: codec }), progress(message))
 
     onProgress({ sessionId, phase: 'normalizing', percent: 0 })
 
@@ -190,15 +193,26 @@ export async function exportSession(
       if (!hasVideo) throw first
       try {
         // Chromium có thể sinh codec mà container đích không nhận (h264 trong webm là ca hay gặp).
-        onProgress({ sessionId, phase: 'muxing', percent: 0, message: 'Chép thẳng không được, đang encode lại…' })
-        await mux(output, inputs, 'h264')
-      } catch (second) {
-        // Mất hình thì vẫn nghe lại được cuộc gọi; mất tiếng là mất tất cả. Bỏ hình, giữ hai track.
-        if (!inputs.mic && !inputs.system) throw second
-        keptVideo = false
-        output = join(folder, 'recording.m4a')
-        await mux(output, { mic: inputs.mic, system: inputs.system }, 'copy')
-        sendAlert({ kind: 'stream-error', messageKey: 'record.videoDropped' })
+        const message = 'Chép thẳng không được, đang encode lại — bước này lâu hơn nhiều.'
+        onProgress({ sessionId, phase: 'muxing', percent: 0, message })
+        await mux(output, inputs, 'h264', message)
+      } catch {
+        try {
+          // Encode lại hỏng hoặc quá lâu thì nhét thẳng vào WebM: không encode gì cả nên gần như
+          // tức thì, giữ nguyên chất lượng và vẫn đủ hai track tiếng - chỉ mất chuẩn hoá âm lượng.
+          const message = 'Encode lại không xong, đang lưu nguyên chất lượng ra .webm…'
+          onProgress({ sessionId, phase: 'muxing', percent: 0, message })
+          output = join(folder, 'recording.webm')
+          await runFfmpeg(buildRemuxArgs({ inputs, offsetsMs, output }), progress(message))
+          sendAlert({ kind: 'stream-error', messageKey: 'record.remuxedWebm' })
+        } catch (third) {
+          // Mất hình thì vẫn nghe lại được cuộc gọi; mất tiếng là mất tất cả. Bỏ hình, giữ hai track.
+          if (!inputs.mic && !inputs.system) throw third
+          keptVideo = false
+          output = join(folder, 'recording.m4a')
+          await mux(output, { mic: inputs.mic, system: inputs.system }, 'copy')
+          sendAlert({ kind: 'stream-error', messageKey: 'record.videoDropped' })
+        }
       }
     }
 

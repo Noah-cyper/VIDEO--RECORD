@@ -57,6 +57,11 @@ export interface RunOptions {
   totalMs?: number
   onProgress?: (percent: number, p: FfmpegProgress) => void
   signal?: AbortSignal
+  /**
+   * Giết tiến trình nếu không có tín hiệu tiến độ nào trong ngần này mili giây. Không có nó thì
+   * một lần ffmpeg treo là giao diện đứng vĩnh viễn ở "Đang xuất file… 0%" và không có đường ra.
+   */
+  stallMs?: number
 }
 
 export function runFfmpeg(args: string[], opts: RunOptions = {}): Promise<void> {
@@ -64,23 +69,46 @@ export function runFfmpeg(args: string[], opts: RunOptions = {}): Promise<void> 
     const bin = ffmpegPath()
     const child = spawn(bin, args, { stdio: ['ignore', 'pipe', 'pipe'] })
     let stderr = ''
+    let lastTick = Date.now()
+    let stalled = false
+
+    // Chỉ canh khi nơi gọi thật sự chờ tiến độ; lệnh ngắn như tạo thumbnail không in gì cả.
+    const watchdog = opts.stallMs
+      ? setInterval(() => {
+          if (Date.now() - lastTick < (opts.stallMs as number)) return
+          stalled = true
+          child.kill('SIGKILL')
+        }, 1000)
+      : null
+    const stopWatchdog = () => {
+      if (watchdog) clearInterval(watchdog)
+    }
 
     child.stdout.setEncoding('utf-8')
     child.stdout.on('data', (chunk: string) => {
+      lastTick = Date.now()
       const p = parseProgress(chunk)
       if (p && opts.onProgress) opts.onProgress(percentFrom(p, opts.totalMs ?? 0), p)
     })
     child.stderr.setEncoding('utf-8')
     child.stderr.on('data', (chunk: string) => {
+      lastTick = Date.now()
       stderr = (stderr + chunk).slice(-4000)
     })
 
     opts.signal?.addEventListener('abort', () => child.kill('SIGKILL'), { once: true })
 
     child.on('error', (err) => {
+      stopWatchdog()
       reject((err as NodeJS.ErrnoException).code === 'ENOENT' ? new FfmpegMissingError() : err)
     })
     child.on('close', (code) => {
+      stopWatchdog()
+      if (stalled) {
+        return reject(
+          new Error(`FFmpeg đứng im quá ${Math.round((opts.stallMs ?? 0) / 1000)} giây nên đã bị dừng.`),
+        )
+      }
       if (code === 0) resolve()
       else reject(new Error(`FFmpeg thoát với mã ${code}${stderr ? `: ${stderr.trim()}` : ''}`))
     })

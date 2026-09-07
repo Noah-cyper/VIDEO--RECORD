@@ -76,6 +76,43 @@ export function buildExportArgs(opts: ExportOptions): string[] {
  * vào MP4 và VP9 thì cần cờ experimental, nên "copy" chỉ an toàn khi nguồn đã là h264 -
  * còn lại buộc phải encode lại, chậm hơn nhưng ra file mở được ở mọi nơi.
  */
+/**
+ * Nhét thẳng luồng thô vào WebM, KHÔNG encode lại gì cả: WebM chứa được VP8/VP9 và nhiều track
+ * Opus - đúng những thứ MediaRecorder vừa sinh ra. Gần như tức thì và không mất chất lượng, đổi
+ * lại là bỏ bước chuẩn hoá âm lượng và file không mở được bằng Windows Media Player đời cũ.
+ */
+export function buildRemuxArgs(opts: ExportOptions): string[] {
+  const present = ORDER.filter((k) => opts.inputs[k])
+  if (present.length === 0) throw new Error('Không có luồng nào để xuất')
+
+  const index = new Map<StreamKind, number>()
+  const args: string[] = ['-y', '-hide_banner', '-loglevel', 'error']
+
+  present.forEach((kind, i) => {
+    index.set(kind, i)
+    args.push('-itsoffset', offsetToSeconds(opts.offsetsMs[kind] ?? 0), '-i', opts.inputs[kind] as string)
+  })
+
+  const video = index.get('video')
+  if (video !== undefined) args.push('-map', `${video}:v`)
+
+  const labels = opts.labels ?? { mic: 'Toi', system: 'Doi phuong' }
+  const audioTracks: string[] = []
+  for (const kind of ['mic', 'system'] as const) {
+    const i = index.get(kind)
+    if (i === undefined) continue
+    args.push('-map', `${i}:a`)
+    audioTracks.push(labels[kind])
+  }
+
+  args.push('-c', 'copy')
+  audioTracks.forEach((label, i) => {
+    args.push(`-metadata:s:a:${i}`, `title=${label}`, `-metadata:s:a:${i}`, 'language=vie')
+  })
+  args.push('-progress', 'pipe:1', '-nostats', opts.output)
+  return args
+}
+
 export function videoCodecFor(mimeType: string | undefined): 'copy' | 'h264' {
   return mimeType && /h264|avc1/i.test(mimeType) ? 'copy' : 'h264'
 }

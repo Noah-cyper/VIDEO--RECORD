@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildAudioExtractArgs, buildExportArgs, buildThumbnailArgs, inputsFromManifest, parseProgress, percentFrom, rawRescuePlan, filterUsableInputs, MIN_USABLE_INPUT_BYTES,
+import { buildAudioExtractArgs, buildExportArgs, buildThumbnailArgs, inputsFromManifest, parseProgress, percentFrom, rawRescuePlan, filterUsableInputs, MIN_USABLE_INPUT_BYTES, buildRemuxArgs,
 } from '@shared/ffmpeg'
 import type { SessionManifest } from '@shared/types'
 
@@ -186,5 +186,33 @@ describe('loại luồng rỗng trước khi mux', () => {
 
   it('không đọc được kích thước thì coi như rỗng, đừng đưa vào lệnh ffmpeg', () => {
     expect(filterUsableInputs(paths, () => 0).usable).toEqual({})
+  })
+})
+
+describe('nhét thẳng vào WebM khi không dựng được MP4', () => {
+  const inputs = { mic: '/s/mic.webm', system: '/s/system.webm', video: '/s/video.webm' }
+  const args = buildRemuxArgs({ inputs, offsetsMs: { mic: 0, system: 42, video: 118 }, output: '/out/rec.webm' })
+
+  it('không encode lại gì cả - đó là toàn bộ lý do bậc này tồn tại', () => {
+    expect(args.join(' ')).toContain('-c copy')
+    expect(args.join(' ')).not.toContain('libx264')
+    expect(args.join(' ')).not.toContain('loudnorm')
+  })
+
+  it('vẫn bù lệch từng luồng như đường xuất chính', () => {
+    expect(args.join(' ')).toContain('-itsoffset 0.042 -i /s/system.webm')
+    expect(args.join(' ')).toContain('-itsoffset 0.118 -i /s/video.webm')
+  })
+
+  it('giữ đủ hai track tiếng, có nhãn, đúng thứ tự mic trước', () => {
+    const joined = args.join(' ')
+    expect(joined).toContain('-metadata:s:a:0 title=Toi')
+    expect(joined).toContain('-metadata:s:a:1 title=Doi phuong')
+  })
+
+  it('thiếu luồng nào thì bỏ luồng đó, không dựng lệnh rỗng', () => {
+    expect(buildRemuxArgs({ inputs: { mic: '/s/mic.webm' }, offsetsMs: {}, output: '/o.webm' }).join(' '))
+      .toContain('-map 0:a')
+    expect(() => buildRemuxArgs({ inputs: {}, offsetsMs: {}, output: '/o.webm' })).toThrow(/không có luồng/i)
   })
 })

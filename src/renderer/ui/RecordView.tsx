@@ -201,7 +201,12 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
         )}
 
         {state === 'finalizing' && (
-          <p className="muted">{t('record.exporting', { percent: r.progress?.percent ?? 0 })}</p>
+          <p className="muted">
+            {t('record.exporting', { percent: r.progress?.percent ?? 0 })}
+            {/* 0% kéo dài mà không nói đang làm gì thì trông y như treo - mà có lúc đúng là đang
+                encode lại thật. Thông báo từ exporter phải hiện ra đây. */}
+            {r.progress?.message ? ` — ${r.progress.message}` : ''}
+          </p>
         )}
         {state === 'error' && (
           <div className="alert error">
