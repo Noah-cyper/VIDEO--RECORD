@@ -84,7 +84,10 @@ job build: máy nào xong trước sẽ mở release cho trình cập nhật th�
 và kiểm trong container không có card âm thanh, không có Windows/macOS. Những thứ sau vẫn là giả
 định theo tài liệu Electron, chưa phải sự thật đã đo:
 
-- `audio: 'loopback'` có thật sự trả về tiếng đầu bên kia trên Windows và macOS 13+ không
+- `audio: 'loopback'` có thật sự trả về tiếng đầu bên kia trên Windows và macOS 13+ không.
+  **Đã biết một phần**: trên Windows 10, khi không có âm thanh nào phát ra loa thì luồng loopback
+  không sinh byte nào và `system.webm` là file rỗng — không phải "im lặng có dữ liệu". Đường xuất
+  file đã lọc luồng rỗng, nhưng việc loopback có bắt được tiếng thật hay không thì vẫn chưa đo được
 - Độ lệch A/V sau 60 phút, mức CPU khi ghi 1080p30
 - Luồng cấp quyền macOS
 - `runWhisper` (chưa có binary whisper.cpp trong môi trường dựng)

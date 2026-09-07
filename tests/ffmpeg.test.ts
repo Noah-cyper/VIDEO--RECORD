@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildAudioExtractArgs, buildExportArgs, buildThumbnailArgs, inputsFromManifest, parseProgress, percentFrom, rawRescuePlan,
+import { buildAudioExtractArgs, buildExportArgs, buildThumbnailArgs, inputsFromManifest, parseProgress, percentFrom, rawRescuePlan, filterUsableInputs, MIN_USABLE_INPUT_BYTES,
 } from '@shared/ffmpeg'
 import type { SessionManifest } from '@shared/types'
 
@@ -156,5 +156,35 @@ describe('kế hoạch cứu file thô', () => {
 
   it('không có luồng nào thì nói thẳng chứ đừng tạo bản ghi rỗng', () => {
     expect(() => rawRescuePlan({})).toThrow(/không có file thô/i)
+  })
+})
+
+describe('loại luồng rỗng trước khi mux', () => {
+  const paths = { mic: '/s/mic.webm', system: '/s/system.webm', video: '/s/video.webm' }
+  const sizes = (map: Record<string, number>) => (file: string) => map[file] ?? 0
+
+  it('đủ dữ liệu thì giữ nguyên cả ba', () => {
+    const big = MIN_USABLE_INPUT_BYTES * 10
+    const out = filterUsableInputs(paths, sizes({ [paths.mic]: big, [paths.system]: big, [paths.video]: big }))
+    expect(out.dropped).toEqual([])
+    expect(out.usable).toEqual(paths)
+  })
+
+  /** Ca thật trên Windows: loopback không đẩy byte nào khi không có tiếng phát ra loa. */
+  it('system.webm rỗng thì bỏ nó ra, KHÔNG kéo theo mic và hình', () => {
+    const big = MIN_USABLE_INPUT_BYTES * 10
+    const out = filterUsableInputs(paths, sizes({ [paths.mic]: big, [paths.system]: 0, [paths.video]: big }))
+    expect(out.dropped).toEqual(['system'])
+    expect(out.usable).toEqual({ mic: paths.mic, video: paths.video })
+  })
+
+  it('file chỉ có header cũng coi là rỗng', () => {
+    const out = filterUsableInputs({ mic: paths.mic }, sizes({ [paths.mic]: MIN_USABLE_INPUT_BYTES - 1 }))
+    expect(out.dropped).toEqual(['mic'])
+    expect(out.usable).toEqual({})
+  })
+
+  it('không đọc được kích thước thì coi như rỗng, đừng đưa vào lệnh ffmpeg', () => {
+    expect(filterUsableInputs(paths, () => 0).usable).toEqual({})
   })
 })

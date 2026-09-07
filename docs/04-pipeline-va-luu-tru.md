@@ -122,6 +122,22 @@ Không còn ổ nào ghi được thì phiên chuyển sang `error`, giữ nguy�
 ngoài cho xuất lại — `needsRecovery()` ở `shared/machine.ts` là nơi quyết định trạng thái nào
 còn cứu được. Banner được đẩy lên ngay lúc hỏng, không đợi lần mở app sau.
 
+## 4b-bis. Luồng rỗng
+
+Loopback trên Windows **không đẩy byte nào** khi không có âm thanh phát ra loa — WASAPI chỉ giao
+buffer khi endpoint đang phát. Ghi một buổi mà đầu bên kia im (hoặc chưa bắt được loopback) thì
+`system.webm` là file 0 byte.
+
+Một input rỗng làm FFmpeg hỏng **cả lệnh**, tức là mất luôn phần tiếng và hình đã ghi được. Đây
+là nguyên nhân thật của ba lần mất bản ghi liên tiếp trên máy người dùng đầu tiên.
+
+Nên trước khi mux, `filterUsableInputs()` đọc kích thước thật trên đĩa và loại luồng nào dưới
+2 KB (WebM rỗng vẫn còn vài trăm byte header). Luồng bị loại được báo ra bằng cảnh báo đỏ nói rõ
+luồng nào và vì sao. Mất một luồng còn hơn mất cả buổi ghi.
+
+Thứ tự `audioTracks` được tính **sau** khi lọc, nên mất track mic thì track 0 là đối phương và
+nhãn vẫn đúng — ghi sai chỗ này là gán nhầm người nói cho cả cuộc gọi.
+
 ## 4c. Thang cứu khi dựng file hỏng
 
 Bấm Dừng xong mà nhận về con số không là điều tệ nhất app này có thể làm. Nên bước xuất file đi

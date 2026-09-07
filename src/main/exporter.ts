@@ -2,13 +2,14 @@ import { app } from 'electron'
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import { statfs } from 'node:fs/promises'
-import type { DiskStatus, ExportProgress, QualityPreset, Recording, SessionManifest } from '@shared/types'
+import type { DiskStatus, ExportProgress, QualityPreset, Recording, SessionManifest, StreamKind } from '@shared/types'
 import { CH } from '@shared/ipc'
 import { assessDisk, makeRecordingFolder, pickRoot, uniqueFolder } from '@shared/naming'
 import {
-  buildAudioExtractArgs, buildExportArgs, buildThumbnailArgs, inputsFromManifest, rawRescuePlan,
-  videoCodecFor,
+  buildAudioExtractArgs, buildExportArgs, buildThumbnailArgs, filterUsableInputs,
+  inputsFromManifest, rawRescuePlan, videoCodecFor,
 } from '@shared/ffmpeg'
+import { translate } from '@shared/i18n'
 import { cleanupAfterExport, closeWriters, findOrphans, readManifest, sessionDir, setState } from './storage'
 import { runFfmpeg } from './ffmpeg'
 import { addRecording, getRecording } from './library'
@@ -55,9 +56,9 @@ async function rescueRaw(
   title: string | undefined,
   durationMs: number,
   reason: string,
+  inputs: Partial<Record<StreamKind, string>>,
 ): Promise<Recording | null> {
   try {
-    const { inputs } = inputsFromManifest(manifest, (f) => join(sessionDir(sessionId), f))
     const plan = rawRescuePlan(inputs)
     await fs.mkdir(folder, { recursive: true })
 
@@ -103,7 +104,13 @@ export async function exportSession(
   onProgress: ProgressSink,
 ): Promise<Recording | null> {
   const manifest = await readManifest(sessionId)
-  if (!manifest) return null
+  if (!manifest) {
+    // Trả null trần khiến giao diện chỉ nói được câu chung chung "không xuất được file" - đúng
+    // thứ đã làm người dùng ba lần không biết chuyện gì xảy ra.
+    const message = `Không đọc được session.json của phiên ${sessionId}.`
+    onProgress({ sessionId, phase: 'error', percent: 0, message })
+    return null
+  }
 
   await closeWriters(sessionId)
   await setState(sessionId, 'finalizing')
@@ -112,7 +119,26 @@ export async function exportSession(
   const startedAt = new Date(manifest.startedAt)
   const sourceName = manifest.streams.video?.source
   const base = makeRecordingFolder(startedAt, title ?? manifest.title, sourceName)
-  const { inputs, offsetsMs } = inputsFromManifest(manifest, (f) => join(sessionDir(sessionId), f))
+  const { inputs: declared, offsetsMs } = inputsFromManifest(manifest, (f) => join(sessionDir(sessionId), f))
+  // Đọc kích thước thật, không tin vào manifest: manifest chỉ ghi lại ý định, còn luồng có ra
+  // được byte nào hay không thì chỉ đĩa mới biết.
+  const sizes = new Map<string, number>()
+  for (const file of Object.values(declared)) {
+    sizes.set(file, await fs.stat(file).then((st) => st.size, () => 0))
+  }
+  const { usable: inputs, dropped } = filterUsableInputs(declared, (f) => sizes.get(f) ?? 0)
+
+  if (dropped.length > 0) {
+    const { language } = await getSettings()
+    for (const kind of dropped) {
+      sendAlert({
+        kind: 'stream-error',
+        stream: kind,
+        messageKey: 'record.streamEmpty',
+        params: { stream: translate(language, `stream.${kind}` as 'stream.mic') },
+      })
+    }
+  }
   // Lần xuất trước có thể đã cứu ra một bản thô; dựng được MP4 rồi thì thư mục thô đó là rác.
   const previous = await getRecording(sessionId)
 
@@ -137,6 +163,13 @@ export async function exportSession(
     const folderName = uniqueFolder(base, (n) => existing.has(n))
     folder = join(root, folderName)
     await fs.mkdir(folder, { recursive: true })
+
+    if (Object.keys(inputs).length === 0) {
+      throw new Error(
+        'Cả ba luồng đều rỗng, không có gì để dựng thành file. Chạy "Kiểm tra thiết bị" ở màn hình ' +
+          'Ghi để biết micro và âm thanh hệ thống có vào tiếng không.',
+      )
+    }
 
     const hasVideo = Boolean(inputs.video)
     const mux = (out: string, ins: typeof inputs, codec: 'copy' | 'h264') =>
@@ -210,7 +243,7 @@ export async function exportSession(
     return recording
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err)
-    const rescued = folder ? await rescueRaw(sessionId, manifest, folder, title, durationMs, reason) : null
+    const rescued = folder ? await rescueRaw(sessionId, manifest, folder, title, durationMs, reason, inputs) : null
     const message = rescued
       ? `${reason} — đã chép file thô vào ${rescued.folder}.`
       : `${reason} — file thô vẫn còn, xuất lại được từ banner ở đầu cửa sổ.`

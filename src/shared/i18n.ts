@@ -274,6 +274,14 @@ const vi = {
   'shortcut.stop': 'Dừng ghi',
   'shortcut.bookmark': 'Đánh dấu mốc',
 
+  'stream.mic': 'micro (giọng của mình)',
+  'stream.system': 'âm thanh hệ thống (giọng đối phương)',
+  'stream.video': 'hình màn hình',
+  'record.streamEmpty':
+    'Luồng {stream} không ghi được giây nào nên đã bị bỏ khỏi file đích — phần còn lại vẫn được lưu bình thường. Thường là do không có âm thanh nào phát ra loa trong lúc ghi.',
+  'record.noUsableStreams':
+    'Cả ba luồng đều rỗng, không có gì để dựng thành file. Chạy "Kiểm tra thiết bị" ở màn hình Ghi để biết micro và âm thanh hệ thống có vào tiếng không.',
+
   'speaker.me': 'Tôi',
   'speaker.them': 'Đối phương',
 } as const
@@ -549,6 +557,14 @@ const en: Record<TranslationKey, string> = {
   'shortcut.pause': 'Pause / resume',
   'shortcut.stop': 'Stop recording',
   'shortcut.bookmark': 'Add marker',
+
+  'stream.mic': 'microphone (your voice)',
+  'stream.system': 'system audio (the other party)',
+  'stream.video': 'screen video',
+  'record.streamEmpty':
+    'The {stream} stream never recorded a single second, so it was left out of the final file — everything else was saved normally. Usually this means nothing was playing through the speakers while recording.',
+  'record.noUsableStreams':
+    'All three streams are empty, so there is nothing to build a file from. Run "Test devices" on the Record screen to check whether the microphone and system audio are picking anything up.',
 
   'speaker.me': 'Me',
   'speaker.them': 'Other party',
