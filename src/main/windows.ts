@@ -21,6 +21,7 @@ let overlay: BrowserWindow | null = null
 let lastState: RecordState = 'idle'
 let lastElapsed = 0
 let overlayCaptions = false
+let captionBar: BrowserWindow | null = null
 
 export function createMainWindow(): BrowserWindow {
   mainWindow = new BrowserWindow({
@@ -106,6 +107,56 @@ export function setOverlayCaptions(enabled: boolean): void {
 }
 
 /**
+ * Thanh phụ đề chạy ngang đầu màn hình. Khác hẳn ô chỉ báo: đây là tiện ích bật tắt được, và nó
+ * XUYÊN CHUỘT - chắn mất nút bấm của cửa sổ cuộc gọi thì tiện ích thành chướng ngại vật.
+ */
+function createCaptionBar(): BrowserWindow {
+  const { workArea } = screen.getPrimaryDisplay()
+  const height = 104
+  const width = Math.min(1680, workArea.width - 64)
+  const win = new BrowserWindow({
+    width,
+    height,
+    x: workArea.x + Math.round((workArea.width - width) / 2),
+    y: workArea.y + 10,
+    frame: false,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    closable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    transparent: true,
+    focusable: false,
+    hasShadow: false,
+    webPreferences: { preload: preload(), sandbox: true, contextIsolation: true, nodeIntegration: false },
+  })
+  win.setIgnoreMouseEvents(true)
+  win.setAlwaysOnTop(true, 'screen-saver')
+  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+
+  const url = devUrl()
+  if (url) win.loadURL(`${url}/captions.html`)
+  else win.loadFile(join(__dirname, '../renderer/captions.html'))
+  return win
+}
+
+export function setCaptionBar(enabled: boolean): void {
+  if (enabled === Boolean(captionBar)) return
+  if (enabled) {
+    captionBar = createCaptionBar()
+    captionBar.on('closed', () => {
+      captionBar = null
+    })
+    return
+  }
+  const win = captionBar
+  captionBar = null
+  win?.destroy()
+}
+
+/**
  * Overlay là ràng buộc pháp lý FR-08, không phải tiện ích: nó không đóng được bằng tay và
  * chỉ biến mất khi trạng thái rời khỏi nhóm đang ghi.
  */
@@ -166,6 +217,7 @@ export function syncIndicator(state: RecordState, elapsedMs: number): void {
 export function broadcast(channel: string, payload: unknown): void {
   mainWindow?.webContents.send(channel, payload)
   overlay?.webContents.send(channel, payload)
+  captionBar?.webContents.send(channel, payload)
 }
 
 export function sendCommand(cmd: MainCommand): void {

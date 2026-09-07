@@ -113,6 +113,7 @@ export interface TranscribeOptions {
   signal?: AbortSignal
   /** Dịch thẳng sang tiếng Anh trong lúc nhận dạng, dùng cho phụ đề trực tiếp không cần mạng. */
   translate?: boolean
+  beamSize?: number
 }
 
 /** Trả về nội dung JSON thô của whisper.cpp; việc diễn giải để cho @shared/transcript lo. */
@@ -124,6 +125,7 @@ export async function runWhisper(opts: TranscribeOptions): Promise<string> {
     outputPrefix,
     language: opts.language,
     translate: opts.translate,
+    beamSize: opts.beamSize,
     threads: Math.max(2, Math.min(8, cpus().length - 1)),
   })
 

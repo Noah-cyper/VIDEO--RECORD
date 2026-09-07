@@ -34,6 +34,11 @@ export interface WhisperArgs {
   threads?: number
   /** whisper.cpp chỉ dịch được sang tiếng Anh; dùng cho phụ đề trực tiếp không cần mạng. */
   translate?: boolean
+  /**
+   * Số nhánh beam search. Mặc định của whisper.cpp là 5 - chính xác hơn nhưng chậm gấp mấy lần.
+   * Phụ đề trực tiếp cần nhanh hơn cần hoàn hảo, nên ở đó dùng 1.
+   */
+  beamSize?: number
 }
 
 export function buildWhisperArgs(opts: WhisperArgs): string[] {
@@ -45,6 +50,7 @@ export function buildWhisperArgs(opts: WhisperArgs): string[] {
     '-of', opts.outputPrefix,
     '-t', String(opts.threads ?? 4),
     ...(opts.translate ? ['-tr'] : []),
+    ...(opts.beamSize ? ['-bs', String(opts.beamSize), '-bo', String(opts.beamSize)] : []),
     // -pp để đọc được tiến độ; -np bỏ phần in transcript ra stdout cho đỡ rác.
     '-pp',
     '-np',

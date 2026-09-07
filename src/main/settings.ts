@@ -22,8 +22,9 @@ function defaults(): Settings {
     liveCaptions: false,
     liveTarget: '',
     liveTargetLabel: '',
-    liveModel: 'tiny',
+    liveModel: 'base',
     spokenLanguage: SPOKEN_AUTO,
+    captionBar: true,
   }
 }
 

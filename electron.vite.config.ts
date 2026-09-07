@@ -23,6 +23,7 @@ export default defineConfig({
         input: {
           index: resolve('src/renderer/index.html'),
           overlay: resolve('src/renderer/overlay.html'),
+          captions: resolve('src/renderer/captions.html'),
         },
       },
     },

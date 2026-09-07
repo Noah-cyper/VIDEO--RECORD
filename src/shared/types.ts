@@ -122,6 +122,8 @@ export interface Settings {
    * whisper nhận ngôn ngữ giao diện - gọi tiếng Anh mà app để tiếng Việt là ra kết quả rác.
    */
   spokenLanguage: string
+  /** Thanh phụ đề chạy ngang đầu màn hình, tách khỏi ô chỉ báo đang ghi (bật tắt được). */
+  captionBar: boolean
   /** Model riêng cho phụ đề: bản gỡ băng chọn theo độ chính xác, bản trực tiếp chọn theo tốc độ. */
   liveModel: 'tiny' | 'base' | 'small' | 'medium'
 }

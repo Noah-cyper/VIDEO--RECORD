@@ -4,9 +4,9 @@ import type { Speaker } from './transcript'
 export const LIVE_SAMPLE_RATE = 16000
 
 /** Dài quá thì phụ đề tới muộn, ngắn quá thì whisper mất ngữ cảnh và đoán sai từ. */
-export const SEGMENT_MAX_MS = 8000
+export const SEGMENT_MAX_MS = 6000
 export const SEGMENT_MIN_VOICED_MS = 400
-export const SILENCE_HANG_MS = 700
+export const SILENCE_HANG_MS = 500
 export const VOICE_RMS_GATE = 0.004
 
 /** Nghẽn hàng đợi nghĩa là phụ đề tụt lại vĩnh viễn; thà bỏ đoạn cũ còn hơn hiện chậm mãi. */
@@ -26,9 +26,15 @@ export type LiveMode = 'off' | 'local' | 'cloud'
 /**
  * Dịch từ tiếng X sang chính tiếng X là việc vô nghĩa và tốn một lượt gọi API, nên ngôn ngữ nguồn
  * cũng tham gia quyết định ở đây chứ không chỉ ngôn ngữ đích.
+ *
+ * Có API sẵn sàng thì dùng API cho MỌI ngôn ngữ, kể cả tiếng Anh. Cờ -tr của whisper bắt model
+ * vừa nghe vừa dịch cùng lúc: với model nhỏ chạy thời gian thực thì bản tiếng Anh nó trả về
+ * thường sai nghĩa. Để whisper làm đúng một việc là nghe, rồi đưa chữ cho mô hình dịch, cho kết
+ * quả tốt hơn hẳn - và thường còn nhanh hơn vì một lượt gọi API rẻ hơn một lượt dịch cục bộ.
  */
-export function liveTargetMode(target: string, spoken = ''): LiveMode {
+export function liveTargetMode(target: string, spoken = '', cloudReady = false): LiveMode {
   if (!target || target === spoken) return 'off'
+  if (cloudReady) return 'cloud'
   return target === LIVE_TARGET_LOCAL ? 'local' : 'cloud'
 }
 
@@ -177,11 +183,15 @@ export function cleanLiveText(raw: string): string {
   return /[\p{L}\p{N}]/u.test(text) ? text : ''
 }
 
-export function buildLivePrompt(text: string, targetLanguage: string): string {
+export function buildLivePrompt(text: string, targetLanguage: string, sourceLanguage = ''): string {
   return [
-    `Dịch câu thoại sau sang ${targetLanguage}.`,
+    sourceLanguage
+      ? `Dịch câu thoại ${sourceLanguage} sau sang ${targetLanguage}.`
+      : `Dịch câu thoại sau sang ${targetLanguage}.`,
     'Chỉ trả về đúng bản dịch, không giải thích, không thêm dấu ngoặc kép, không lặp lại câu gốc.',
-    'Đây là lời nói trong cuộc gọi, có thể bị cắt giữa chừng - cứ dịch phần nghe được.',
+    'Đây là lời nói trong cuộc gọi, do máy nhận dạng tiếng nói ghi lại nên có thể sai vài từ hoặc',
+    'bị cắt giữa chừng. Dịch cho tự nhiên theo đúng ý người nói, đừng dịch từng chữ và đừng thêm',
+    'ghi chú hay dấu ngoặc nào.',
     '',
     text,
   ].join('\n')

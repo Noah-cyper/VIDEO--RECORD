@@ -65,3 +65,17 @@ describe('buildWavExtractArgs', () => {
     expect(joined).toContain('-c:a pcm_s16le')
   })
 })
+
+describe('beam search cho phụ đề trực tiếp', () => {
+  const base = { modelPath: 'm.bin', wavPath: 'a.wav', outputPrefix: 'a', language: 'vi' }
+
+  it('không đặt thì giữ mặc định của whisper.cpp, không tự ý bóp chất lượng bản gỡ băng', () => {
+    expect(buildWhisperArgs(base).join(' ')).not.toContain('-bs')
+  })
+
+  it('đặt 1 thì cả beam lẫn best-of đều là 1 - đó mới là thứ làm nó nhanh lên', () => {
+    const args = buildWhisperArgs({ ...base, beamSize: 1 }).join(' ')
+    expect(args).toContain('-bs 1')
+    expect(args).toContain('-bo 1')
+  })
+})

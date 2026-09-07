@@ -302,6 +302,20 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
               )}
             </div>
 
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={settings.captionBar}
+                disabled={recording}
+                onChange={(e) => onSettings({ captionBar: e.target.checked })}
+              />
+              <span>
+                {t('live.captionBar')}
+                <br />
+                <span className="muted">{t('live.captionBarHint')}</span>
+              </span>
+            </label>
+
             {showCustom && (
               <div className="field">
                 <label htmlFor="live-target-name">{t('live.targetCustomName')}</label>

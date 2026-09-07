@@ -210,6 +210,12 @@ app.whenReady().then(async () => {
       sessionId: 'smoke', target: 'khong-co-that', model: 'tiny',
     })
 
+    // Thanh phụ đề: công tắc phải lưu được, vì nó quyết định có dựng cửa sổ riêng hay không.
+    await window.callrec.settings.set({ captionBar: false })
+    const barOff = (await window.callrec.settings.get()).captionBar === false
+    await window.callrec.settings.set({ captionBar: true })
+    const barOn = (await window.callrec.settings.get()).captionBar === true
+
     // Ngôn ngữ đang nói: mã bịa phải bị từ chối, mã thật phải lưu được.
     let rejectedBadSpoken = false
     try {
@@ -238,7 +244,7 @@ app.whenReady().then(async () => {
     const aliveAfter = typeof (await window.callrec.settings.get()).liveTarget === 'string'
     return {
       enabled, hasTarget, rejectedBadTarget, startReason: started.reason, aliveAfter,
-      rejectedBadSpoken, spokenSaved, rejectedUnnamed, customSaved,
+      rejectedBadSpoken, spokenSaved, rejectedUnnamed, customSaved, barOff, barOn,
     }
   })()`).catch((err) => ({ error: `lỗi khi kiểm phụ đề trực tiếp: ${err.message}` }))
 
@@ -274,6 +280,7 @@ app.whenReady().then(async () => {
     if (!liveChecks.spokenSaved) problems.push('chọn ngôn ngữ đang nói nhưng không lưu được')
     if (!liveChecks.rejectedUnnamed) problems.push('ngôn ngữ ngoài danh sách không có tên vẫn được nhận')
     if (!liveChecks.customSaved) problems.push('ngôn ngữ ngoài danh sách có tên nhưng không lưu được')
+    if (!liveChecks.barOff || !liveChecks.barOn) problems.push('công tắc thanh phụ đề không lưu được')
     if (liveChecks.startReason !== 'bad-target') {
       problems.push(`live.start với ngôn ngữ bịa phải trả về bad-target, nhận ${liveChecks.startReason}`)
     }
