@@ -91,6 +91,15 @@ export function indicatorRequired(state: RecordState): boolean {
   return ACTIVE_STATES.includes(state)
 }
 
+/**
+ * Phiên còn file thô trên đĩa mà chưa thành bản ghi. `error` PHẢI nằm trong này: xuất file hỏng
+ * thì exporter hứa với người dùng là "mở lại ứng dụng sẽ có nút xuất lại", mà bỏ sót nó ở đây
+ * thì lời hứa đó thành lời nói dối - file còn nguyên nhưng không có đường nào chạm tới.
+ */
+export function needsRecovery(state: RecordState): boolean {
+  return isBusy(state) || state === 'error'
+}
+
 export function isBusy(state: RecordState): boolean {
   return state === 'recording' || state === 'paused' || state === 'finalizing'
 }

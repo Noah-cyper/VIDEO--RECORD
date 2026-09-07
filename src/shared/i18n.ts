@@ -54,6 +54,8 @@ const vi = {
 
   'orphan.found':
     'Phiên ghi ngày {when} chưa được xuất file — có thể ứng dụng đã bị đóng đột ngột. Phần đã ghi vẫn còn.',
+  'orphan.failed':
+    'Phiên ghi ngày {when} xuất file KHÔNG thành công: {reason} Phần đã ghi vẫn còn nguyên, bấm Xuất file để thử lại.',
   'orphan.export': 'Xuất file',
   'orphan.discard': 'Bỏ',
   'orphan.confirmDiscard': 'Xoá hẳn phần đã ghi của phiên này?',
@@ -293,6 +295,8 @@ const en: Record<TranslationKey, string> = {
 
   'orphan.found':
     'The session from {when} was never exported — the app may have closed unexpectedly. What was recorded is still there.',
+  'orphan.failed':
+    'The recording from {when} failed to export: {reason} What was recorded is still intact — press Export to try again.',
   'orphan.export': 'Export it',
   'orphan.discard': 'Discard',
   'orphan.confirmDiscard': 'Permanently discard what was recorded in this session?',
