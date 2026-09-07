@@ -145,10 +145,19 @@ theo thang, mỗi bậc bỏ bớt một thứ nhưng bậc nào cũng ra file m
 
 | Bậc | Làm gì | Mất gì |
 |---|---|---|
-| 1 | Mux `-c:v copy` | Không mất gì |
-| 2 | Encode lại H.264 | Chậm hơn vài chục giây |
-| 3 | Bỏ hình, mux riêng 2 track tiếng ra `.m4a` | Mất hình |
-| 4 | Chép thẳng `mic.webm` / `system.webm` / `video.webm` sang thư mục đích | Mất phần gộp; hình và tiếng nằm ở file riêng |
+| 1 | Mux `-c:v copy` vào MP4 | Không mất gì |
+| 2 | Encode lại H.264 | Chậm hơn nhiều; có watchdog 2 phút |
+| 3 | Nhét thẳng vào `.webm` (`-c copy`) | Mất chuẩn hoá âm lượng; MP4 → WebM |
+| 4 | Bỏ hình, mux riêng 2 track tiếng ra `.m4a` | Mất hình |
+| 5 | Chép thẳng `mic.webm` / `system.webm` / `video.webm` sang thư mục đích | Mất phần gộp; hình và tiếng nằm ở file riêng |
+
+Bậc 3 gần như tức thì và không mất chất lượng: WebM chứa được đúng VP8/VP9 + nhiều track Opus mà
+MediaRecorder vừa sinh ra. Nó nằm sau bậc 2 vì MP4 mở được ở nhiều nơi hơn, nhưng khi encode lại
+hỏng — hoặc đứng im quá 2 phút và bị watchdog dừng — thì đây là đường ra nhanh nhất.
+
+Watchdog cần thiết vì không có nó, một lần FFmpeg treo là giao diện đứng vĩnh viễn ở
+"Đang xuất file… 0%" mà không có đường thoát nào. Watchdog chỉ bật ở các lệnh có `-progress`;
+lệnh ngắn như tạo thumbnail không in gì nên không canh được theo cách này.
 
 Bậc 4 đánh dấu bản ghi là `raw: true`: thư viện hiện nhãn "bản thô", tắt gỡ băng / cắt / tách
 tiếng (chưa có MP4 thì chưa có track để bám vào), và thư mục phiên **không** bị dọn — banner vẫn

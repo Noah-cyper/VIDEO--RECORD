@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { readFile, stat, writeFile } from 'node:fs/promises'
-import { buildExportArgs, buildWavExtractArgs, filterUsableInputs, videoCodecFor } from '@shared/ffmpeg'
+import { buildExportArgs, buildRemuxArgs, buildWavExtractArgs, filterUsableInputs, videoCodecFor } from '@shared/ffmpeg'
 import { buildTrimArgs } from '@shared/trim'
 
 const run = promisify(execFile)
@@ -105,6 +105,24 @@ maybe('xuất file thật bằng ffmpeg', () => {
     expect(info.match(/Stream #0:\d+.*Audio/g) ?? []).toHaveLength(1)
     expect(info).toContain('Toi')
     expect(info).not.toContain('Doi phuong')
+  }, 60_000)
+
+  // Bậc cứu khi encode lại hỏng hoặc quá lâu: VP8 + Opus nhét thẳng vào WebM, không encode gì.
+  it('WebM nhận nguyên VP8 và hai track Opus mà không cần encode lại', async () => {
+    const output = join(dir, 'remux.webm')
+    await run(bin!, buildRemuxArgs({
+      inputs: { mic: inputs.mic, system: inputs.system, video: inputs.video },
+      offsetsMs: { mic: 0, system: 42, video: 118 },
+      output,
+    }))
+
+    const info = await probe(output)
+    expect(info).toMatch(/Video: vp8/)
+    expect(info.match(/Stream #0:\d+.*Audio/g) ?? []).toHaveLength(2)
+    // Không encode lại nghĩa là tiếng vẫn là Opus nguyên bản, không phải AAC.
+    expect(info).toMatch(/Audio: opus/)
+    expect(info).toContain('Toi')
+    expect(info).toContain('Doi phuong')
   }, 60_000)
 
   it('tạo MP4 có đúng hai audio track riêng biệt', async () => {

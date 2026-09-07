@@ -97,6 +97,8 @@ const vi = {
   'record.diskFull': 'Ổ đĩa còn dưới 1 GB, không đủ chỗ để bắt đầu ghi.',
   'record.dirUnavailable':
     'Không ghi được vào thư mục lưu "{dir}" nên chưa bắt đầu ghi — để anh khỏi mất buổi ghi. Lý do: {reason}. Cắm lại ổ đĩa, hoặc đổi thư mục lưu ở Cài đặt.',
+  'record.remuxedWebm':
+    'Không dựng được MP4 nên bản ghi được lưu ở định dạng .webm — không encode lại nên nhanh và không mất chất lượng, vẫn đủ hai track tiếng. Mở bằng trình duyệt hoặc VLC; Windows Media Player đời cũ có thể không mở được.',
   'record.videoDropped':
     'Không dựng được phần hình nên bản ghi này chỉ còn tiếng — hai track vẫn tách riêng. File thô vẫn còn, bấm Xuất file ở banner để thử lại cả hình.',
   'record.rawRescued':
@@ -381,6 +383,8 @@ const en: Record<TranslationKey, string> = {
   'record.diskFull': 'Less than 1 GB free — not enough space to start recording.',
   'record.dirUnavailable':
     'The recordings folder "{dir}" cannot be written to, so recording has not started — better than losing the call. Reason: {reason}. Reconnect the drive, or pick another folder in Settings.',
+  'record.remuxedWebm':
+    'The MP4 could not be built, so the recording was saved as .webm — nothing was re-encoded, so it was fast and lossless, and both audio tracks are intact. Open it in a browser or VLC; older Windows Media Player may not.',
   'record.videoDropped':
     'The video could not be muxed, so this recording is audio only — both tracks are still separate. The raw files are still there; press Export on the banner to retry with video.',
   'record.rawRescued':
