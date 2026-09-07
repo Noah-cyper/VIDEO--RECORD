@@ -120,7 +120,25 @@ Hai lớp bảo vệ:
 
 Không còn ổ nào ghi được thì phiên chuyển sang `error`, giữ nguyên file thô, và banner ở khung
 ngoài cho xuất lại — `needsRecovery()` ở `shared/machine.ts` là nơi quyết định trạng thái nào
-còn cứu được.
+còn cứu được. Banner được đẩy lên ngay lúc hỏng, không đợi lần mở app sau.
+
+## 4c. Thang cứu khi dựng file hỏng
+
+Bấm Dừng xong mà nhận về con số không là điều tệ nhất app này có thể làm. Nên bước xuất file đi
+theo thang, mỗi bậc bỏ bớt một thứ nhưng bậc nào cũng ra file mở được:
+
+| Bậc | Làm gì | Mất gì |
+|---|---|---|
+| 1 | Mux `-c:v copy` | Không mất gì |
+| 2 | Encode lại H.264 | Chậm hơn vài chục giây |
+| 3 | Bỏ hình, mux riêng 2 track tiếng ra `.m4a` | Mất hình |
+| 4 | Chép thẳng `mic.webm` / `system.webm` / `video.webm` sang thư mục đích | Mất phần gộp; hình và tiếng nằm ở file riêng |
+
+Bậc 4 đánh dấu bản ghi là `raw: true`: thư viện hiện nhãn "bản thô", tắt gỡ băng / cắt / tách
+tiếng (chưa có MP4 thì chưa có track để bám vào), và thư mục phiên **không** bị dọn — banner vẫn
+cho thử dựng lại MP4. Dựng lại thành công thì thư mục thô cũ bị xoá, nhưng chỉ khi nó nằm trong
+thư mục bản ghi: đường dẫn trong chỉ mục là dữ liệu cũ trên đĩa, không phải thứ được phép chỉ
+lệnh xoá đi bất cứ đâu.
 
 ## 5. Transcript (Phase 4)
 

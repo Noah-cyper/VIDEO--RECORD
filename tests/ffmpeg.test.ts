@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { buildAudioExtractArgs, buildExportArgs, buildThumbnailArgs, inputsFromManifest, parseProgress, percentFrom } from '@shared/ffmpeg'
+import { buildAudioExtractArgs, buildExportArgs, buildThumbnailArgs, inputsFromManifest, parseProgress, percentFrom, rawRescuePlan,
+} from '@shared/ffmpeg'
 import type { SessionManifest } from '@shared/types'
 
 const full = {
@@ -126,5 +127,34 @@ describe('lệnh phụ trợ', () => {
   })
   it('tách audio theo chỉ số track', () => {
     expect(buildAudioExtractArgs('/a.mp4', '/o.m4a', 1).join(' ')).toContain('-map 0:a:1')
+  })
+})
+
+describe('kế hoạch cứu file thô', () => {
+  const paths = { mic: '/s/mic.webm', system: '/s/system.webm', video: '/s/video.webm' }
+
+  it('chép cả ba luồng, giữ nguyên tên theo luồng', () => {
+    const plan = rawRescuePlan(paths)
+    expect(plan.copies.map((c) => c.to)).toEqual(['mic.webm', 'system.webm', 'video.webm'])
+    expect(plan.copies.map((c) => c.from)).toEqual([paths.mic, paths.system, paths.video])
+  })
+
+  it('file đại diện là hình khi có hình', () => {
+    expect(rawRescuePlan(paths)).toMatchObject({ mainFile: 'video.webm', hasVideo: true })
+  })
+
+  it('chỉ có tiếng thì lấy track của mình làm đại diện', () => {
+    expect(rawRescuePlan({ mic: paths.mic, system: paths.system })).toMatchObject({
+      mainFile: 'mic.webm',
+      hasVideo: false,
+    })
+  })
+
+  it('mất mic thì đại diện là track đối phương, không phải file rỗng', () => {
+    expect(rawRescuePlan({ system: paths.system }).mainFile).toBe('system.webm')
+  })
+
+  it('không có luồng nào thì nói thẳng chứ đừng tạo bản ghi rỗng', () => {
+    expect(() => rawRescuePlan({})).toThrow(/không có file thô/i)
   })
 })

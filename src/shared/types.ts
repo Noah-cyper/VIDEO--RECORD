@@ -90,6 +90,11 @@ export interface Recording {
   summaryFile?: string
   /** Mã ngôn ngữ đã dịch sẵn; mỗi mã tương ứng một file transcript.<code>.json cạnh bản ghi. */
   translations?: string[]
+  /**
+   * Bản thô được cứu khi không dựng được MP4: hình và tiếng nằm ở các file .webm riêng. Xem được
+   * nhưng chưa gỡ băng, cắt hay tách tiếng được - phải dựng lại thành MP4 trước.
+   */
+  raw?: boolean
 }
 
 export interface Settings {

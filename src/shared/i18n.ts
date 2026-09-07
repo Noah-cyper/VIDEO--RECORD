@@ -97,6 +97,10 @@ const vi = {
   'record.diskFull': 'Ổ đĩa còn dưới 1 GB, không đủ chỗ để bắt đầu ghi.',
   'record.dirUnavailable':
     'Không ghi được vào thư mục lưu "{dir}" nên chưa bắt đầu ghi — để anh khỏi mất buổi ghi. Lý do: {reason}. Cắm lại ổ đĩa, hoặc đổi thư mục lưu ở Cài đặt.',
+  'record.videoDropped':
+    'Không dựng được phần hình nên bản ghi này chỉ còn tiếng — hai track vẫn tách riêng. File thô vẫn còn, bấm Xuất file ở banner để thử lại cả hình.',
+  'record.rawRescued':
+    'Không dựng được file MP4 ({reason}) nên CallRec đã chép thẳng file thô vào "{folder}". Mở bằng VLC hoặc trình duyệt là xem/nghe được ngay — hình và tiếng nằm ở các file .webm riêng. Bấm Xuất file ở banner để thử dựng lại thành MP4.',
   'record.savedElsewhere':
     'Không ghi được vào "{wanted}" ({reason}) nên bản ghi đã được lưu vào "{used}". Bản ghi còn nguyên — chép lại sang ổ của mình khi ổ đó sẵn sàng.',
   'record.diskLow': 'Ổ đĩa sắp đầy, chỉ còn ghi được khoảng {minutes} phút.',
@@ -132,6 +136,9 @@ const vi = {
   'library.withVideo': 'có hình',
   'library.audioOnly': 'chỉ tiếng',
   'library.hits': 'Tìm thấy trong nội dung cuộc gọi ({count})',
+  'library.raw': 'bản thô',
+  'library.rawHint':
+    'Bản thô: hình và tiếng nằm ở các file .webm riêng vì không dựng được MP4. Xem được, nhưng chưa gỡ băng, cắt hay tách tiếng được — bấm Xuất file ở banner đầu cửa sổ để dựng lại thành MP4.',
   'library.extractAudio': 'Tách tiếng',
   'library.extractMe': 'Tách track Tôi',
   'library.extractThem': 'Tách track Đối phương',
@@ -342,6 +349,10 @@ const en: Record<TranslationKey, string> = {
   'record.diskFull': 'Less than 1 GB free — not enough space to start recording.',
   'record.dirUnavailable':
     'The recordings folder "{dir}" cannot be written to, so recording has not started — better than losing the call. Reason: {reason}. Reconnect the drive, or pick another folder in Settings.',
+  'record.videoDropped':
+    'The video could not be muxed, so this recording is audio only — both tracks are still separate. The raw files are still there; press Export on the banner to retry with video.',
+  'record.rawRescued':
+    'Could not build an MP4 ({reason}), so CallRec copied the raw files into "{folder}". VLC or a browser opens them as-is — video and audio are in separate .webm files. Press Export on the banner to retry building the MP4.',
   'record.savedElsewhere':
     'Could not write to "{wanted}" ({reason}), so the recording was saved to "{used}" instead. Nothing is lost — copy it over once that drive is back.',
   'record.diskLow': 'Disk is nearly full: about {minutes} minutes of recording left.',
@@ -377,6 +388,9 @@ const en: Record<TranslationKey, string> = {
   'library.withVideo': 'with video',
   'library.audioOnly': 'audio only',
   'library.hits': 'Found in call content ({count})',
+  'library.raw': 'raw',
+  'library.rawHint':
+    'Raw recording: video and audio sit in separate .webm files because the MP4 could not be built. Playable, but not yet transcribable, trimmable or splittable — press Export on the banner at the top to rebuild it as an MP4.',
   'library.extractAudio': 'Extract audio',
   'library.extractMe': 'Extract my track',
   'library.extractThem': 'Extract their track',
