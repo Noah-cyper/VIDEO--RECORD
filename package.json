@@ -1,6 +1,6 @@
 {
   "name": "callrec",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "Ghi âm và ghi hình cuộc gọi trên máy tính với âm thanh cả hai bên",
   "main": "./out/main/index.js",
   "author": "Noah-cyper",
@@ -16,8 +16,9 @@
     "test:watch": "vitest",
     "smoke": "electron-vite build && electron scripts/smoke.mjs",
     "fetch:ffmpeg": "node scripts/fetch-ffmpeg.mjs",
-    "package:win": "npm run fetch:ffmpeg && npm run build && electron-builder --win",
-    "package:mac": "npm run fetch:ffmpeg && npm run build && electron-builder --mac"
+    "package:win": "npm run fetch:ffmpeg && npm run fetch:whisper && npm run build && electron-builder --win",
+    "package:mac": "npm run fetch:ffmpeg && npm run fetch:whisper && npm run build && electron-builder --mac",
+    "fetch:whisper": "node scripts/fetch-whisper.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",

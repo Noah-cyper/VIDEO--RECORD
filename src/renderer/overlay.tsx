@@ -15,6 +15,8 @@ function Overlay() {
   const [elapsed, setElapsed] = useState(0)
   const [lang, setLang] = useState<Lang>('vi')
   const [captions, setCaptions] = useState<LiveCaption[]>([])
+  // Khoá nút ngay khi bấm: lệnh đi một chiều nên bấm chồng là gửi hai lệnh cho cùng một việc.
+  const [sent, setSent] = useState(false)
 
   useEffect(() => {
     void window.callrec.settings.get().then((s) => setLang(s.language))
@@ -25,6 +27,8 @@ function Overlay() {
       window.callrec.onIndicator((p) => {
         setState(p.state)
         setElapsed(p.elapsedMs)
+        // Trạng thái đổi nghĩa là lệnh đã tới nơi; mở khoá để còn tạm dừng / tiếp tục tiếp.
+        setSent(false)
       }),
     [],
   )
@@ -51,11 +55,24 @@ function Overlay() {
           hay tắt chỉ báo - danh sách lệnh bị chặn ở cả preload lẫn main (FR-08). */}
       {!finalizing && (
         <div className="row" style={{ gap: 6 }}>
-          <button onClick={() => window.callrec.sendOverlayCommand('pause')}>
+          <button
+            disabled={sent}
+            onClick={() => {
+              setSent(true)
+              window.callrec.sendOverlayCommand('pause')
+            }}
+          >
             {T(paused ? 'overlay.resume' : 'overlay.pause')}
           </button>
           <button onClick={() => window.callrec.sendOverlayCommand('bookmark')}>{T('overlay.bookmark')}</button>
-          <button className="danger" onClick={() => window.callrec.sendOverlayCommand('stop')}>
+          <button
+            className="danger"
+            disabled={sent}
+            onClick={() => {
+              setSent(true)
+              window.callrec.sendOverlayCommand('stop')
+            }}
+          >
             {T('overlay.stop')}
           </button>
         </div>

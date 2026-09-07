@@ -29,7 +29,8 @@ npm run build        # dựng bundle vào out/
 npm run package:win  # đóng gói installer (cần chứng thư ký số để không bị SmartScreen chặn)
 ```
 
-**whisper.cpp** (chỉ cần cho tính năng gỡ băng): tự build rồi đặt binary vào `resources/whisper/`.
+**whisper.cpp** (gỡ băng, phụ đề trực tiếp, dịch): **bản phát hành đã kèm sẵn** — `scripts/fetch-whisper.mjs`
+lấy bản dựng chính thức khi CI đóng gói. Chạy từ mã nguồn thì tự build rồi đặt binary vào `resources/whisper/`.
 Hướng dẫn ở [`docs/06-transcript.md`](docs/06-transcript.md#2-cài-whispercpp). Không có nó thì mọi
 tính năng ghi vẫn chạy bình thường, chỉ nút gỡ băng bị vô hiệu hoá.
 

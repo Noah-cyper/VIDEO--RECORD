@@ -52,6 +52,18 @@ export function isValidSessionId(id: unknown): id is string {
 }
 
 /** `2026-09-05_1430_Hop-khach-hang`. Không có tên thì lấy tên cửa sổ đã ghi làm tên tạm. */
+/**
+ * Session id đã mang sẵn ngày giờ bắt đầu, nên khi session.json mất thì vẫn dựng lại được mốc
+ * thời gian thật thay vì lấy "bây giờ" - tên thư mục bản ghi phụ thuộc vào nó.
+ */
+export function parseSessionIdDate(id: string): Date | null {
+  const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})-[0-9a-f]{4}$/.exec(id)
+  if (!m) return null
+  const [, y, mo, d, h, mi, sec] = m.map(Number) as unknown as number[]
+  const date = new Date(y as number, (mo as number) - 1, d as number, h as number, mi as number, sec as number)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
 export function makeRecordingFolder(startedAt: Date, title?: string, fallbackSource?: string): string {
   const d = startedAt
   const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
