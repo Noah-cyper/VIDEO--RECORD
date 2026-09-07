@@ -65,12 +65,15 @@ async function fetchWindows() {
   const cli = findCli(work)
   if (!cli) return done('Không tìm thấy file chạy whisper trong gói vừa tải.')
 
-  // Chép cả thư mục chứa nó: whisper-cli.exe cần các DLL nằm ngay cạnh mới chạy được.
+  // Chỉ lấy CLI và các DLL nằm cạnh nó - whisper-cli.exe cần DLL mới chạy được. Gói tải về còn
+  // kèm ~20 binary khác (server, bench, test-*, parakeet, wchess...) mà app không gọi tới; chép
+  // hết thì installer phình thêm hàng trăm MB và người dùng phải tải lại chừng đó mỗi lần cập nhật.
   const dir = join(cli, '..')
+  copyFileSync(cli, dest)
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (!entry.isFile()) continue
-    const target = CLI_NAMES.includes(entry.name) ? exeName : entry.name
-    copyFileSync(join(dir, entry.name), join(outDir, target))
+    if (entry.isFile() && entry.name.toLowerCase().endsWith('.dll')) {
+      copyFileSync(join(dir, entry.name), join(outDir, entry.name))
+    }
   }
   done(`Đã đặt whisper.cpp vào ${dest} (${(statSync(dest).size / 1048576).toFixed(1)} MB)`)
 }
