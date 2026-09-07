@@ -1,27 +1,43 @@
+import { app } from 'electron'
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import { statfs } from 'node:fs/promises'
-import type { ExportProgress, QualityPreset, Recording } from '@shared/types'
-import { assessDisk, makeRecordingFolder, uniqueFolder } from '@shared/naming'
+import type { DiskStatus, ExportProgress, QualityPreset, Recording } from '@shared/types'
+import { assessDisk, makeRecordingFolder, pickRoot, uniqueFolder } from '@shared/naming'
 import { buildAudioExtractArgs, buildExportArgs, buildThumbnailArgs, inputsFromManifest, videoCodecFor } from '@shared/ffmpeg'
 import { cleanupAfterExport, closeWriters, readManifest, sessionDir, setState } from './storage'
 import { runFfmpeg } from './ffmpeg'
 import { addRecording } from './library'
 import { getSettings } from './settings'
+import { APP_FOLDER, probeWritable } from './paths'
+import { sendAlert } from './windows'
 import { exists } from './jsonstore'
 
 export type ProgressSink = (p: ExportProgress) => void
 
-export async function diskStatus(quality: QualityPreset) {
+export async function diskStatus(quality: QualityPreset): Promise<DiskStatus> {
   const { recordingsDir } = await getSettings()
-  await fs.mkdir(recordingsDir, { recursive: true }).catch(() => undefined)
+  // Ghi thử TRƯỚC khi ghi. Ổ USB chưa cắm hay ổ mạng đứt mà chỉ phát hiện ở bước xuất file thì
+  // người dùng đã gọi xong cuộc gọi rồi - lúc đó báo lỗi là quá muộn.
+  const problem = await probeWritable(recordingsDir)
+  if (problem) {
+    return { dir: recordingsDir, problem, freeBytes: 0, minutesLeft: 0, canRecord: false, warn: true }
+  }
   try {
     const st = await statfs(recordingsDir)
-    return assessDisk(st.bavail * st.bsize, quality)
+    return { dir: recordingsDir, ...assessDisk(st.bavail * st.bsize, quality) }
   } catch {
     // Không đọc được dung lượng thì không chặn người dùng ghi, chỉ bỏ cảnh báo.
-    return { freeBytes: Number.MAX_SAFE_INTEGER, minutesLeft: Infinity, canRecord: true, warn: false }
+    return { dir: recordingsDir, freeBytes: Number.MAX_SAFE_INTEGER, minutesLeft: Infinity, canRecord: true, warn: false }
   }
+}
+
+/**
+ * Thứ tự ưu tiên khi tìm chỗ đặt bản ghi. Chỗ người dùng chọn luôn đứng đầu; hai chỗ sau chỉ để
+ * cứu bản ghi khi ổ đích biến mất GIỮA buổi (rút USB, mất mạng) - lúc đó preflight đã qua rồi.
+ */
+function rootCandidates(configured: string): string[] {
+  return [...new Set([configured, join(app.getPath('videos'), APP_FOLDER), join(app.getPath('userData'), 'recordings')])]
 }
 
 export async function exportSession(
@@ -40,20 +56,32 @@ export async function exportSession(
   const startedAt = new Date(manifest.startedAt)
   const sourceName = manifest.streams.video?.source
   const base = makeRecordingFolder(startedAt, title ?? manifest.title, sourceName)
-  const root = settings.recordingsDir
-  await fs.mkdir(root, { recursive: true })
 
-  const existing = new Set(await fs.readdir(root).catch(() => [] as string[]))
-  const folderName = uniqueFolder(base, (n) => existing.has(n))
-  const folder = join(root, folderName)
-  await fs.mkdir(folder, { recursive: true })
-
-  const { inputs, offsetsMs } = inputsFromManifest(manifest, (f) => join(sessionDir(sessionId), f))
-  const hasVideo = Boolean(inputs.video)
-  const outName = hasVideo ? 'recording.mp4' : 'recording.m4a'
-  const output = join(folder, outName)
-
+  // Chọn chỗ đặt file nằm TRONG try: không còn ổ nào ghi được cũng phải đi đúng đường báo lỗi,
+  // để phiên chuyển sang error và giữ file thô, chứ không ném thẳng ra ngoài rồi treo ở finalizing.
   try {
+    const choice = await pickRoot(rootCandidates(settings.recordingsDir), probeWritable)
+    const root = choice.root
+    if (choice.fellBackFrom) {
+      // Lưu được nhưng không đúng chỗ vẫn là chuyện phải nói to: người dùng sẽ đi tìm ở ổ của họ.
+      sendAlert({
+        kind: 'stream-error',
+        messageKey: 'record.savedElsewhere',
+        params: { wanted: choice.fellBackFrom, used: root, reason: choice.reason ?? '' },
+      })
+    }
+    await fs.mkdir(root, { recursive: true })
+
+    const existing = new Set(await fs.readdir(root).catch(() => [] as string[]))
+    const folderName = uniqueFolder(base, (n) => existing.has(n))
+    const folder = join(root, folderName)
+    await fs.mkdir(folder, { recursive: true })
+
+    const { inputs, offsetsMs } = inputsFromManifest(manifest, (f) => join(sessionDir(sessionId), f))
+    const hasVideo = Boolean(inputs.video)
+    const outName = hasVideo ? 'recording.mp4' : 'recording.m4a'
+    const output = join(folder, outName)
+
     const videoCodec = videoCodecFor(manifest.streams.video?.mimeType)
     onProgress({ sessionId, phase: 'normalizing', percent: 0 })
 

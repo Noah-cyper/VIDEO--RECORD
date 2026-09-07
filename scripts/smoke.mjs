@@ -135,6 +135,8 @@ app.whenReady().then(async () => {
     await window.callrec.settings.set({ recordingsDir: before })
 
     // Nút "Kiểm tra bản mới" phải luôn trả về một trạng thái đọc được, không được im lặng.
+    // Chỗ lưu phải được kiểm THẬT trước khi ghi, và phải nói rõ nó đang trỏ vào đâu.
+    const disk = await window.callrec.disk.status('audio-only')
     const ffmpegOk = await window.callrec.ffmpeg.available()
     const beforeCheck = await window.callrec.update.get()
     const afterCheck = await window.callrec.update.check()
@@ -147,6 +149,8 @@ app.whenReady().then(async () => {
       before, saved, wanted, managed: perms.managed, grantButton, errorShown,
       rootNormalized,
       ffmpegOk,
+      diskDir: disk.dir,
+      diskCanRecord: disk.canRecord,
       updateVersion: beforeCheck.currentVersion,
       updateState: afterCheck.state,
     }
@@ -241,6 +245,11 @@ app.whenReady().then(async () => {
     // Chạy từ mã nguồn thì phải nói rõ là không có kênh cập nhật, chứ không phải đứng im.
     // Môi trường dựng có ffmpeg-static nên preflight phải trả về true; false nghĩa là đường dẫn hỏng.
     if (settingsChecks.ffmpegOk !== true) problems.push('preflight FFmpeg báo không có')
+    // Người dùng phải đối chiếu được "app định ghi vào đâu" với "mình đã chọn đâu".
+    if (settingsChecks.diskDir !== settingsChecks.before) {
+      problems.push(`preflight ổ đĩa trỏ sai chỗ: ${settingsChecks.diskDir}, đúng ra là ${settingsChecks.before}`)
+    }
+    if (settingsChecks.diskCanRecord !== true) problems.push('thư mục lưu ghi được nhưng preflight vẫn chặn')
     if (settingsChecks.updateState !== 'unsupported') {
       problems.push(`kiểm tra cập nhật trả về trạng thái lạ: ${settingsChecks.updateState}`)
     }
@@ -255,6 +264,7 @@ app.whenReady().then(async () => {
       `gốc ổ đĩa → ${settingsChecks.rootNormalized} | ` +
       `lỗi hiện ra được: ${settingsChecks.errorShown} | ` +
       `ffmpeg: ${settingsChecks.ffmpegOk} | ` +
+      `chỗ lưu: ${settingsChecks.diskDir} (ghi được: ${settingsChecks.diskCanRecord}) | ` +
       `tự kiểm tra thiết bị: ${selfTest.verdicts ?? 0} kết luận | ` +
       `phụ đề trực tiếp: bật OK, chặn ngôn ngữ bịa OK | ` +
       `ghi ngầm: ẩn/hiện ${hidden && shownAgain ? 'OK' : 'HỎNG'}, throttling=${throttling} | ` +

@@ -1,11 +1,10 @@
 import { app } from 'electron'
-import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type { Settings } from '@shared/types'
 import { WHISPER_MODELS } from '@shared/whisper'
 import { TARGET_LANGUAGES } from '@shared/translate'
 import { readJson, writeJson } from './jsonstore'
-import { isUsableRecordingsDir, normalizeRecordingsDir } from './paths'
+import { isUsableRecordingsDir, normalizeRecordingsDir, probeWritable } from './paths'
 
 const file = () => join(app.getPath('userData'), 'settings.json')
 
@@ -27,16 +26,8 @@ function defaults(): Settings {
 }
 
 async function assertWritable(dir: string): Promise<void> {
-  const probe = join(dir, '.callrec-write-test')
-  try {
-    await fs.mkdir(dir, { recursive: true })
-    await fs.writeFile(probe, '')
-  } catch (err) {
-    const reason = err instanceof Error ? err.message : String(err)
-    throw new Error(`Không ghi được vào thư mục này: ${reason}`)
-  } finally {
-    await fs.rm(probe, { force: true }).catch(() => undefined)
-  }
+  const problem = await probeWritable(dir)
+  if (problem) throw new Error(`Không ghi được vào thư mục này: ${problem}`)
 }
 
 let cache: Settings | null = null

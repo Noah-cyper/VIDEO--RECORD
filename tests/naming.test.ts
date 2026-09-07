@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assessDisk, formatBytes, formatDuration, makeRecordingFolder, makeSessionId, slugify, uniqueFolder } from '@shared/naming'
+import { assessDisk, formatBytes, formatDuration, makeRecordingFolder, makeSessionId, slugify, uniqueFolder, pickRoot } from '@shared/naming'
 
 describe('slugify', () => {
   it('bỏ dấu tiếng Việt', () => {
@@ -77,5 +77,32 @@ describe('assessDisk', () => {
     // 10 GB ở 500 MB/giờ ≈ 20 giờ; chỉ ghi tiếng thì lâu hơn nhiều.
     expect(assessDisk(10 * GB, '1080p30').minutesLeft).toBe(1228)
     expect(assessDisk(10 * GB, 'audio-only').minutesLeft).toBeGreaterThan(5000)
+  })
+})
+
+describe('chọn thư mục đặt bản ghi', () => {
+  const ok = async () => null
+  const failing = (bad: string[]) => async (dir: string) => (bad.includes(dir) ? 'ổ chưa cắm' : null)
+
+  it('ghi được vào chỗ người dùng chọn thì không đi đâu khác', async () => {
+    expect(await pickRoot(['D:/CallRec', 'C:/Videos/CallRec'], ok)).toEqual({ root: 'D:/CallRec' })
+  })
+
+  it('ổ đích biến mất thì lui về chỗ sau và nói rõ đã lui từ đâu, vì sao', async () => {
+    const choice = await pickRoot(['D:/CallRec', 'C:/Videos/CallRec'], failing(['D:/CallRec']))
+    expect(choice).toEqual({ root: 'C:/Videos/CallRec', fellBackFrom: 'D:/CallRec', reason: 'ổ chưa cắm' })
+  })
+
+  it('lý do báo ra là lý do của chỗ NGƯỜI DÙNG chọn, không phải của chỗ trung gian', async () => {
+    const probe = async (dir: string) =>
+      dir === 'D:/CallRec' ? 'ổ chưa cắm' : dir === 'C:/Videos/CallRec' ? 'thư mục chỉ đọc' : null
+    const choice = await pickRoot(['D:/CallRec', 'C:/Videos/CallRec', 'C:/AppData/recordings'], probe)
+    expect(choice.root).toBe('C:/AppData/recordings')
+    expect(choice.reason).toBe('ổ chưa cắm')
+  })
+
+  it('không còn chỗ nào ghi được thì ném lỗi kèm đủ lý do để lần ra', async () => {
+    await expect(pickRoot(['D:/CallRec', 'C:/Videos/CallRec'], failing(['D:/CallRec', 'C:/Videos/CallRec'])))
+      .rejects.toThrow(/D:\/CallRec \(ổ chưa cắm\).*C:\/Videos\/CallRec/)
   })
 })

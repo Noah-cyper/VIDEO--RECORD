@@ -104,7 +104,12 @@ export function useRecorder(options: RecorderOptions) {
     }
     const disk = await window.callrec.disk.status(opts.quality)
     if (!disk.canRecord) {
-      pushAlert({ kind: 'disk-low', messageKey: 'record.diskFull' })
+      // Ổ không ghi được và ổ sắp đầy là hai chuyện khác nhau, và cách xử lý cũng khác nhau.
+      pushAlert(
+        disk.problem
+          ? { kind: 'stream-error', messageKey: 'record.dirUnavailable', params: { dir: disk.dir, reason: disk.problem } }
+          : { kind: 'disk-low', messageKey: 'record.diskFull' },
+      )
       return
     }
     if (disk.warn) {

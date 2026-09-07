@@ -95,6 +95,10 @@ const vi = {
   'record.quality.1080': '1080p30 (~500 MB/giờ)',
   'record.quality.1080_60': '1080p60 (~850 MB/giờ)',
   'record.diskFull': 'Ổ đĩa còn dưới 1 GB, không đủ chỗ để bắt đầu ghi.',
+  'record.dirUnavailable':
+    'Không ghi được vào thư mục lưu "{dir}" nên chưa bắt đầu ghi — để anh khỏi mất buổi ghi. Lý do: {reason}. Cắm lại ổ đĩa, hoặc đổi thư mục lưu ở Cài đặt.',
+  'record.savedElsewhere':
+    'Không ghi được vào "{wanted}" ({reason}) nên bản ghi đã được lưu vào "{used}". Bản ghi còn nguyên — chép lại sang ổ của mình khi ổ đó sẵn sàng.',
   'record.diskLow': 'Ổ đĩa sắp đầy, chỉ còn ghi được khoảng {minutes} phút.',
   'record.bookmarked': 'Đã đánh dấu mốc thời gian.',
   'record.noMic': 'Không mở được microphone. Chỉ ghi được tiếng đầu bên kia.',
@@ -336,6 +340,10 @@ const en: Record<TranslationKey, string> = {
   'record.quality.1080': '1080p30 (~500 MB/hour)',
   'record.quality.1080_60': '1080p60 (~850 MB/hour)',
   'record.diskFull': 'Less than 1 GB free — not enough space to start recording.',
+  'record.dirUnavailable':
+    'The recordings folder "{dir}" cannot be written to, so recording has not started — better than losing the call. Reason: {reason}. Reconnect the drive, or pick another folder in Settings.',
+  'record.savedElsewhere':
+    'Could not write to "{wanted}" ({reason}), so the recording was saved to "{used}" instead. Nothing is lost — copy it over once that drive is back.',
   'record.diskLow': 'Disk is nearly full: about {minutes} minutes of recording left.',
   'record.bookmarked': 'Marker added.',
   'record.noMic': 'Could not open the microphone. Only the other party will be recorded.',

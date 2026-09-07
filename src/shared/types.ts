@@ -115,6 +115,10 @@ export interface Settings {
 }
 
 export interface DiskStatus {
+  /** Thư mục thật sự sẽ được ghi vào; hiện ra để người dùng đối chiếu khi thấy file không ở đâu cả. */
+  dir: string
+  /** Có giá trị nghĩa là thư mục đó không ghi được lúc này - ổ chưa cắm, ổ mạng đứt, chỉ-đọc. */
+  problem?: string
   freeBytes: number
   /** Ước lượng số phút còn ghi được ở chất lượng hiện tại. */
   minutesLeft: number

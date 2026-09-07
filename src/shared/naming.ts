@@ -103,3 +103,31 @@ export function assessDisk(freeBytes: number, quality: QualityPreset) {
     warn: freeBytes < WARN_FREE_BYTES,
   }
 }
+
+export interface RootChoice {
+  root: string
+  /** Có giá trị nghĩa là chỗ người dùng chọn không ghi được và đã phải lui về chỗ khác. */
+  fellBackFrom?: string
+  reason?: string
+}
+
+/**
+ * Chọn thư mục thật sự ghi được trong danh sách ưu tiên. Ổ USB bị rút hay ổ mạng đứt là chuyện
+ * bình thường; lúc đó thà lưu sang chỗ khác rồi nói rõ, còn hơn để cả buổi ghi treo lại thành
+ * file thô mà người dùng tưởng là mất.
+ */
+export async function pickRoot(
+  candidates: string[],
+  probe: (dir: string) => Promise<string | null>,
+): Promise<RootChoice> {
+  const wanted = candidates[0] as string
+  const reasons: string[] = []
+  for (const [index, dir] of candidates.entries()) {
+    const problem = await probe(dir)
+    if (problem === null) {
+      return index === 0 ? { root: dir } : { root: dir, fellBackFrom: wanted, reason: reasons[0] }
+    }
+    reasons.push(problem)
+  }
+  throw new Error(`Không có thư mục nào ghi được: ${candidates.map((d, i) => `${d} (${reasons[i]})`).join('; ')}`)
+}

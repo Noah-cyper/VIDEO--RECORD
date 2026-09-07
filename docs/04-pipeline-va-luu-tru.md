@@ -104,6 +104,24 @@ cách nhanh nhất để mất một buổi ghi quan trọng.
 Cần cảnh báo khi ổ đĩa còn dưới 5 GB, và **chặn không cho bắt đầu ghi** khi còn dưới 1 GB —
 tốt hơn là báo trước còn hơn để người dùng ghi 40 phút rồi mới hỏng.
 
+## 4b. Chỗ lưu khi ổ đích không sẵn sàng
+
+File thô luôn nằm ở `userData/sessions/<id>/` trên ổ hệ thống. Chỉ bước xuất file cuối cùng mới
+chạm tới thư mục người dùng chọn — nên ổ USB bị rút giữa buổi ghi không làm mất gì.
+
+Hai lớp bảo vệ:
+
+1. **Trước khi ghi** — `diskStatus()` ghi thử một file vào thư mục đích. Không ghi được (ổ chưa
+   cắm, ổ mạng đứt, thư mục chỉ-đọc) thì **chặn luôn**, nêu rõ đường dẫn và lý do. Trước đây bước
+   này nuốt lỗi và trả về "ghi được", nên người dùng chỉ biết sau khi đã gọi xong.
+2. **Lúc xuất file** — `pickRoot()` thử theo thứ tự: chỗ người dùng chọn → `Videos/CallRec` →
+   `userData/recordings`. Phải lui về chỗ khác thì bản ghi vẫn ra file, kèm cảnh báo đỏ nói rõ
+   muốn lưu ở đâu, đã lưu ở đâu, vì sao. Mất bản ghi tệ hơn nhiều so với lưu sai chỗ.
+
+Không còn ổ nào ghi được thì phiên chuyển sang `error`, giữ nguyên file thô, và banner ở khung
+ngoài cho xuất lại — `needsRecovery()` ở `shared/machine.ts` là nơi quyết định trạng thái nào
+còn cứu được.
+
 ## 5. Transcript (Phase 4)
 
 Vì mic và system audio là hai track riêng, việc nhận diện người nói trở nên tầm thường:
