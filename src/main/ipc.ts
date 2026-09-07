@@ -10,6 +10,7 @@ import {
 import { toMarkdown, toSrt, toTxt, type SpeakerLabels } from '@shared/transcript'
 import { translate } from '@shared/i18n'
 import { WHISPER_MODELS, type WhisperModelName } from '@shared/whisper'
+import { isOverlayCommand } from '@shared/shortcuts'
 
 import { pushLiveAudio, startLive, stopLive } from './live'
 import { readTranscript, searchAllTranscripts, transcribeRecording } from './transcribe'
@@ -27,9 +28,9 @@ import { diskStatus, exportSession, extractAudio } from './exporter'
 import { getSettings, setSettings } from './settings'
 import { checkPermissions, requestPermissions } from './permissions'
 import { listSources, pickSource, pickedSourceName } from './sources'
-import { broadcast, getMainWindow, hideMainWindow, showMainWindow, syncIndicator } from './windows'
+import { broadcast, getMainWindow, hideMainWindow, sendCommand, showMainWindow, syncIndicator } from './windows'
 import { mediaUrl } from './media-protocol'
-import { updateTray } from './tray'
+import { setTrayLanguage, shortcutStatus, updateTray } from './tray'
 
 /** Tên model từ renderer được ghép vào đường dẫn file và URL tải, nên phải nằm trong bảng. */
 function assertModel(name: unknown): WhisperModelName {
@@ -235,6 +236,13 @@ export function registerIpc(): void {
   ipcMain.handle(CH.crashOpen, () => openCrashDumpDir())
   ipcMain.handle(CH.crashClear, () => clearCrashDumps())
 
+  ipcMain.handle(CH.shortcutsStatus, () => shortcutStatus())
+  // Ô chỉ báo chỉ được phát đúng ba lệnh này. Không có lệnh nào ẩn hay tắt chỉ báo (FR-08), và
+  // kênh mở cho renderer nên danh sách phải kiểm ở đây chứ không tin vào phía gửi.
+  ipcMain.on(CH.commandFromOverlay, (_e, cmd: unknown) => {
+    if (isOverlayCommand(cmd)) sendCommand(cmd)
+  })
+
   ipcMain.handle(CH.windowHide, () => hideMainWindow())
   ipcMain.handle(CH.windowShow, () => showMainWindow())
   ipcMain.handle(CH.ffmpegStatus, () => ffmpegAvailable())
@@ -243,7 +251,12 @@ export function registerIpc(): void {
     await removeModel(assertModel(name))
     return whisperStatus()
   })
-  ipcMain.handle(CH.settingsSet, (_e, patch: Partial<Settings>) => setSettings(patch))
+  ipcMain.handle(CH.settingsSet, async (_e, patch: Partial<Settings>) => {
+    const next = await setSettings(patch)
+    // Menu khay dựng sẵn từ trước nên không tự đổi theo ngôn ngữ; phải bảo nó dựng lại.
+    setTrayLanguage(next.language)
+    return next
+  })
   ipcMain.handle(CH.settingsPickDir, async () => {
     const win = getMainWindow()
     // defaultPath mở hộp thoại ngay tại thư mục đang dùng, thay vì một chỗ ngẫu nhiên.

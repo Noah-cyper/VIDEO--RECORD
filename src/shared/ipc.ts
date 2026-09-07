@@ -3,6 +3,7 @@ import type {
   QualityPreset, Recording, RecordState, SessionManifest, Settings, StreamKind,
 } from './types'
 import type { LiveCaption } from './live'
+import type { OverlayCommand } from './shortcuts'
 import type { Speaker, Transcript } from './transcript'
 import type { StoredSummary } from './summary'
 import type { WhisperModelName } from './whisper'
@@ -70,6 +71,9 @@ export const CH = {
   crashCount: 'crash:count',
   crashOpen: 'crash:open',
   crashClear: 'crash:clear',
+
+  commandFromOverlay: 'record:commandFromOverlay',
+  shortcutsStatus: 'shortcuts:status',
 
   windowHide: 'window:hide',
   windowShow: 'window:show',
@@ -195,6 +199,13 @@ export type TranscriptFormat = 'txt' | 'srt' | 'md'
 /** Lệnh phát từ main (phím tắt toàn cục, menu khay) xuống renderer. */
 export type MainCommand = 'toggle-record' | 'pause' | 'stop' | 'bookmark'
 
+export interface ShortcutStatus {
+  accelerator: string
+  command: MainCommand
+  /** false = phím đã bị ứng dụng khác chiếm. Im lặng bỏ qua là để người dùng bấm vào hư không. */
+  registered: boolean
+}
+
 export interface CallrecApi {
   sources: {
     list(): Promise<CaptureSource[]>
@@ -272,6 +283,9 @@ export interface CallrecApi {
     clear(): Promise<void>
   }
   window: { hide(): Promise<void>; show(): Promise<void> }
+  shortcuts: { status(): Promise<ShortcutStatus[]> }
+  /** Ô chỉ báo phát lệnh về main; danh sách lệnh bị giới hạn ở OVERLAY_COMMANDS. */
+  sendOverlayCommand(cmd: OverlayCommand): void
   ffmpeg: { available(): Promise<boolean> }
   whisper: {
     status(): Promise<WhisperStatus>

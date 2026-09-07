@@ -54,7 +54,8 @@ màn hình anh đang ghi. Bản ghi vẫn chạy bình thường.
 - Mở lại: nhấn icon CallRec ở khay hệ thống, hoặc chuột phải vào icon để dừng/tạm dừng ngay từ đó.
 - Đóng cửa sổ (dấu X) giữa lúc đang ghi **chỉ thu xuống khay**, không làm mất bản ghi. Muốn thoát
   hẳn thì dừng ghi trước, hoặc chọn Thoát trong menu khay.
-- Ô chỉ báo đang ghi vẫn ở nguyên góc màn hình — nó không tắt được, kể cả ở chế độ ngầm.
+- Ô chỉ báo đang ghi vẫn ở nguyên góc màn hình — nó không tắt được, kể cả ở chế độ ngầm. Trên ô đó
+  có sẵn nút **Tạm dừng**, **Mốc** và **Dừng**, nên không cần mở lại cửa sổ chỉ để dừng ghi.
 
 Tắt hành vi này ở **Cài đặt → "Tự thu cửa sổ xuống khay khi bắt đầu ghi"** nếu anh muốn giữ cửa sổ
 trên màn hình.
@@ -69,6 +70,10 @@ Trong lúc ghi:
 
 Đánh dấu mốc rất đáng dùng: nghe thấy điều quan trọng thì bấm một cái, sau này nhảy thẳng
 tới đó thay vì tua mò.
+
+Phím tắt toàn cục có thể bị ứng dụng khác (Zoom, Discord…) chiếm mất. **Cài đặt → Phím tắt toàn
+cục** liệt kê từng phím và nói rõ phím nào đang dùng được, phím nào bị chiếm — bị chiếm thì dùng
+nút trên ô chỉ báo hoặc menu ở khay hệ thống thay thế.
 
 ## 3. Xin phép người khác
 

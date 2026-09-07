@@ -145,6 +145,13 @@ app.whenReady().then(async () => {
     const beforeCheck = await window.callrec.update.get()
     const afterCheck = await window.callrec.update.check()
 
+    // Phím tắt: đăng ký hỏng vốn bị nuốt im lặng, nên ít nhất phải đọc được trạng thái ra.
+    const shortcuts = await window.callrec.shortcuts.status()
+    // Lệnh từ ô chỉ báo: kênh mở cho renderer nên giá trị lạ phải bị bỏ qua, không làm chết main.
+    window.callrec.sendOverlayCommand('khong-phai-lenh')
+    window.callrec.sendOverlayCommand('bookmark')
+    const aliveAfterOverlay = typeof (await window.callrec.settings.get()).language === 'string'
+
     const perms = await window.callrec.permissions.check()
     const grantButton = [...document.querySelectorAll('button')].some(
       (b) => b.textContent.trim() === 'Cấp quyền' || b.textContent.trim() === 'Grant permissions',
@@ -154,6 +161,9 @@ app.whenReady().then(async () => {
       rootNormalized, rootError,
       ffmpegOk,
       diskDir: disk.dir,
+      shortcutCount: shortcuts.length,
+      shortcutAccel: shortcuts[0]?.accelerator ?? '',
+      aliveAfterOverlay,
       diskCanRecord: disk.canRecord,
       updateVersion: beforeCheck.currentVersion,
       updateState: afterCheck.state,
@@ -259,6 +269,13 @@ app.whenReady().then(async () => {
       problems.push(`preflight ổ đĩa trỏ sai chỗ: ${settingsChecks.diskDir}, đúng ra là ${settingsChecks.before}`)
     }
     if (settingsChecks.diskCanRecord !== true) problems.push('thư mục lưu ghi được nhưng preflight vẫn chặn')
+    if (settingsChecks.shortcutCount !== 3) {
+      problems.push(`mong đợi 3 phím tắt, nhận ${settingsChecks.shortcutCount}`)
+    }
+    if (!settingsChecks.shortcutAccel.includes('CommandOrControl')) {
+      problems.push(`phím tắt trả về sai định dạng: ${settingsChecks.shortcutAccel}`)
+    }
+    if (!settingsChecks.aliveAfterOverlay) problems.push('gửi lệnh lạ từ ô chỉ báo xong main không trả lời nữa')
     if (settingsChecks.updateState !== 'unsupported') {
       problems.push(`kiểm tra cập nhật trả về trạng thái lạ: ${settingsChecks.updateState}`)
     }
@@ -275,6 +292,7 @@ app.whenReady().then(async () => {
       `ffmpeg: ${settingsChecks.ffmpegOk} | ` +
       `chỗ lưu: ${settingsChecks.diskDir} (ghi được: ${settingsChecks.diskCanRecord}) | ` +
       `tự kiểm tra thiết bị: ${selfTest.verdicts ?? 0} kết luận | ` +
+      `phím tắt: ${settingsChecks.shortcutCount} cái, lệnh lạ bị chặn OK | ` +
       `phụ đề trực tiếp: bật OK, chặn ngôn ngữ bịa OK | ` +
       `ghi ngầm: ẩn/hiện ${hidden && shownAgain ? 'OK' : 'HỎNG'}, throttling=${throttling} | ` +
       `cập nhật: v${settingsChecks.updateVersion} → ${settingsChecks.updateState}`,
