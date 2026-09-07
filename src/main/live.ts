@@ -9,7 +9,7 @@ import {
   stripQuotes, type LiveCaption,
 } from '@shared/live'
 import { parseWhisperJson, type Speaker } from '@shared/transcript'
-import { languageLabel, TARGET_LANGUAGES } from '@shared/translate'
+import { languageLabel, SPOKEN_AUTO, TARGET_LANGUAGES } from '@shared/translate'
 import type { WhisperModelName } from '@shared/whisper'
 import { getSettings } from './settings'
 import { getApiKey } from './secrets'
@@ -24,6 +24,7 @@ interface LiveSession {
   targetName: string
   model: WhisperModelName
   language: string
+  spoken: string
   client: Anthropic | null
 }
 
@@ -42,20 +43,25 @@ let reportedError = false
 
 const workDir = () => join(app.getPath('temp'), 'callrec-live')
 
-/** Mã ngôn ngữ từ renderer đi vào prompt gửi ra ngoài; chỉ nhận đúng những mã app tự khai. */
-function targetName(code: string): string | null {
+/**
+ * Mã ngôn ngữ từ renderer đi vào prompt gửi ra ngoài. Mã trong danh sách thì lấy tên chuẩn; mã
+ * tự đặt thì phải có tên người dùng đã gõ - cài đặt đã kiểm, đây là lớp thứ hai.
+ */
+function targetName(code: string, customLabel: string): string | null {
   if (!code) return ''
-  return TARGET_LANGUAGES.some((l) => l.code === code) ? languageLabel(code) : null
+  if (TARGET_LANGUAGES.some((l) => l.code === code)) return languageLabel(code)
+  return customLabel.trim() || null
 }
 
 export async function startLive(input: LiveStartInput): Promise<LiveStartResult> {
-  const name = targetName(input.target)
+  const settingsForName = await getSettings()
+  const name = targetName(input.target, settingsForName.liveTargetLabel)
   if (name === null) return { ok: false, reason: 'bad-target' }
   if (!(await whisperAvailable())) return { ok: false, reason: 'no-binary' }
 
-  const settings = await getSettings()
+  const settings = settingsForName
   let client: Anthropic | null = null
-  if (liveTargetMode(input.target) === 'cloud') {
+  if (liveTargetMode(input.target, settings.spokenLanguage) === 'cloud') {
     const apiKey = settings.allowCloudSummary ? await getApiKey() : null
     if (!apiKey) return { ok: false, reason: 'cloud-off' }
     client = new Anthropic({ apiKey })
@@ -75,7 +81,10 @@ export async function startLive(input: LiveStartInput): Promise<LiveStartResult>
     target: input.target,
     targetName: name,
     model: input.model,
-    language: settings.language,
+    // 'auto' = để whisper tự nhận diện. Đoán theo ngôn ngữ giao diện là cách chắc chắn sai khi
+    // người dùng gọi bằng thứ tiếng khác với thứ tiếng họ dùng app.
+    language: settings.spokenLanguage === SPOKEN_AUTO ? 'auto' : settings.spokenLanguage,
+    spoken: settings.spokenLanguage,
     client,
   }
   queue = []
@@ -145,7 +154,7 @@ async function transcribeSegment(current: LiveSession, job: Job): Promise<void> 
       wavPath: wav,
       model: current.model,
       language: current.language,
-      translate: liveTargetMode(current.target) === 'local',
+      translate: liveTargetMode(current.target, current.spoken) === 'local',
     })
     if (session !== current) return
 
@@ -156,7 +165,7 @@ async function transcribeSegment(current: LiveSession, job: Job): Promise<void> 
     )
     if (!text) return
 
-    const needsCloud = liveTargetMode(current.target) === 'cloud'
+    const needsCloud = liveTargetMode(current.target, current.spoken) === 'cloud'
     const caption: LiveCaption = { id: job.id, speaker: job.speaker, atMs: job.atMs, text, pending: needsCloud }
     broadcast(CH.liveCaption, caption)
     // Không await: bản dịch tới sau vài giây, còn hàng đợi gỡ băng phải chạy tiếp ngay.

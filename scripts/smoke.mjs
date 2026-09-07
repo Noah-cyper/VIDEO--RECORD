@@ -209,12 +209,37 @@ app.whenReady().then(async () => {
     const started = await window.callrec.live.start({
       sessionId: 'smoke', target: 'khong-co-that', model: 'tiny',
     })
+
+    // Ngôn ngữ đang nói: mã bịa phải bị từ chối, mã thật phải lưu được.
+    let rejectedBadSpoken = false
+    try {
+      await window.callrec.settings.set({ spokenLanguage: 'xx' })
+    } catch {
+      rejectedBadSpoken = true
+    }
+    await window.callrec.settings.set({ spokenLanguage: 'ja' })
+    const spokenSaved = (await window.callrec.settings.get()).spokenLanguage === 'ja'
+    await window.callrec.settings.set({ spokenLanguage: 'auto' })
+
+    // Ngôn ngữ đích ngoài danh sách: có tên thì nhận, không tên thì từ chối.
+    let rejectedUnnamed = false
+    try {
+      await window.callrec.settings.set({ liveTarget: 'tieng-bo-dao-nha', liveTargetLabel: '' })
+    } catch {
+      rejectedUnnamed = true
+    }
+    await window.callrec.settings.set({ liveTarget: 'tieng-bo-dao-nha', liveTargetLabel: 'Tiếng Bồ Đào Nha' })
+    const customSaved = (await window.callrec.settings.get()).liveTarget === 'tieng-bo-dao-nha'
+    await window.callrec.settings.set({ liveTarget: '', liveTargetLabel: '' })
     // Gói tiếng của một phiên không tồn tại phải bị bỏ qua, không được làm main chết.
     window.callrec.live.audio({ sessionId: 'khong-ton-tai', speaker: 'me', atMs: 0, pcm: new ArrayBuffer(64) })
     await window.callrec.live.stop()
     await window.callrec.settings.set({ liveCaptions: original })
     const aliveAfter = typeof (await window.callrec.settings.get()).liveTarget === 'string'
-    return { enabled, hasTarget, rejectedBadTarget, startReason: started.reason, aliveAfter }
+    return {
+      enabled, hasTarget, rejectedBadTarget, startReason: started.reason, aliveAfter,
+      rejectedBadSpoken, spokenSaved, rejectedUnnamed, customSaved,
+    }
   })()`).catch((err) => ({ error: `lỗi khi kiểm phụ đề trực tiếp: ${err.message}` }))
 
   // Ghi ngầm: cửa sổ phải ẩn/hiện được qua IPC, và throttling phải tắt - Chromium bóp ga cửa sổ
@@ -245,6 +270,10 @@ app.whenReady().then(async () => {
     if (!liveChecks.enabled) problems.push('bật phụ đề trực tiếp nhưng cài đặt không được lưu')
     if (!liveChecks.hasTarget) problems.push('bật phụ đề rồi mà không có ô chọn ngôn ngữ dịch')
     if (!liveChecks.rejectedBadTarget) problems.push('mã ngôn ngữ bịa vẫn được nhận vào cài đặt')
+    if (!liveChecks.rejectedBadSpoken) problems.push('mã ngôn ngữ đang nói bịa vẫn được nhận')
+    if (!liveChecks.spokenSaved) problems.push('chọn ngôn ngữ đang nói nhưng không lưu được')
+    if (!liveChecks.rejectedUnnamed) problems.push('ngôn ngữ ngoài danh sách không có tên vẫn được nhận')
+    if (!liveChecks.customSaved) problems.push('ngôn ngữ ngoài danh sách có tên nhưng không lưu được')
     if (liveChecks.startReason !== 'bad-target') {
       problems.push(`live.start với ngôn ngữ bịa phải trả về bad-target, nhận ${liveChecks.startReason}`)
     }
@@ -304,7 +333,7 @@ app.whenReady().then(async () => {
       `chỗ lưu: ${settingsChecks.diskDir} (ghi được: ${settingsChecks.diskCanRecord}) | ` +
       `tự kiểm tra thiết bị: ${selfTest.verdicts ?? 0} kết luận | ` +
       `phím tắt: ${settingsChecks.shortcutCount} cái, lệnh lạ bị chặn OK | ` +
-      `phụ đề trực tiếp: bật OK, chặn ngôn ngữ bịa OK | ` +
+      `phụ đề trực tiếp: bật OK, chặn ngôn ngữ bịa OK, nguồn+đích lưu được OK | ` +
       `ghi ngầm: ẩn/hiện ${hidden && shownAgain ? 'OK' : 'HỎNG'}, throttling=${throttling} | ` +
       `cập nhật: v${settingsChecks.updateVersion} → ${settingsChecks.updateState}`,
   )

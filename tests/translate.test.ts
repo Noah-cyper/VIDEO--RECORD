@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyTranslation, buildTranslatePrompt, chunkSegments, customLanguageCode,
-  languageLabel, parseTranslation, TARGET_LANGUAGES,
+  languageLabel, parseTranslation, TARGET_LANGUAGES, isSpokenLanguage, isCustomLanguageCode, SPOKEN_AUTO,
 } from '@shared/translate'
 import type { TranscriptSegment } from '@shared/transcript'
 
@@ -86,5 +86,28 @@ describe('mã ngôn ngữ', () => {
   it('không có mã trùng trong danh sách', () => {
     const codes = TARGET_LANGUAGES.map((l) => l.code)
     expect(new Set(codes).size).toBe(codes.length)
+  })
+})
+
+describe('mã ngôn ngữ nhận từ giao diện', () => {
+  it('nguồn: nhận auto và các mã app tự khai', () => {
+    expect(isSpokenLanguage(SPOKEN_AUTO)).toBe(true)
+    expect(isSpokenLanguage('vi')).toBe(true)
+    expect(isSpokenLanguage('ja')).toBe(true)
+  })
+
+  it('nguồn: từ chối mã bịa và thứ không phải chuỗi', () => {
+    for (const junk of ['xx', 'auto ', '', null, 42, {}]) expect(isSpokenLanguage(junk)).toBe(false)
+  })
+
+  it('đích tự đặt: đúng khuôn mà customLanguageCode sinh ra thì nhận', () => {
+    expect(isCustomLanguageCode(customLanguageCode('Tiếng Bồ Đào Nha'))).toBe(true)
+    expect(isCustomLanguageCode(customLanguageCode('Italiano'))).toBe(true)
+  })
+
+  it('đích tự đặt: chặn thứ có thể chui vào tên file hay prompt', () => {
+    for (const junk of ['../../etc', 'a/b', 'CÓ-HOA', 'dấu cách', '-', 'a'.repeat(25), null]) {
+      expect(isCustomLanguageCode(junk)).toBe(false)
+    }
   })
 })

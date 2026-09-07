@@ -11,6 +11,7 @@ import { toMarkdown, toSrt, toTxt, type SpeakerLabels } from '@shared/transcript
 import { translate } from '@shared/i18n'
 import { WHISPER_MODELS, type WhisperModelName } from '@shared/whisper'
 import { isOverlayCommand } from '@shared/shortcuts'
+import { SPOKEN_AUTO } from '@shared/translate'
 
 import { pushLiveAudio, startLive, stopLive } from './live'
 import { readTranscript, searchAllTranscripts, transcribeRecording } from './transcribe'
@@ -138,7 +139,8 @@ export function registerIpc(): void {
       return await transcribeRecording(
         id,
         model,
-        settings.language,
+        // Ngôn ngữ ĐANG NÓI, không phải ngôn ngữ giao diện; 'auto' để whisper tự nhận diện.
+        settings.spokenLanguage === SPOKEN_AUTO ? 'auto' : settings.spokenLanguage,
         (p) => broadcast(CH.transcriptProgress, p),
         controller.signal,
       )

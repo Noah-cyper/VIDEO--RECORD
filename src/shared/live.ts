@@ -23,8 +23,12 @@ export const LIVE_TARGET_LOCAL = 'en'
 
 export type LiveMode = 'off' | 'local' | 'cloud'
 
-export function liveTargetMode(target: string): LiveMode {
-  if (!target) return 'off'
+/**
+ * Dịch từ tiếng X sang chính tiếng X là việc vô nghĩa và tốn một lượt gọi API, nên ngôn ngữ nguồn
+ * cũng tham gia quyết định ở đây chứ không chỉ ngôn ngữ đích.
+ */
+export function liveTargetMode(target: string, spoken = ''): LiveMode {
+  if (!target || target === spoken) return 'off'
   return target === LIVE_TARGET_LOCAL ? 'local' : 'cloud'
 }
 

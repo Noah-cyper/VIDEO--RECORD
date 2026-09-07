@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { join } from 'node:path'
 import type { Settings } from '@shared/types'
 import { WHISPER_MODELS } from '@shared/whisper'
-import { TARGET_LANGUAGES } from '@shared/translate'
+import { isCustomLanguageCode, isSpokenLanguage, SPOKEN_AUTO, TARGET_LANGUAGES } from '@shared/translate'
 import { readJson, writeJson } from './jsonstore'
 import { isUsableRecordingsDir, normalizeRecordingsDir, probeWritable } from './paths'
 
@@ -21,7 +21,9 @@ function defaults(): Settings {
     allowCloudSummary: false,
     liveCaptions: false,
     liveTarget: '',
+    liveTargetLabel: '',
     liveModel: 'tiny',
+    spokenLanguage: SPOKEN_AUTO,
   }
 }
 
@@ -54,11 +56,25 @@ export async function setSettings(patch: Partial<Settings>): Promise<Settings> {
     // im lặng cho tới lúc người dùng ghi xong một cuộc gọi rồi mới hỏng ở bước xuất file.
     await assertWritable(next.recordingsDir)
   }
-  // Mã ngôn ngữ đích của phụ đề đi thẳng vào prompt gửi ra dịch vụ ngoài; chỉ nhận mã app tự khai.
+  // Mã ngôn ngữ đích của phụ đề đi thẳng vào prompt gửi ra dịch vụ ngoài, và cả vào tên file bản
+  // dịch - nên nhận mã trong danh sách, hoặc mã tự đặt đúng khuôn customLanguageCode() sinh ra.
   if (patch.liveTarget !== undefined && patch.liveTarget !== '') {
-    if (!TARGET_LANGUAGES.some((l) => l.code === patch.liveTarget)) {
+    const known = TARGET_LANGUAGES.some((l) => l.code === patch.liveTarget)
+    if (!known && !isCustomLanguageCode(patch.liveTarget)) {
       throw new Error(`Ngôn ngữ phụ đề không hợp lệ: ${JSON.stringify(patch.liveTarget)}`)
     }
+    // Ngôn ngữ ngoài danh sách chỉ có tên do người dùng gõ; không có tên thì không dịch nổi.
+    const label = (patch.liveTargetLabel ?? current.liveTargetLabel).trim()
+    if (!known && label === '') {
+      throw new Error('Ngôn ngữ ngoài danh sách phải kèm tên ngôn ngữ.')
+    }
+  }
+  if (patch.liveTargetLabel !== undefined) {
+    // Chuỗi này đi vào prompt gửi ra ngoài: cắt ngắn và bỏ ký tự điều khiển, đừng nhận nguyên xi.
+    next.liveTargetLabel = patch.liveTargetLabel.replace(/[\p{C}]/gu, ' ').trim().slice(0, 60)
+  }
+  if (patch.spokenLanguage !== undefined && !isSpokenLanguage(patch.spokenLanguage)) {
+    throw new Error(`Ngôn ngữ đang nói không hợp lệ: ${JSON.stringify(patch.spokenLanguage)}`)
   }
   if (patch.liveModel !== undefined && !(patch.liveModel in WHISPER_MODELS)) {
     throw new Error(`Model phụ đề không hợp lệ: ${JSON.stringify(patch.liveModel)}`)

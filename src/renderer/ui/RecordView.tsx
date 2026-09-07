@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { CaptureSource, Settings } from '@shared/types'
 import { formatDuration } from '@shared/naming'
 import { LIVE_TARGET_LOCAL, liveTargetMode, type LiveCaption } from '@shared/live'
-import { TARGET_LANGUAGES } from '@shared/translate'
+import { customLanguageCode, languageLabel, SPOKEN_AUTO, TARGET_LANGUAGES } from '@shared/translate'
 import { listMics } from '../capture/engine'
 import { runSelfTest, type SelfTestOutcome } from '../capture/selftest'
 import { formatReport, type SelfTestVerdict } from '@shared/selftest'
@@ -76,6 +76,10 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
   const [testResult, setTestResult] = useState<SelfTestOutcome | null>(null)
   const [copied, setCopied] = useState(false)
   const [mics, setMics] = useState<{ deviceId: string; label: string }[]>([])
+  // Ngôn ngữ ngoài danh sách: giữ ô gõ tên mở cho tới khi người dùng nhập xong.
+  const custom = settings.liveTarget !== '' && !TARGET_LANGUAGES.some((l) => l.code === settings.liveTarget)
+  const [customName, setCustomName] = useState(settings.liveTargetLabel)
+  const [showCustom, setShowCustom] = useState(custom)
   const r = useRecorder({
     quality: settings.quality,
     micDeviceId: settings.micDeviceId,
@@ -249,22 +253,79 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
         </label>
 
         {settings.liveCaptions && (
-          <div className="field">
-            <label htmlFor="live-target">{t('live.target')}</label>
-            <select
-              id="live-target"
-              value={settings.liveTarget}
-              disabled={recording}
-              onChange={(e) => onSettings({ liveTarget: e.target.value })}
-            >
-              <option value="">{t('live.targetOff')}</option>
-              {TARGET_LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code}>
-                  {t(l.code === LIVE_TARGET_LOCAL ? 'live.targetLocal' : 'live.targetCloud', { lang: l.label })}
-                </option>
-              ))}
-            </select>
-          </div>
+          <>
+            <div className="field">
+              <label htmlFor="spoken-lang">{t('live.spoken')}</label>
+              <select
+                id="spoken-lang"
+                value={settings.spokenLanguage}
+                disabled={recording}
+                onChange={(e) => onSettings({ spokenLanguage: e.target.value })}
+              >
+                <option value={SPOKEN_AUTO}>{t('live.spokenAuto')}</option>
+                {TARGET_LANGUAGES.map((l) => (
+                  <option key={l.code} value={l.code}>{l.label}</option>
+                ))}
+              </select>
+              <span className="muted" style={{ fontSize: 12 }}>{t('live.spokenHint')}</span>
+            </div>
+
+            <div className="field">
+              <label htmlFor="live-target">{t('live.target')}</label>
+              <select
+                id="live-target"
+                value={showCustom ? 'custom' : settings.liveTarget}
+                disabled={recording}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setShowCustom(value === 'custom')
+                  if (value !== 'custom') onSettings({ liveTarget: value, liveTargetLabel: '' })
+                }}
+              >
+                <option value="">{t('live.targetOff')}</option>
+                {TARGET_LANGUAGES.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {t(
+                      l.code === settings.spokenLanguage ? 'live.targetSame'
+                      : l.code === LIVE_TARGET_LOCAL ? 'live.targetLocal'
+                      : 'live.targetCloud',
+                      { lang: l.label },
+                    )}
+                  </option>
+                ))}
+                <option value="custom">{t('live.targetCustom')}</option>
+              </select>
+              {custom && !showCustom && (
+                <span className="muted" style={{ fontSize: 12 }}>
+                  {t('live.targetCloud', { lang: settings.liveTargetLabel || languageLabel(settings.liveTarget) })}
+                </span>
+              )}
+            </div>
+
+            {showCustom && (
+              <div className="field">
+                <label htmlFor="live-target-name">{t('live.targetCustomName')}</label>
+                <div className="row">
+                  <input
+                    id="live-target-name"
+                    value={customName}
+                    disabled={recording}
+                    placeholder={t('live.targetCustomPlaceholder')}
+                    onChange={(e) => setCustomName(e.target.value)}
+                  />
+                  <button
+                    disabled={recording || customName.trim() === ''}
+                    onClick={() =>
+                      onSettings({ liveTarget: customLanguageCode(customName), liveTargetLabel: customName.trim() })
+                    }
+                  >
+                    {t('app.apply')}
+                  </button>
+                </div>
+                <span className="muted" style={{ fontSize: 12 }}>{t('live.targetCustomHint')}</span>
+              </div>
+            )}
+          </>
         )}
 
         {/* Nói trước khi bấm ghi, chứ để tới lúc bắt đầu ghi mới báo là đã lỡ mất đoạn đầu. */}

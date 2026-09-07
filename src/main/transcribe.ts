@@ -3,7 +3,10 @@ import { join } from 'node:path'
 import type { Recording } from '@shared/types'
 import type { TranscriptProgress } from '@shared/ipc'
 import { buildWavExtractArgs } from '@shared/ffmpeg'
-import { mergeTranscripts, parseWhisperJson, type Speaker, type Transcript, type TranscriptSegment } from '@shared/transcript'
+import {
+  detectLanguage, mergeTranscripts, parseWhisperJson,
+  type Speaker, type Transcript, type TranscriptSegment,
+} from '@shared/transcript'
 import type { WhisperModelName } from '@shared/whisper'
 import { runFfmpeg } from './ffmpeg'
 import { ensureModel, runWhisper } from './whisper'
@@ -43,6 +46,9 @@ export async function transcribeRecording(
 
     const perTrack = new Map<Speaker, TranscriptSegment[]>()
     const failures: string[] = []
+    // Với 'auto' thì ngôn ngữ thật chỉ biết được sau khi whisper chạy; lưu lại để biên bản ghi
+    // đúng thứ tiếng đã nghe được, chứ không ghi chữ "auto".
+    let detected: string | null = null
 
     for (const [index, speaker] of tracks.entries()) {
       const wav = join(rec.folder, `.track-${index}.wav`)
@@ -66,6 +72,7 @@ export async function transcribeRecording(
             track: speaker,
           }),
       })
+      detected ??= detectLanguage(raw)
       perTrack.set(speaker, parseWhisperJson(raw, speaker))
       } catch (err) {
         if (signal?.aborted) throw err
@@ -79,7 +86,7 @@ export async function transcribeRecording(
     const mine = perTrack.get('me') ?? []
     const theirs = perTrack.get('them') ?? []
     const transcript: Transcript = {
-      language,
+      language: language === 'auto' ? (detected ?? 'vi') : language,
       model,
       createdAt: new Date().toISOString(),
       segments: mergeTranscripts(mine, theirs),

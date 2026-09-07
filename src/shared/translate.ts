@@ -20,6 +20,19 @@ export const TARGET_LANGUAGES: TargetLanguage[] = [
   { code: 'ru', label: 'Русский' },
 ]
 
+/** Để whisper tự nhận diện ngôn ngữ đang nói, thay vì đoán theo ngôn ngữ giao diện. */
+export const SPOKEN_AUTO = 'auto'
+
+/** Mã ngôn ngữ nguồn hợp lệ: 'auto' hoặc một trong những mã app tự khai. */
+export function isSpokenLanguage(code: unknown): code is string {
+  return code === SPOKEN_AUTO || (typeof code === 'string' && TARGET_LANGUAGES.some((l) => l.code === code))
+}
+
+/** Mã tự đặt cho ngôn ngữ ngoài danh sách; phải khớp đúng thứ customLanguageCode() sinh ra. */
+export function isCustomLanguageCode(code: unknown): code is string {
+  return typeof code === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(code) && code.length <= 24
+}
+
 /** Ngôn ngữ ngoài danh sách: người dùng gõ tên, chuyển thành mã an toàn cho tên file. */
 export function customLanguageCode(name: string): string {
   const slug = foldDiacritics(name)
