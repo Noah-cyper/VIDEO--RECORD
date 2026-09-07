@@ -54,6 +54,8 @@ const vi = {
 
   'orphan.found':
     'Phiên ghi ngày {when} chưa được xuất file — có thể ứng dụng đã bị đóng đột ngột. Phần đã ghi vẫn còn.',
+  'orphan.failed':
+    'Phiên ghi ngày {when} xuất file KHÔNG thành công: {reason} Phần đã ghi vẫn còn nguyên, bấm Xuất file để thử lại.',
   'orphan.export': 'Xuất file',
   'orphan.discard': 'Bỏ',
   'orphan.confirmDiscard': 'Xoá hẳn phần đã ghi của phiên này?',
@@ -93,6 +95,14 @@ const vi = {
   'record.quality.1080': '1080p30 (~500 MB/giờ)',
   'record.quality.1080_60': '1080p60 (~850 MB/giờ)',
   'record.diskFull': 'Ổ đĩa còn dưới 1 GB, không đủ chỗ để bắt đầu ghi.',
+  'record.dirUnavailable':
+    'Không ghi được vào thư mục lưu "{dir}" nên chưa bắt đầu ghi — để anh khỏi mất buổi ghi. Lý do: {reason}. Cắm lại ổ đĩa, hoặc đổi thư mục lưu ở Cài đặt.',
+  'record.videoDropped':
+    'Không dựng được phần hình nên bản ghi này chỉ còn tiếng — hai track vẫn tách riêng. File thô vẫn còn, bấm Xuất file ở banner để thử lại cả hình.',
+  'record.rawRescued':
+    'Không dựng được file MP4 ({reason}) nên CallRec đã chép thẳng file thô vào "{folder}". Mở bằng VLC hoặc trình duyệt là xem/nghe được ngay — hình và tiếng nằm ở các file .webm riêng. Bấm Xuất file ở banner để thử dựng lại thành MP4.',
+  'record.savedElsewhere':
+    'Không ghi được vào "{wanted}" ({reason}) nên bản ghi đã được lưu vào "{used}". Bản ghi còn nguyên — chép lại sang ổ của mình khi ổ đó sẵn sàng.',
   'record.diskLow': 'Ổ đĩa sắp đầy, chỉ còn ghi được khoảng {minutes} phút.',
   'record.bookmarked': 'Đã đánh dấu mốc thời gian.',
   'record.noMic': 'Không mở được microphone. Chỉ ghi được tiếng đầu bên kia.',
@@ -126,6 +136,9 @@ const vi = {
   'library.withVideo': 'có hình',
   'library.audioOnly': 'chỉ tiếng',
   'library.hits': 'Tìm thấy trong nội dung cuộc gọi ({count})',
+  'library.raw': 'bản thô',
+  'library.rawHint':
+    'Bản thô: hình và tiếng nằm ở các file .webm riêng vì không dựng được MP4. Xem được, nhưng chưa gỡ băng, cắt hay tách tiếng được — bấm Xuất file ở banner đầu cửa sổ để dựng lại thành MP4.',
   'library.extractAudio': 'Tách tiếng',
   'library.extractMe': 'Tách track Tôi',
   'library.extractThem': 'Tách track Đối phương',
@@ -212,6 +225,31 @@ const vi = {
   'overlay.paused': 'Tạm dừng',
   'overlay.saving': 'Đang lưu',
 
+
+  'live.title': 'Phụ đề trực tiếp',
+  'live.enable': 'Hiện phụ đề trong lúc ghi',
+  'live.hint':
+    'Nghe ké hai luồng rồi gỡ băng từng đoạn ngay trong lúc ghi. Phụ đề tới chậm 2-6 giây tuỳ máy, và đây là bản nghe nhanh - biên bản chính xác vẫn là bản gỡ băng sau khi ghi xong.',
+  'live.target': 'Dịch phụ đề sang',
+  'live.targetOff': 'Không dịch — chỉ hiện nguyên văn',
+  'live.targetLocal': '{lang} — dịch ngay trên máy, không cần mạng',
+  'live.targetCloud': '{lang} — qua API, lời thoại rời khỏi máy này',
+  'live.preparing': 'Đang tải model phụ đề về máy, lần đầu có thể mất một lúc. Bản ghi bắt đầu ngay sau đó.',
+  'live.waiting': 'Đang nghe… phụ đề hiện ra khi có người nói.',
+  'live.off': 'Phụ đề đang tắt. Bật ở ô trên rồi bắt đầu ghi.',
+  'live.pending': 'đang dịch…',
+  'live.noBinary': 'Chưa có whisper.cpp nên không chạy được phụ đề trực tiếp. Việc ghi vẫn diễn ra bình thường.',
+  'live.cloudOff':
+    'Dịch phụ đề sang ngôn ngữ này phải gửi lời thoại ra ngoài. Bật mục cho phép ở Cài đặt và nhập khoá API, hoặc chọn dịch sang tiếng Anh để chạy hẳn trên máy.',
+  'live.badTarget': 'Ngôn ngữ phụ đề không hợp lệ.',
+  'live.modelFailed': 'Không chuẩn bị được model phụ đề: {reason}',
+  'live.busy': 'Không bật được phụ đề trực tiếp.',
+  'live.behind':
+    'Máy không theo kịp nên một đoạn phụ đề đã bị bỏ. Bản ghi không mất gì; chọn model phụ đề nhẹ hơn nếu bị thường xuyên.',
+  'settings.liveModel': 'Model phụ đề trực tiếp',
+  'settings.liveModelHint':
+    'Model này chạy song song với việc ghi nên phải nhẹ: tiny và base kịp thời gian thực, small trở lên sẽ tụt lại trên máy yếu. Không liên quan tới model gỡ băng sau khi ghi.',
+
   'speaker.me': 'Tôi',
   'speaker.them': 'Đối phương',
 } as const
@@ -268,6 +306,8 @@ const en: Record<TranslationKey, string> = {
 
   'orphan.found':
     'The session from {when} was never exported — the app may have closed unexpectedly. What was recorded is still there.',
+  'orphan.failed':
+    'The recording from {when} failed to export: {reason} What was recorded is still intact — press Export to try again.',
   'orphan.export': 'Export it',
   'orphan.discard': 'Discard',
   'orphan.confirmDiscard': 'Permanently discard what was recorded in this session?',
@@ -307,6 +347,14 @@ const en: Record<TranslationKey, string> = {
   'record.quality.1080': '1080p30 (~500 MB/hour)',
   'record.quality.1080_60': '1080p60 (~850 MB/hour)',
   'record.diskFull': 'Less than 1 GB free — not enough space to start recording.',
+  'record.dirUnavailable':
+    'The recordings folder "{dir}" cannot be written to, so recording has not started — better than losing the call. Reason: {reason}. Reconnect the drive, or pick another folder in Settings.',
+  'record.videoDropped':
+    'The video could not be muxed, so this recording is audio only — both tracks are still separate. The raw files are still there; press Export on the banner to retry with video.',
+  'record.rawRescued':
+    'Could not build an MP4 ({reason}), so CallRec copied the raw files into "{folder}". VLC or a browser opens them as-is — video and audio are in separate .webm files. Press Export on the banner to retry building the MP4.',
+  'record.savedElsewhere':
+    'Could not write to "{wanted}" ({reason}), so the recording was saved to "{used}" instead. Nothing is lost — copy it over once that drive is back.',
   'record.diskLow': 'Disk is nearly full: about {minutes} minutes of recording left.',
   'record.bookmarked': 'Marker added.',
   'record.noMic': 'Could not open the microphone. Only the other party will be recorded.',
@@ -340,6 +388,9 @@ const en: Record<TranslationKey, string> = {
   'library.withVideo': 'with video',
   'library.audioOnly': 'audio only',
   'library.hits': 'Found in call content ({count})',
+  'library.raw': 'raw',
+  'library.rawHint':
+    'Raw recording: video and audio sit in separate .webm files because the MP4 could not be built. Playable, but not yet transcribable, trimmable or splittable — press Export on the banner at the top to rebuild it as an MP4.',
   'library.extractAudio': 'Extract audio',
   'library.extractMe': 'Extract my track',
   'library.extractThem': 'Extract their track',
@@ -425,6 +476,31 @@ const en: Record<TranslationKey, string> = {
   'overlay.recording': 'Recording',
   'overlay.paused': 'Paused',
   'overlay.saving': 'Saving',
+
+
+  'live.title': 'Live captions',
+  'live.enable': 'Show captions while recording',
+  'live.hint':
+    'Taps both streams and transcribes them segment by segment while you record. Captions lag 2-6 seconds depending on the machine, and this is the quick read - the accurate record is still the transcript made after the call.',
+  'live.target': 'Translate captions into',
+  'live.targetOff': 'No translation — original wording only',
+  'live.targetLocal': '{lang} — translated on this machine, no network needed',
+  'live.targetCloud': '{lang} — via the API, the speech leaves this machine',
+  'live.preparing': 'Downloading the caption model; the first time takes a while. Recording starts right after.',
+  'live.waiting': 'Listening… captions appear once somebody speaks.',
+  'live.off': 'Captions are off. Turn them on above, then start recording.',
+  'live.pending': 'translating…',
+  'live.noBinary': 'whisper.cpp is missing, so live captions cannot run. Recording itself is unaffected.',
+  'live.cloudOff':
+    'Translating captions into this language sends the speech off this machine. Enable that in Settings and add an API key, or pick English to keep everything local.',
+  'live.badTarget': 'That caption language is not valid.',
+  'live.modelFailed': 'Could not prepare the caption model: {reason}',
+  'live.busy': 'Could not turn on live captions.',
+  'live.behind':
+    'This machine fell behind, so one caption segment was dropped. Nothing is missing from the recording; pick a lighter caption model if it keeps happening.',
+  'settings.liveModel': 'Live caption model',
+  'settings.liveModelHint':
+    'This model runs alongside the recording, so it has to be light: tiny and base keep up in real time, small and above fall behind on slower machines. Unrelated to the transcription model used after the call.',
 
   'speaker.me': 'Me',
   'speaker.them': 'Other party',

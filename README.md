@@ -6,6 +6,8 @@ với **âm thanh đầy đủ của cả hai bên**:
 - **Giọng của mình** — lấy từ microphone.
 - **Giọng đầu bên kia** — lấy từ *loopback / system audio* (âm thanh đang phát ra loa), không cần bên kia cài gì.
 - **Hình ảnh** — ghi màn hình (cửa sổ cuộc gọi hoặc toàn màn hình) + webcam tuỳ chọn.
+- **Phụ đề trực tiếp** — gỡ băng ngay trong lúc ghi, có thể dịch sang ngôn ngữ khác; hiện ở cửa sổ
+  chính và trên ô chỉ báo, kể cả khi đang ghi ngầm.
 
 > **Trạng thái:** toàn bộ Phase 0-5 đã viết xong code, trừ ký số (cần chứng thư trả phí).
 > Build sạch, typecheck sạch, 100 test pass, bản đóng gói chạy được.
@@ -69,6 +71,7 @@ src/
 ├── preload/     contextBridge, danh sách kênh cố định
 └── renderer/    Chromium - Web API media và giao diện
     ├── capture/engine.ts    lõi ghi: 3 MediaRecorder, VU meter, phát hiện im lặng
+    ├── capture/livetap.ts   nhánh phụ đề: cắt đoạn theo khoảng lặng, hạ 16 kHz, không đụng bản ghi
     ├── state/useRecorder.ts nối máy trạng thái với engine và IPC
     └── ui/                  RecordView, LibraryView, SettingsView
 ```
@@ -82,6 +85,7 @@ src/
 | 2 — Video + đồng bộ | Code xong, **chưa qua GATE C** | Offset đo bằng `performance.now()`, bù bằng `-itsoffset` |
 | 3 — UI + thư viện | Code xong | Overlay không tắt được, tray, phím tắt, thư viện, cài đặt, giao diện Việt/Anh |
 | 4 — Transcript | Code xong | whisper.cpp riêng từng track, tìm toàn văn, xuất txt/srt/md, tóm tắt |
+| 4b — Phụ đề trực tiếp | Code xong, **chưa nghe thử trên máy thật** | Nghe ké 2 luồng song song với bản ghi, dịch trên máy (tiếng Anh) hoặc qua API |
 | 5 — Phát hành | Code xong, trừ ký số | Đóng gói, tự cập nhật, crash dump cục bộ, CI release, tài liệu người dùng |
 
 ### Đã kiểm chứng được gì

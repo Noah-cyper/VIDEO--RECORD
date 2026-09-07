@@ -159,3 +159,33 @@ export function inputsFromManifest(manifest: SessionManifest, resolve: (file: st
   }
   return { inputs, offsetsMs }
 }
+
+export interface RescueCopy {
+  kind: StreamKind
+  from: string
+  /** Tên file trong thư mục đích; giữ nguyên .webm vì đây đúng là file thô chưa qua xử lý. */
+  to: string
+}
+
+export interface RescuePlan {
+  copies: RescueCopy[]
+  /** File đại diện cho bản ghi trong thư viện; ưu tiên hình vì nó là thứ mở ra thấy ngay. */
+  mainFile: string
+  hasVideo: boolean
+}
+
+/**
+ * Bậc cuối của thang cứu: mọi cách dựng MP4 đều hỏng thì chép thẳng file thô sang thư mục người
+ * dùng. WebM mở được bằng trình duyệt hay VLC, nên vẫn là "có file xem được" - chỉ mất phần gộp
+ * hình với tiếng vào một file. Bấm Dừng xong nhận về con số không mới là điều tệ nhất.
+ */
+export function rawRescuePlan(inputs: Partial<Record<StreamKind, string>>): RescuePlan {
+  const copies: RescueCopy[] = []
+  for (const kind of ORDER) {
+    const from = inputs[kind]
+    if (from) copies.push({ kind, from, to: `${kind}.webm` })
+  }
+  if (copies.length === 0) throw new Error('Không có file thô nào để cứu')
+  const video = copies.find((c) => c.kind === 'video')
+  return { copies, mainFile: (video ?? (copies[0] as RescueCopy)).to, hasVideo: Boolean(video) }
+}

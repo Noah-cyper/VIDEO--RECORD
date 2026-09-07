@@ -146,8 +146,14 @@ function Shell({
           </div>
         )}
         {orphans.map((m) => (
-          <div key={m.id} className="alert">
-            <span>{t('orphan.found', { when: new Date(m.startedAt).toLocaleString() })}</span>
+          <div key={m.id} className={`alert${m.error ? ' error' : ''}`}>
+            {/* Lý do hỏng nằm trong manifest; không hiện ra đây thì nó chết cùng lúc người dùng
+                đổi tab, và "sao không thấy file đâu" thành câu hỏi không có manh mối nào. */}
+            <span>
+              {m.error
+                ? t('orphan.failed', { when: new Date(m.startedAt).toLocaleString(), reason: m.error })
+                : t('orphan.found', { when: new Date(m.startedAt).toLocaleString() })}
+            </span>
             <div className="row">
               <button onClick={() => void recoverOrphan(m)}>{t('orphan.export')}</button>
               <button className="ghost" onClick={() => void discardOrphan(m)}>{t('orphan.discard')}</button>

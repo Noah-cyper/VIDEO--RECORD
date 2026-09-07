@@ -4,6 +4,7 @@ import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type { Bookmark, RecordState, SessionManifest, StreamKind } from '@shared/types'
 import { isValidSessionId, makeSessionId } from '@shared/naming'
+import { needsRecovery } from '@shared/machine'
 import type { OpenSessionInput, RegisterStreamInput } from '@shared/ipc'
 import { readJson, writeJson, exists } from './jsonstore'
 
@@ -135,7 +136,7 @@ export async function findOrphans(): Promise<SessionManifest[]> {
   for (const id of ids) {
     const m = await readManifest(id)
     if (!m) continue
-    if (m.state === 'recording' || m.state === 'paused' || m.state === 'finalizing') out.push(m)
+    if (needsRecovery(m.state)) out.push(m)
   }
   return out.sort((a, b) => b.startedAt.localeCompare(a.startedAt))
 }

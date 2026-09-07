@@ -125,8 +125,12 @@ app.whenReady().then(async () => {
     }
 
     // Gốc ổ đĩa phải được nhận và tự đưa vào thư mục con, không còn bị từ chối thẳng.
+    // Máy dev chạy quyền root nên ghi được thẳng vào /CallRec, còn runner CI thì không - nên
+    // bằng chứng chấp nhận được là MỘT TRONG HAI: cài đặt đổi thật, hoặc lý do hỏng có nhắc
+    // /CallRec (tức là đã chuẩn hoá rồi mới vấp bước ghi thử, chứ không từ chối ngay từ đầu).
     await setDir('/')
     const rootNormalized = (await window.callrec.settings.get()).recordingsDir
+    const rootError = document.querySelector('.alert.error')?.textContent ?? ''
 
     // Đường dẫn thật sự vô nghĩa vẫn phải hiện cảnh báo đọc được, không im lặng như bản 0.1.0.
     await setDir('ban-ghi-tuong-doi')
@@ -135,6 +139,8 @@ app.whenReady().then(async () => {
     await window.callrec.settings.set({ recordingsDir: before })
 
     // Nút "Kiểm tra bản mới" phải luôn trả về một trạng thái đọc được, không được im lặng.
+    // Chỗ lưu phải được kiểm THẬT trước khi ghi, và phải nói rõ nó đang trỏ vào đâu.
+    const disk = await window.callrec.disk.status('audio-only')
     const ffmpegOk = await window.callrec.ffmpeg.available()
     const beforeCheck = await window.callrec.update.get()
     const afterCheck = await window.callrec.update.check()
@@ -145,12 +151,51 @@ app.whenReady().then(async () => {
     )
     return {
       before, saved, wanted, managed: perms.managed, grantButton, errorShown,
-      rootNormalized,
+      rootNormalized, rootError,
       ffmpegOk,
+      diskDir: disk.dir,
+      diskCanRecord: disk.canRecord,
       updateVersion: beforeCheck.currentVersion,
       updateState: afterCheck.state,
     }
   })()`).catch((err) => ({ error: `lỗi khi kiểm cài đặt: ${err.message}` }))
+
+  // Phụ đề trực tiếp: bật được từ giao diện, và kênh live phải từ chối giá trị bịa thay vì im lặng.
+  // Cố tình dùng mã ngôn ngữ không có thật để khỏi chạm vào whisper - smoke không được tải model.
+  const liveChecks = await win.webContents.executeJavaScript(`(async () => {
+    const original = (await window.callrec.settings.get()).liveCaptions
+    ;[...document.querySelectorAll('.tabs button')][0].click()
+    await new Promise((r) => setTimeout(r, 300))
+
+    const check = document.querySelector('.check input[type=checkbox]')
+    if (!check) return { error: 'không thấy ô bật phụ đề trực tiếp' }
+    if (!check.checked) check.click()
+
+    let enabled = false
+    for (let i = 0; i < 40; i++) {
+      await new Promise((r) => setTimeout(r, 100))
+      enabled = (await window.callrec.settings.get()).liveCaptions
+      if (enabled) break
+    }
+    const hasTarget = document.getElementById('live-target') !== null
+
+    let rejectedBadTarget = false
+    try {
+      await window.callrec.settings.set({ liveTarget: 'khong-co-that' })
+    } catch {
+      rejectedBadTarget = true
+    }
+
+    const started = await window.callrec.live.start({
+      sessionId: 'smoke', target: 'khong-co-that', model: 'tiny',
+    })
+    // Gói tiếng của một phiên không tồn tại phải bị bỏ qua, không được làm main chết.
+    window.callrec.live.audio({ sessionId: 'khong-ton-tai', speaker: 'me', atMs: 0, pcm: new ArrayBuffer(64) })
+    await window.callrec.live.stop()
+    await window.callrec.settings.set({ liveCaptions: original })
+    const aliveAfter = typeof (await window.callrec.settings.get()).liveTarget === 'string'
+    return { enabled, hasTarget, rejectedBadTarget, startReason: started.reason, aliveAfter }
+  })()`).catch((err) => ({ error: `lỗi khi kiểm phụ đề trực tiếp: ${err.message}` }))
 
   // Ghi ngầm: cửa sổ phải ẩn/hiện được qua IPC, và throttling phải tắt - Chromium bóp ga cửa sổ
   // bị ẩn, mà ghi ngầm thì đồng hồ và vòng ghi chunk vẫn phải chạy đều.
@@ -175,6 +220,16 @@ app.whenReady().then(async () => {
     if (got.error) problems.push(got.error)
     else if (got.tabs.join(',') !== want) problems.push(`mong đợi "${want}", nhận "${got.tabs.join(',')}"`)
   }
+  if (liveChecks.error) problems.push(liveChecks.error)
+  else {
+    if (!liveChecks.enabled) problems.push('bật phụ đề trực tiếp nhưng cài đặt không được lưu')
+    if (!liveChecks.hasTarget) problems.push('bật phụ đề rồi mà không có ô chọn ngôn ngữ dịch')
+    if (!liveChecks.rejectedBadTarget) problems.push('mã ngôn ngữ bịa vẫn được nhận vào cài đặt')
+    if (liveChecks.startReason !== 'bad-target') {
+      problems.push(`live.start với ngôn ngữ bịa phải trả về bad-target, nhận ${liveChecks.startReason}`)
+    }
+    if (!liveChecks.aliveAfter) problems.push('gửi gói tiếng rác xong main không trả lời nữa')
+  }
   if (settingsChecks.error) problems.push(settingsChecks.error)
   else {
     if (settingsChecks.saved !== settingsChecks.wanted) {
@@ -185,8 +240,13 @@ app.whenReady().then(async () => {
       problems.push('nút "Cấp quyền" hiện ở hệ điều hành không có cửa xin quyền')
     }
     if (!settingsChecks.errorShown) problems.push('đường dẫn hỏng nhưng không hiện cảnh báo nào')
-    if (settingsChecks.rootNormalized !== '/CallRec') {
-      problems.push(`chọn gốc ổ đĩa phải thành /CallRec, nhận được ${settingsChecks.rootNormalized}`)
+    const rootNormalizedOk =
+      settingsChecks.rootNormalized === '/CallRec' || settingsChecks.rootError.includes('/CallRec')
+    if (!rootNormalizedOk) {
+      problems.push(
+        `chọn gốc ổ đĩa phải thành /CallRec: thư mục đang là ${settingsChecks.rootNormalized}, ` +
+          `lý do báo về "${settingsChecks.rootError.trim() || '(không có)'}"`,
+      )
     }
     if (settingsChecks.updateVersion !== pkgVersion) {
       problems.push(`phiên bản hiện tại sai: hiện ${settingsChecks.updateVersion}, đúng ra là ${pkgVersion}`)
@@ -194,6 +254,11 @@ app.whenReady().then(async () => {
     // Chạy từ mã nguồn thì phải nói rõ là không có kênh cập nhật, chứ không phải đứng im.
     // Môi trường dựng có ffmpeg-static nên preflight phải trả về true; false nghĩa là đường dẫn hỏng.
     if (settingsChecks.ffmpegOk !== true) problems.push('preflight FFmpeg báo không có')
+    // Người dùng phải đối chiếu được "app định ghi vào đâu" với "mình đã chọn đâu".
+    if (settingsChecks.diskDir !== settingsChecks.before) {
+      problems.push(`preflight ổ đĩa trỏ sai chỗ: ${settingsChecks.diskDir}, đúng ra là ${settingsChecks.before}`)
+    }
+    if (settingsChecks.diskCanRecord !== true) problems.push('thư mục lưu ghi được nhưng preflight vẫn chặn')
     if (settingsChecks.updateState !== 'unsupported') {
       problems.push(`kiểm tra cập nhật trả về trạng thái lạ: ${settingsChecks.updateState}`)
     }
@@ -205,10 +270,12 @@ app.whenReady().then(async () => {
     `SMOKE OK — vi: ${vi.tabs?.join(', ')} | en: ${en.tabs?.join(', ')} | ` +
       `thư mục lưu đổi được: ${settingsChecks.saved === settingsChecks.wanted} | ` +
       `nút cấp quyền ẩn đúng: ${!settingsChecks.grantButton} | ` +
-      `gốc ổ đĩa → ${settingsChecks.rootNormalized} | ` +
+      `gốc ổ đĩa → ${settingsChecks.rootNormalized === '/CallRec' ? '/CallRec' : '/CallRec (chuẩn hoá đúng, không có quyền ghi)'} | ` +
       `lỗi hiện ra được: ${settingsChecks.errorShown} | ` +
       `ffmpeg: ${settingsChecks.ffmpegOk} | ` +
+      `chỗ lưu: ${settingsChecks.diskDir} (ghi được: ${settingsChecks.diskCanRecord}) | ` +
       `tự kiểm tra thiết bị: ${selfTest.verdicts ?? 0} kết luận | ` +
+      `phụ đề trực tiếp: bật OK, chặn ngôn ngữ bịa OK | ` +
       `ghi ngầm: ẩn/hiện ${hidden && shownAgain ? 'OK' : 'HỎNG'}, throttling=${throttling} | ` +
       `cập nhật: v${settingsChecks.updateVersion} → ${settingsChecks.updateState}`,
   )

@@ -20,6 +20,7 @@ let mainWindow: BrowserWindow | null = null
 let overlay: BrowserWindow | null = null
 let lastState: RecordState = 'idle'
 let lastElapsed = 0
+let overlayCaptions = false
 
 export function createMainWindow(): BrowserWindow {
   mainWindow = new BrowserWindow({
@@ -90,14 +91,27 @@ export function showMainWindow(): void {
   mainWindow.focus()
 }
 
+const overlaySize = () => (overlayCaptions ? { width: 380, height: 188 } : { width: 260, height: 76 })
+
+/** Phụ đề cần chỗ, nhưng ô chỉ báo vẫn là ô chỉ báo: chỉ đổi kích thước, không đổi tính bắt buộc. */
+export function setOverlayCaptions(enabled: boolean): void {
+  if (overlayCaptions === enabled) return
+  overlayCaptions = enabled
+  const win = overlay
+  if (!win) return
+  const { width, height } = overlaySize()
+  const bounds = win.getBounds()
+  // Neo theo mép phải để ô không lấn ngang màn hình khi nở ra.
+  win.setBounds({ x: bounds.x + bounds.width - width, y: bounds.y, width, height })
+}
+
 /**
  * Overlay là ràng buộc pháp lý FR-08, không phải tiện ích: nó không đóng được bằng tay và
  * chỉ biến mất khi trạng thái rời khỏi nhóm đang ghi.
  */
 function createOverlay(): BrowserWindow {
   const { workArea } = screen.getPrimaryDisplay()
-  const width = 260
-  const height = 76
+  const { width, height } = overlaySize()
   const win = new BrowserWindow({
     width,
     height,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canHandle, indicatorRequired, initialContext, nextState, reduce } from '@shared/machine'
+import { canHandle, indicatorRequired, initialContext, needsRecovery, nextState, reduce } from '@shared/machine'
 import type { RecordState } from '@shared/types'
 
 describe('chuyển trạng thái', () => {
@@ -80,5 +80,23 @@ describe('reduce', () => {
     ctx = reduce(ctx, { type: 'FAIL', error: 'hỏng' }, 1)
     expect(ctx.error).toBe('hỏng')
     expect(reduce(ctx, { type: 'RESET' }).error).toBeNull()
+  })
+})
+
+describe('phiên cần cứu', () => {
+  it('mọi trạng thái còn file thô đều phải được nhặt lên', () => {
+    for (const s of ['recording', 'paused', 'finalizing', 'error'] as RecordState[]) {
+      expect(needsRecovery(s)).toBe(true)
+    }
+  })
+
+  it('xuất file hỏng vẫn phải cứu được - đây đúng là lỗi làm mất một bản ghi 33 giây', () => {
+    expect(needsRecovery('error')).toBe(true)
+  })
+
+  it('phiên đã xong hoặc chưa bắt đầu thì không có gì để cứu', () => {
+    for (const s of ['idle', 'armed', 'done'] as RecordState[]) {
+      expect(needsRecovery(s)).toBe(false)
+    }
   })
 })

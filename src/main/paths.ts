@@ -1,3 +1,4 @@
+import { promises as fs } from 'node:fs'
 import nodePath, { type PlatformPath } from 'node:path'
 
 /** Tên thư mục app tự tạo khi người dùng trỏ thẳng vào gốc ổ đĩa. */
@@ -43,4 +44,22 @@ export const isUsableRecordingsDir = (dir: unknown): dir is string =>
 export function assertInside(parent: string, child: string, what: string): string {
   if (!isInside(parent, child)) throw new Error(`Đường dẫn ${what} nằm ngoài thư mục cho phép`)
   return nodePath.resolve(child)
+}
+
+/**
+ * Tạo thư mục rồi ghi thử một file. Chỉ có cách này mới biết ổ USB còn cắm không, ổ mạng còn
+ * kết nối không, thư mục có chỉ-đọc không - `existsSync` trả lời được câu hỏi khác hẳn.
+ * Trả về null nếu ghi được, hoặc lý do hỏng đọc được cho người dùng.
+ */
+export async function probeWritable(dir: string): Promise<string | null> {
+  const probe = nodePath.join(dir, '.callrec-write-test')
+  try {
+    await fs.mkdir(dir, { recursive: true })
+    await fs.writeFile(probe, '')
+    return null
+  } catch (err) {
+    return err instanceof Error ? err.message : String(err)
+  } finally {
+    await fs.rm(probe, { force: true }).catch(() => undefined)
+  }
 }

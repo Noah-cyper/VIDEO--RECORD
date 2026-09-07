@@ -90,6 +90,11 @@ export interface Recording {
   summaryFile?: string
   /** Mã ngôn ngữ đã dịch sẵn; mỗi mã tương ứng một file transcript.<code>.json cạnh bản ghi. */
   translations?: string[]
+  /**
+   * Bản thô được cứu khi không dựng được MP4: hình và tiếng nằm ở các file .webm riêng. Xem được
+   * nhưng chưa gỡ băng, cắt hay tách tiếng được - phải dựng lại thành MP4 trước.
+   */
+  raw?: boolean
 }
 
 export interface Settings {
@@ -106,9 +111,19 @@ export interface Settings {
   autoInstallUpdates: boolean
   /** Không bao giờ mặc định bật: gửi dữ liệu ra ngoài phải là hành động có ý thức (NFR-06). */
   allowCloudSummary: boolean
+  /** Phụ đề trực tiếp trong lúc ghi. Tách khỏi gỡ băng: đây là thứ chạy song song với bản ghi. */
+  liveCaptions: boolean
+  /** '' = chỉ hiện nguyên văn; 'en' = whisper dịch ngay trên máy; mã khác = phải đi qua API. */
+  liveTarget: string
+  /** Model riêng cho phụ đề: bản gỡ băng chọn theo độ chính xác, bản trực tiếp chọn theo tốc độ. */
+  liveModel: 'tiny' | 'base' | 'small' | 'medium'
 }
 
 export interface DiskStatus {
+  /** Thư mục thật sự sẽ được ghi vào; hiện ra để người dùng đối chiếu khi thấy file không ở đâu cả. */
+  dir: string
+  /** Có giá trị nghĩa là thư mục đó không ghi được lúc này - ổ chưa cắm, ổ mạng đứt, chỉ-đọc. */
+  problem?: string
   freeBytes: number
   /** Ước lượng số phút còn ghi được ở chất lượng hiện tại. */
   minutesLeft: number

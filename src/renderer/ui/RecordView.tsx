@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CaptureSource, Settings } from '@shared/types'
 import { formatDuration } from '@shared/naming'
+import { LIVE_TARGET_LOCAL, liveTargetMode, type LiveCaption } from '@shared/live'
+import { TARGET_LANGUAGES } from '@shared/translate'
 import { listMics } from '../capture/engine'
 import { runSelfTest, type SelfTestOutcome } from '../capture/selftest'
 import { formatReport, type SelfTestVerdict } from '@shared/selftest'
@@ -16,6 +18,43 @@ const VERDICT_KEY: Record<SelfTestVerdict, TranslationKey> = {
   'system-silent': 'selftest.systemSilent',
 }
 import { alertText } from './alertText'
+
+/**
+ * Danh sách chỉ cuộn theo khi người dùng đang ở cuối. Kéo lên đọc lại một câu mà bị giật xuống
+ * mỗi lần có phụ đề mới thì không đọc nổi.
+ */
+function LiveCaptions({ captions, t }: { captions: LiveCaption[]; t: Translator }) {
+  const boxRef = useRef<HTMLDivElement>(null)
+  const stickRef = useRef(true)
+
+  useEffect(() => {
+    const box = boxRef.current
+    if (box && stickRef.current) box.scrollTop = box.scrollHeight
+  }, [captions])
+
+  return (
+    <div
+      className="live-box"
+      ref={boxRef}
+      onScroll={(e) => {
+        const el = e.currentTarget
+        stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 24
+      }}
+      aria-live="polite"
+    >
+      {captions.map((c) => (
+        <div key={c.id} className={`live-line ${c.speaker}`}>
+          <span className="live-who">{t(c.speaker === 'me' ? 'speaker.me' : 'speaker.them')}</span>
+          <span className="live-text">
+            {c.translated ?? c.text}
+            {c.translated && <span className="live-original">{c.text}</span>}
+            {c.pending && <span className="muted"> {t('live.pending')}</span>}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 function Meter({ label, value }: { label: string; value: number }) {
   const pct = Math.round(value * 100)
@@ -43,6 +82,9 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
     language: settings.language,
     playConsent: settings.playConsentNotice,
     hideWhileRecording: settings.hideWhileRecording,
+    liveCaptions: settings.liveCaptions,
+    liveTarget: settings.liveTarget,
+    liveModel: settings.liveModel,
   })
 
   const refreshSources = () => void window.callrec.sources.list().then(setSources)
@@ -174,6 +216,57 @@ export function RecordView({ settings, onSettings }: { settings: Settings; onSet
               {t('record.openFolder')}
             </button>
           </div>
+        )}
+      </div>
+
+      <div className="panel col">
+        <div className="row spread">
+          <strong>{t('live.title')}</strong>
+        </div>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={settings.liveCaptions}
+            disabled={recording}
+            onChange={(e) => onSettings({ liveCaptions: e.target.checked })}
+          />
+          <span>
+            {t('live.enable')}
+            <br />
+            <span className="muted">{t('live.hint')}</span>
+          </span>
+        </label>
+
+        {settings.liveCaptions && (
+          <div className="field">
+            <label htmlFor="live-target">{t('live.target')}</label>
+            <select
+              id="live-target"
+              value={settings.liveTarget}
+              disabled={recording}
+              onChange={(e) => onSettings({ liveTarget: e.target.value })}
+            >
+              <option value="">{t('live.targetOff')}</option>
+              {TARGET_LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {t(l.code === LIVE_TARGET_LOCAL ? 'live.targetLocal' : 'live.targetCloud', { lang: l.label })}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Nói trước khi bấm ghi, chứ để tới lúc bắt đầu ghi mới báo là đã lỡ mất đoạn đầu. */}
+        {settings.liveCaptions && liveTargetMode(settings.liveTarget) === 'cloud' && !settings.allowCloudSummary && (
+          <div className="alert">
+            <span>{t('live.cloudOff')}</span>
+          </div>
+        )}
+
+        {r.liveOn && r.captions.length === 0 && <p className="muted">{t('live.waiting')}</p>}
+        {r.captions.length > 0 && <LiveCaptions captions={r.captions} t={t} />}
+        {!r.liveOn && r.captions.length === 0 && !settings.liveCaptions && (
+          <p className="muted">{t('live.off')}</p>
         )}
       </div>
 

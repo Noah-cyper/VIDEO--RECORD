@@ -53,6 +53,23 @@ maybe('xuất file thật bằng ffmpeg', () => {
     }
   }
 
+  // Bậc giữa của thang cứu: dựng hình hỏng thì bỏ hình, giữ đủ hai track tiếng. Mất hình còn
+  // xem lại được bằng biên bản; mất tiếng là mất cả cuộc gọi.
+  it('bỏ hình vẫn ra file mở được, vẫn đủ hai track tiếng có nhãn', async () => {
+    const output = join(dir, 'rescue-audio.m4a')
+    await run(bin!, buildExportArgs({
+      inputs: { mic: inputs.mic, system: inputs.system },
+      offsetsMs: { mic: 0, system: 42 },
+      output,
+    }))
+
+    const info = await probe(output)
+    expect(info.match(/Stream #0:\d+.*Audio/g) ?? []).toHaveLength(2)
+    expect(info).not.toMatch(/Video:/)
+    expect(info).toContain('Toi')
+    expect(info).toContain('Doi phuong')
+  }, 60_000)
+
   it('tạo MP4 có đúng hai audio track riêng biệt', async () => {
     const output = join(dir, 'recording.mp4')
     await run(bin!, buildExportArgs({

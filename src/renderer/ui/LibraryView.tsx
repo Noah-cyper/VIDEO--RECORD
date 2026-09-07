@@ -125,6 +125,14 @@ export function LibraryView({ settings }: { settings: Settings }) {
             </div>
           )}
         </div>
+        {playing.raw && (
+          <div className="alert">
+            <span>{t('library.rawHint')}</span>
+          </div>
+        )}
+        {/* Bản thô chưa có MP4 nên tách tiếng, cắt và gỡ băng đều không có gì để bám vào. */}
+        {!playing.raw && (
+        <>
         <div className="panel col">
           <strong>{t('library.extractAudio')}</strong>
           <div className="row" style={{ flexWrap: 'wrap' }}>
@@ -174,6 +182,8 @@ export function LibraryView({ settings }: { settings: Settings }) {
         </div>
         <TranscriptPanel recording={playing} settings={settings} onSeek={seek} />
         </>
+        )}
+        </>
       )}
 
       {hits.length > 0 && (
@@ -206,6 +216,7 @@ export function LibraryView({ settings }: { settings: Settings }) {
               <div className="meta">
                 {new Date(rec.createdAt).toLocaleString('vi-VN')} · {formatDuration(rec.durationMs)} ·{' '}
                 {formatBytes(rec.sizeBytes)} · {t(rec.hasVideo ? 'library.withVideo' : 'library.audioOnly')}
+                {rec.raw ? ` · ${t('library.raw')}` : ''}
               </div>
             </div>
             <button onClick={() => void open(rec)}>{t('library.play')}</button>
