@@ -189,3 +189,29 @@ export function rawRescuePlan(inputs: Partial<Record<StreamKind, string>>): Resc
   const video = copies.find((c) => c.kind === 'video')
   return { copies, mainFile: (video ?? (copies[0] as RescueCopy)).to, hasVideo: Boolean(video) }
 }
+
+/**
+ * WebM rỗng vẫn còn vài trăm byte header, nên ngưỡng phải trên số đó một chút. Dưới ngưỡng này
+ * nghĩa là luồng chưa từng ghi được giây tiếng nào.
+ */
+export const MIN_USABLE_INPUT_BYTES = 2048
+
+/**
+ * Loại luồng rỗng TRƯỚC khi mux. Loopback trên Windows không đẩy dữ liệu nào khi không có âm
+ * thanh phát ra loa, nên `system.webm` có thể là file 0 byte - và một input rỗng làm FFmpeg hỏng
+ * cả lệnh, tức là mất luôn phần tiếng và hình đã ghi được. Mất một luồng còn hơn mất cả buổi ghi.
+ */
+export function filterUsableInputs(
+  inputs: Partial<Record<StreamKind, string>>,
+  sizeOf: (file: string) => number,
+): { usable: Partial<Record<StreamKind, string>>; dropped: StreamKind[] } {
+  const usable: Partial<Record<StreamKind, string>> = {}
+  const dropped: StreamKind[] = []
+  for (const kind of ORDER) {
+    const file = inputs[kind]
+    if (!file) continue
+    if (sizeOf(file) >= MIN_USABLE_INPUT_BYTES) usable[kind] = file
+    else dropped.push(kind)
+  }
+  return { usable, dropped }
+}

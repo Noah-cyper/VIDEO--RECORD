@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { readFile } from 'node:fs/promises'
-import { buildExportArgs, buildWavExtractArgs, videoCodecFor } from '@shared/ffmpeg'
+import { readFile, stat, writeFile } from 'node:fs/promises'
+import { buildExportArgs, buildWavExtractArgs, filterUsableInputs, videoCodecFor } from '@shared/ffmpeg'
 import { buildTrimArgs } from '@shared/trim'
 
 const run = promisify(execFile)
@@ -43,6 +43,16 @@ maybe('xuất file thật bằng ffmpeg', () => {
     if (dir) await rm(dir, { recursive: true, force: true })
   })
 
+  beforeAll(async () => {
+    for (const file of [inputs.mic, inputs.system, inputs.video, join(dir, 'system-empty.webm')]) {
+      await writeFile(join(dir, 'system-empty.webm'), '').catch(() => undefined)
+      sizes.set(file, await stat(file).then((st) => st.size, () => 0))
+    }
+  })
+
+  const sizes = new Map<string, number>()
+  const sizeOf = (file: string) => sizes.get(file) ?? 0
+
   async function probe(file: string): Promise<string> {
     // ffmpeg-static không kèm ffprobe; `-i` in mô tả stream ra stderr rồi thoát với mã lỗi.
     try {
@@ -68,6 +78,33 @@ maybe('xuất file thật bằng ffmpeg', () => {
     expect(info).not.toMatch(/Video:/)
     expect(info).toContain('Toi')
     expect(info).toContain('Doi phuong')
+  }, 60_000)
+
+  // Ca thật trên máy người dùng: loopback Windows không đẩy byte nào khi không có tiếng phát ra
+  // loa, nên system.webm là file rỗng. Một input rỗng làm hỏng CẢ lệnh - tức là mất luôn phần
+  // tiếng và hình đã ghi được.
+  it('một input rỗng làm hỏng cả lệnh, lọc nó ra thì phần còn lại vẫn dựng được', async () => {
+    const empty = join(dir, 'system-empty.webm')
+    await writeFile(empty, '')
+    const withEmpty = { mic: inputs.mic, system: empty, video: inputs.video }
+
+    await expect(
+      run(bin!, buildExportArgs({ inputs: withEmpty, offsetsMs: {}, output: join(dir, 'hong.mp4') })),
+    ).rejects.toThrow()
+
+    const { usable, dropped } = filterUsableInputs(withEmpty, (f) => sizeOf(f))
+    expect(dropped).toEqual(['system'])
+
+    const output = join(dir, 'con-lai.mp4')
+    // Fixture là VP8 nên phải encode lại, đúng đường mà videoCodecFor chọn cho mimeType đó.
+    await run(bin!, buildExportArgs({ inputs: usable, offsetsMs: { mic: 0, video: 118 }, output, videoCodec: 'h264' }))
+
+    const info = await probe(output)
+    expect(info).toMatch(/Video:/)
+    // Đúng một track tiếng, và nhãn phải là "Toi" - mất track đối phương không được làm lệch nhãn.
+    expect(info.match(/Stream #0:\d+.*Audio/g) ?? []).toHaveLength(1)
+    expect(info).toContain('Toi')
+    expect(info).not.toContain('Doi phuong')
   }, 60_000)
 
   it('tạo MP4 có đúng hai audio track riêng biệt', async () => {
