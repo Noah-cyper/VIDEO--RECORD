@@ -125,8 +125,12 @@ app.whenReady().then(async () => {
     }
 
     // Gốc ổ đĩa phải được nhận và tự đưa vào thư mục con, không còn bị từ chối thẳng.
+    // Máy dev chạy quyền root nên ghi được thẳng vào /CallRec, còn runner CI thì không - nên
+    // bằng chứng chấp nhận được là MỘT TRONG HAI: cài đặt đổi thật, hoặc lý do hỏng có nhắc
+    // /CallRec (tức là đã chuẩn hoá rồi mới vấp bước ghi thử, chứ không từ chối ngay từ đầu).
     await setDir('/')
     const rootNormalized = (await window.callrec.settings.get()).recordingsDir
+    const rootError = document.querySelector('.alert.error')?.textContent ?? ''
 
     // Đường dẫn thật sự vô nghĩa vẫn phải hiện cảnh báo đọc được, không im lặng như bản 0.1.0.
     await setDir('ban-ghi-tuong-doi')
@@ -147,7 +151,7 @@ app.whenReady().then(async () => {
     )
     return {
       before, saved, wanted, managed: perms.managed, grantButton, errorShown,
-      rootNormalized,
+      rootNormalized, rootError,
       ffmpegOk,
       diskDir: disk.dir,
       diskCanRecord: disk.canRecord,
@@ -236,8 +240,13 @@ app.whenReady().then(async () => {
       problems.push('nút "Cấp quyền" hiện ở hệ điều hành không có cửa xin quyền')
     }
     if (!settingsChecks.errorShown) problems.push('đường dẫn hỏng nhưng không hiện cảnh báo nào')
-    if (settingsChecks.rootNormalized !== '/CallRec') {
-      problems.push(`chọn gốc ổ đĩa phải thành /CallRec, nhận được ${settingsChecks.rootNormalized}`)
+    const rootNormalizedOk =
+      settingsChecks.rootNormalized === '/CallRec' || settingsChecks.rootError.includes('/CallRec')
+    if (!rootNormalizedOk) {
+      problems.push(
+        `chọn gốc ổ đĩa phải thành /CallRec: thư mục đang là ${settingsChecks.rootNormalized}, ` +
+          `lý do báo về "${settingsChecks.rootError.trim() || '(không có)'}"`,
+      )
     }
     if (settingsChecks.updateVersion !== pkgVersion) {
       problems.push(`phiên bản hiện tại sai: hiện ${settingsChecks.updateVersion}, đúng ra là ${pkgVersion}`)
@@ -261,7 +270,7 @@ app.whenReady().then(async () => {
     `SMOKE OK — vi: ${vi.tabs?.join(', ')} | en: ${en.tabs?.join(', ')} | ` +
       `thư mục lưu đổi được: ${settingsChecks.saved === settingsChecks.wanted} | ` +
       `nút cấp quyền ẩn đúng: ${!settingsChecks.grantButton} | ` +
-      `gốc ổ đĩa → ${settingsChecks.rootNormalized} | ` +
+      `gốc ổ đĩa → ${settingsChecks.rootNormalized === '/CallRec' ? '/CallRec' : '/CallRec (chuẩn hoá đúng, không có quyền ghi)'} | ` +
       `lỗi hiện ra được: ${settingsChecks.errorShown} | ` +
       `ffmpeg: ${settingsChecks.ffmpegOk} | ` +
       `chỗ lưu: ${settingsChecks.diskDir} (ghi được: ${settingsChecks.diskCanRecord}) | ` +

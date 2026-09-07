@@ -33,6 +33,15 @@ npm run smoke      # bật app thật dưới Xvfb, kiểm cả việc đổi ng
 
 Trước khi coi là xong: `lint`, `typecheck`, `test`, `smoke` — cả bốn.
 
+**Smoke phải chạy được cả khi KHÔNG phải root.** Container làm việc chạy quyền root, runner CI thì
+không: một bài kiểm dựa vào việc ghi được vào `/` sẽ xanh ở đây và đỏ trên CI — đã để lọt đúng lỗi
+đó qua 5 lần chạy đỏ liên tiếp mà không ai nhìn. Kiểm lại bằng:
+
+```bash
+useradd -m smoke; chmod -R a+rX .
+su smoke -c "HOME=/home/smoke xvfb-run -a npx electron --no-sandbox scripts/smoke.mjs"
+```
+
 ## Bố cục
 
 - `src/shared/` — logic thuần, **không** import electron. Đây là phần có unit test.
