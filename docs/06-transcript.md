@@ -29,6 +29,12 @@ chi tiết kỹ thuật ở Phase 1 nhưng lại quyết định chất lượng
 
 ## 2. Cài whisper.cpp
 
+> Từ 0.1.14, **bản phát hành đã kèm sẵn whisper.cpp**: `scripts/fetch-whisper.mjs` lấy bản dựng
+> chính thức cho Windows và cài qua Homebrew trên macOS, ngay trong lượt đóng gói của CI. Bước này
+> cố tình *best-effort* — thiếu whisper chỉ mất tính năng gỡ băng, còn để nó làm đỏ lượt phát hành
+> thì mất luôn phần ghi. Mục dưới đây dành cho lúc chạy từ mã nguồn.
+
+
 Ứng dụng gọi binary `whisper-cli` như một sidecar, giống cách gọi FFmpeg.
 
 ```bash

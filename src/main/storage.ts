@@ -3,7 +3,8 @@ import { createWriteStream, WriteStream } from 'node:fs'
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type { Bookmark, RecordState, SessionManifest, StreamKind } from '@shared/types'
-import { isValidSessionId, makeSessionId } from '@shared/naming'
+import { isValidSessionId, makeSessionId, parseSessionIdDate } from '@shared/naming'
+import { MIN_USABLE_INPUT_BYTES } from '@shared/ffmpeg'
 import { needsRecovery } from '@shared/machine'
 import type { OpenSessionInput, RegisterStreamInput } from '@shared/ipc'
 import { withTimeout } from '@shared/async'
@@ -136,6 +137,33 @@ export async function closeWriters(id: string): Promise<void> {
  * Phiên còn ở trạng thái recording/paused khi app khởi động lại nghĩa là lần trước bị crash.
  * Dữ liệu vẫn còn nguyên tới chunk cuối cùng, chỉ cần chạy lại bước xuất file (NFR-03).
  */
+/**
+ * session.json mất hoặc hỏng nhưng file thô còn nguyên: dựng lại manifest tối thiểu từ những gì
+ * thật sự nằm trên đĩa. Mất offset giữa các luồng (tiếng/hình có thể lệch chút), nhưng mất vài
+ * chục mili giây đồng bộ vẫn hơn mất cả buổi ghi.
+ */
+export async function rebuildManifest(id: string): Promise<SessionManifest | null> {
+  const dir = sessionDir(id)
+  const streams: SessionManifest['streams'] = {}
+  for (const [kind, file] of Object.entries(FILE_OF) as [StreamKind, string][]) {
+    const size = await fs.stat(join(dir, file)).then((st) => st.size, () => 0)
+    if (size >= MIN_USABLE_INPUT_BYTES) streams[kind] = { file, offsetMs: 0 }
+  }
+  if (Object.keys(streams).length === 0) return null
+
+  const startedAt = parseSessionIdDate(id) ?? new Date()
+  return {
+    id,
+    startedAt: startedAt.toISOString(),
+    state: 'finalizing',
+    quality: '1080p30',
+    streams,
+    chunks: {},
+    pausedMs: 0,
+    bookmarks: [],
+  }
+}
+
 export async function findOrphans(): Promise<SessionManifest[]> {
   const root = sessionsRoot()
   if (!(await exists(root))) return []

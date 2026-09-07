@@ -10,7 +10,9 @@ import {
   inputsFromManifest, rawRescuePlan, videoCodecFor,
 } from '@shared/ffmpeg'
 import { translate } from '@shared/i18n'
-import { cleanupAfterExport, closeWriters, findOrphans, readManifest, sessionDir, setState } from './storage'
+import {
+  cleanupAfterExport, closeWriters, findOrphans, readManifest, rebuildManifest, sessionDir, setState,
+} from './storage'
 import { runFfmpeg } from './ffmpeg'
 import { addRecording, getRecording } from './library'
 import { getSettings } from './settings'
@@ -104,11 +106,23 @@ export async function exportSession(
   onProgress: ProgressSink,
   signal?: AbortSignal,
 ): Promise<Recording | null> {
-  const manifest = await readManifest(sessionId)
+  let manifest = await readManifest(sessionId)
+
   if (!manifest) {
-    // Trả null trần khiến giao diện chỉ nói được câu chung chung "không xuất được file" - đúng
-    // thứ đã làm người dùng ba lần không biết chuyện gì xảy ra.
-    const message = `Không đọc được session.json của phiên ${sessionId}.`
+    // Bấm Dừng hai lần, hoặc bấm Xuất lại trên banner sau khi đã xuất xong: lần trước đã dọn
+    // thư mục phiên. Đó là thành công, không phải lỗi - trả lại chính bản ghi đã có.
+    const already = await getRecording(sessionId)
+    if (already && (await exists(join(already.folder, already.videoFile)))) {
+      onProgress({ sessionId, phase: 'done', percent: 100 })
+      return already
+    }
+    // File thô còn mà manifest mất thì dựng lại từ đĩa; đừng bỏ buổi ghi chỉ vì mất tờ khai.
+    manifest = await rebuildManifest(sessionId)
+    if (manifest) sendAlert({ kind: 'stream-error', messageKey: 'record.manifestRebuilt' })
+  }
+
+  if (!manifest) {
+    const message = `Không đọc được session.json của phiên ${sessionId}, và cũng không còn file thô nào để dựng lại.`
     onProgress({ sessionId, phase: 'error', percent: 0, message })
     return null
   }

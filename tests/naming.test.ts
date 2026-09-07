@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { assessDisk, formatBytes, formatDuration, makeRecordingFolder, makeSessionId, slugify, uniqueFolder, pickRoot } from '@shared/naming'
+import { assessDisk, formatBytes, formatDuration, makeRecordingFolder, makeSessionId, slugify, uniqueFolder, pickRoot, parseSessionIdDate,
+} from '@shared/naming'
 
 describe('slugify', () => {
   it('bỏ dấu tiếng Việt', () => {
@@ -104,5 +105,29 @@ describe('chọn thư mục đặt bản ghi', () => {
   it('không còn chỗ nào ghi được thì ném lỗi kèm đủ lý do để lần ra', async () => {
     await expect(pickRoot(['D:/CallRec', 'C:/Videos/CallRec'], failing(['D:/CallRec', 'C:/Videos/CallRec'])))
       .rejects.toThrow(/D:\/CallRec \(ổ chưa cắm\).*C:\/Videos\/CallRec/)
+  })
+})
+
+describe('đọc lại thời điểm ghi từ session id', () => {
+  it('id thật cho đúng ngày giờ đã ghi', () => {
+    const d = parseSessionIdDate('20260907T183151-1f8e')
+    expect(d?.getFullYear()).toBe(2026)
+    expect(d?.getMonth()).toBe(8)
+    expect(d?.getDate()).toBe(7)
+    expect(d?.getHours()).toBe(18)
+    expect(d?.getMinutes()).toBe(31)
+    expect(d?.getSeconds()).toBe(51)
+  })
+
+  it('id do chính app sinh ra luôn đọc lại được', () => {
+    const now = new Date(2026, 0, 2, 3, 4, 5)
+    const parsed = parseSessionIdDate(makeSessionId(now, 0.5))
+    expect(parsed?.getTime()).toBe(now.getTime())
+  })
+
+  it('id sai khuôn thì trả null chứ đừng bịa ra một mốc thời gian', () => {
+    for (const junk of ['', 'hom-qua', '2026-09-07', '20260907T1831-1f8e', '20260907T183151-ZZZZ']) {
+      expect(parseSessionIdDate(junk)).toBeNull()
+    }
   })
 })

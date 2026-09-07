@@ -38,6 +38,7 @@ export function useRecorder(options: RecorderOptions) {
   const [liveOn, setLiveOn] = useState(false)
 
   const engineRef = useRef<CaptureEngine | null>(null)
+  const stoppingRef = useRef(false)
   const sessionRef = useRef<string | null>(null)
   const ctxRef = useRef(ctx)
   ctxRef.current = ctx
@@ -215,6 +216,10 @@ export function useRecorder(options: RecorderOptions) {
   }, [send])
 
   const stop = useCallback(async () => {
+    // Bấm Dừng hai lần (nút ở ô chỉ báo, phím tắt, menu khay) từng tạo ra hai lượt xuất file cho
+    // cùng một phiên: lượt đầu xuất xong và dọn thư mục, lượt sau báo "không đọc được session.json".
+    if (stoppingRef.current) return
+    stoppingRef.current = true
     const id = sessionRef.current
     const finalElapsed = ctxRef.current.startedAtMs
       ? computeElapsed(ctxRef.current.startedAtMs, performance.now(), ctxRef.current.pauses)
@@ -224,7 +229,10 @@ export function useRecorder(options: RecorderOptions) {
     setLiveOn(false)
     await engineRef.current?.stop()
     engineRef.current = null
-    if (!id) return send({ type: 'FINALIZED' })
+    if (!id) {
+      stoppingRef.current = false
+      return send({ type: 'FINALIZED' })
+    }
 
     // Ghi xong thì hiện lại cửa sổ: người dùng cần thấy kết quả hoặc lý do hỏng.
     void window.callrec.window.show()
@@ -234,6 +242,7 @@ export function useRecorder(options: RecorderOptions) {
     // Lý do thật đã về qua kênh tiến độ; hiện nó thay vì một câu chung chung vô dụng.
     const detail = progressRef.current?.phase === 'error' ? progressRef.current.message : undefined
     send(recording ? { type: 'FINALIZED' } : { type: 'FAIL', error: detail || 'record.exportFailed' })
+    stoppingRef.current = false
   }, [elapsed, send])
 
   const bookmark = useCallback(async () => {

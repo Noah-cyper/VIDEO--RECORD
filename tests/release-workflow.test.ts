@@ -35,3 +35,18 @@ describe('quy trình phát hành', () => {
     expect(workflow).toMatch(/if: always\(\)\s*\n\s*uses: actions\/upload-artifact/)
   })
 })
+
+describe('sidecar whisper trong lượt phát hành', () => {
+  const yml = readFileSync('.github/workflows/release.yml', 'utf-8')
+
+  it('có bước lấy whisper trước khi đóng gói', () => {
+    expect(yml).toContain('scripts/fetch-whisper.mjs')
+    expect(yml.indexOf('fetch-whisper.mjs')).toBeLessThan(yml.indexOf('--publish always'))
+  })
+
+  it('bước đó không được làm đỏ cả lượt phát hành', () => {
+    // Mất gỡ băng thì chỉ mất một tính năng; mất lượt phát hành là mất luôn phần ghi.
+    const step = yml.slice(yml.indexOf('Fetch whisper.cpp sidecar'), yml.indexOf('fetch-whisper.mjs'))
+    expect(step).toContain('continue-on-error: true')
+  })
+})

@@ -60,8 +60,9 @@ khi chưa.
 
 - **FFmpeg**: bắt buộc. Khi dev tự lấy từ `node_modules/ffmpeg-static`. Khi đóng gói phải nằm ở
   `resources/ffmpeg/`.
-- **whisper.cpp**: chỉ cần cho gỡ băng. Đặt ở `resources/whisper/`. Không có thì mọi tính năng
-  ghi vẫn chạy, chỉ nút gỡ băng bị vô hiệu hoá.
+- **whisper.cpp**: cần cho gỡ băng, phụ đề trực tiếp và dịch. Đặt ở `resources/whisper/`. Bản phát
+  hành lấy tự động bằng `scripts/fetch-whisper.mjs` (best-effort, không được làm đỏ lượt phát hành).
+  Không có thì mọi tính năng ghi vẫn chạy, chỉ gỡ băng và phụ đề bị vô hiệu hoá.
 
 ## Phát hành
 
