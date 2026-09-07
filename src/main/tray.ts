@@ -1,10 +1,14 @@
 import { app, globalShortcut, Menu, nativeImage, Tray } from 'electron'
 import type { RecordState } from '@shared/types'
+import type { ShortcutStatus } from '@shared/ipc'
 import { indicatorRequired } from '@shared/machine'
+import { translate, type Lang } from '@shared/i18n'
+import { SHORTCUTS } from '@shared/shortcuts'
 import { sendCommand, showMainWindow } from './windows'
 
 let tray: Tray | null = null
 let current: RecordState = 'idle'
+let lang: Lang = 'vi'
 
 /** Vẽ icon bằng data URI để không phụ thuộc asset khi đóng gói; đỏ = đang ghi. */
 function icon(recording: boolean): Electron.NativeImage {
@@ -15,16 +19,24 @@ function icon(recording: boolean): Electron.NativeImage {
 
 function menu(): Electron.Menu {
   const busy = indicatorRequired(current)
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key)
   return Menu.buildFromTemplate([
-    { label: busy ? 'Đang ghi…' : 'Sẵn sàng', enabled: false },
+    { label: t(busy ? 'tray.recording' : 'tray.ready'), enabled: false },
     { type: 'separator' },
-    { label: busy ? 'Dừng ghi' : 'Bắt đầu ghi', click: () => sendCommand(busy ? 'stop' : 'toggle-record') },
-    { label: 'Tạm dừng / tiếp tục', enabled: busy, click: () => sendCommand('pause') },
-    { label: 'Đánh dấu mốc', enabled: busy, click: () => sendCommand('bookmark') },
+    { label: t(busy ? 'tray.stop' : 'tray.start'), click: () => sendCommand(busy ? 'stop' : 'toggle-record') },
+    { label: t('tray.pauseResume'), enabled: busy, click: () => sendCommand('pause') },
+    { label: t('tray.bookmark'), enabled: busy, click: () => sendCommand('bookmark') },
     { type: 'separator' },
-    { label: 'Mở CallRec', click: () => showMainWindow() },
-    { label: 'Thoát', click: () => app.quit() },
+    { label: t('tray.open'), click: () => showMainWindow() },
+    { label: t('tray.quit'), click: () => app.quit() },
   ])
+}
+
+/** Menu khay dựng một lần rồi giữ nguyên, nên đổi ngôn ngữ phải dựng lại - không tự cập nhật. */
+export function setTrayLanguage(next: Lang): void {
+  if (lang === next) return
+  lang = next
+  tray?.setContextMenu(menu())
 }
 
 export function createTray(): void {
@@ -42,19 +54,23 @@ export function updateTray(state: RecordState): void {
   tray.setContextMenu(menu())
 }
 
-const SHORTCUTS: Record<string, Parameters<typeof sendCommand>[0]> = {
-  'CommandOrControl+Shift+R': 'toggle-record',
-  'CommandOrControl+Shift+P': 'pause',
-  'CommandOrControl+Shift+M': 'bookmark',
-}
+let shortcuts: ShortcutStatus[] = []
 
 export function registerShortcuts(): void {
-  for (const [accel, cmd] of Object.entries(SHORTCUTS)) {
-    // Phím tắt có thể đã bị app khác chiếm; bỏ qua thay vì làm hỏng khởi động.
-    globalShortcut.register(accel, () => sendCommand(cmd))
-  }
+  // Phím tắt có thể đã bị app khác chiếm; không được làm hỏng khởi động, nhưng cũng không được
+  // im lặng - người dùng sẽ bấm vào hư không và tưởng app hỏng. Giữ kết quả để Cài đặt hiện ra.
+  shortcuts = SHORTCUTS.map(({ accelerator, command }) => ({
+    accelerator,
+    command,
+    registered: globalShortcut.register(accelerator, () => sendCommand(command)),
+  }))
+}
+
+export function shortcutStatus(): ShortcutStatus[] {
+  return shortcuts
 }
 
 export function unregisterShortcuts(): void {
   globalShortcut.unregisterAll()
+  shortcuts = []
 }

@@ -3,7 +3,8 @@ import { CH } from '@shared/ipc'
 import { createMainWindow, getMainWindow } from './windows'
 import { installDisplayMediaHandler } from './sources'
 import { registerIpc } from './ipc'
-import { createTray, registerShortcuts, unregisterShortcuts, updateTray } from './tray'
+import { createTray, registerShortcuts, unregisterShortcuts, updateTray, setTrayLanguage } from './tray'
+import { getSettings } from './settings'
 import { closeAllWriters, findOrphans, hasOpenWriters } from './storage'
 import { installMediaProtocol, registerMediaScheme } from './media-protocol'
 import { initCrashReporter } from './crash'
@@ -33,6 +34,7 @@ if (!app.requestSingleInstanceLock()) {
     createTray()
     registerShortcuts()
     updateTray('idle')
+    setTrayLanguage((await getSettings()).language)
     initUpdater()
 
     const orphans = await findOrphans()

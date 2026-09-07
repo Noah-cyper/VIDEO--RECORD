@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import type { Settings } from '@shared/types'
-import type { PermissionStatus, UpdateStatus, WhisperStatus } from '@shared/ipc'
+import type { PermissionStatus, ShortcutStatus, UpdateStatus, WhisperStatus } from '@shared/ipc'
 import { WHISPER_MODELS, type WhisperModelName } from '@shared/whisper'
 import { useT } from './i18n'
+import { prettyAccelerator } from '@shared/shortcuts'
 
 function UpdateLine({ update }: { update: UpdateStatus }) {
   const t = useT()
@@ -43,6 +44,11 @@ export function SettingsView({
   onRequestPermissions: () => void
 }) {
   const t = useT()
+  const [shortcuts, setShortcuts] = useState<ShortcutStatus[]>([])
+  useEffect(() => {
+    void window.callrec.shortcuts.status().then(setShortcuts)
+  }, [])
+
   const [whisper, setWhisper] = useState<WhisperStatus | null>(null)
   const [apiKey, setApiKeyInput] = useState('')
   const [crashes, setCrashes] = useState(0)
@@ -256,6 +262,24 @@ export function SettingsView({
             )}
           </div>
         )}
+      </div>
+
+      <div className="panel col">
+        <strong>{t('settings.shortcuts')}</strong>
+        {/* Đăng ký hỏng vốn bị nuốt im lặng, nên người dùng bấm vào hư không mà tưởng app hỏng. */}
+        {shortcuts.map((sc) => (
+          <div key={sc.accelerator} className="row spread">
+            <span>
+              <code>{prettyAccelerator(sc.accelerator, navigator.platform.toLowerCase().includes('mac') ? 'darwin' : 'win32')}</code>
+              {' — '}
+              {t(`shortcut.${sc.command}` as Parameters<typeof t>[0])}
+            </span>
+            <span className={sc.registered ? 'muted' : ''} style={{ fontSize: 12, color: sc.registered ? undefined : 'var(--rec)' }}>
+              {t(sc.registered ? 'settings.shortcutOk' : 'settings.shortcutTaken')}
+            </span>
+          </div>
+        ))}
+        <span className="muted" style={{ fontSize: 12 }}>{t('settings.shortcutsHint')}</span>
       </div>
 
       <div className="panel col">

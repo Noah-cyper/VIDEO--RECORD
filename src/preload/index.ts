@@ -7,6 +7,7 @@ import {
   type TranscriptProgress, type WriteChunkInput,
 } from '@shared/ipc'
 import type { LiveCaption } from '@shared/live'
+import type { OverlayCommand } from '@shared/shortcuts'
 
 function on<T>(channel: string, cb: (payload: T) => void): () => void {
   const handler = (_e: Electron.IpcRendererEvent, payload: T) => cb(payload)
@@ -93,6 +94,8 @@ const api: CallrecApi & { onOrphans(cb: (m: SessionManifest[]) => void): () => v
     hide: () => ipcRenderer.invoke(CH.windowHide),
     show: () => ipcRenderer.invoke(CH.windowShow),
   },
+  shortcuts: { status: () => ipcRenderer.invoke(CH.shortcutsStatus) },
+  sendOverlayCommand: (cmd: OverlayCommand) => ipcRenderer.send(CH.commandFromOverlay, cmd),
   ffmpeg: { available: () => ipcRenderer.invoke(CH.ffmpegStatus) },
   whisper: {
     status: () => ipcRenderer.invoke(CH.whisperStatus),

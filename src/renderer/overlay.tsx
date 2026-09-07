@@ -37,15 +37,29 @@ function Overlay() {
 
   const paused = state === 'paused'
   const finalizing = state === 'finalizing'
+  const T = (key: Parameters<typeof translate>[1]) => translate(lang, key)
   return (
     <div className="overlay-card">
       <div className="row" style={{ gap: 10, width: '100%' }}>
         <span className={`dot ${paused || finalizing ? 'paused' : 'blink'}`} />
         <span className="overlay-time">{formatDuration(elapsed)}</span>
         <span className="muted" style={{ fontSize: 12 }}>
-          {translate(lang, finalizing ? 'overlay.saving' : paused ? 'overlay.paused' : 'overlay.recording')}
+          {T(finalizing ? 'overlay.saving' : paused ? 'overlay.paused' : 'overlay.recording')}
         </span>
       </div>
+      {/* Ghi ngầm giấu cửa sổ chính, nên đây là chỗ duy nhất còn bấm được. Không có nút nào ẩn
+          hay tắt chỉ báo - danh sách lệnh bị chặn ở cả preload lẫn main (FR-08). */}
+      {!finalizing && (
+        <div className="row" style={{ gap: 6 }}>
+          <button onClick={() => window.callrec.sendOverlayCommand('pause')}>
+            {T(paused ? 'overlay.resume' : 'overlay.pause')}
+          </button>
+          <button onClick={() => window.callrec.sendOverlayCommand('bookmark')}>{T('overlay.bookmark')}</button>
+          <button className="danger" onClick={() => window.callrec.sendOverlayCommand('stop')}>
+            {T('overlay.stop')}
+          </button>
+        </div>
+      )}
       {captions.length > 0 && (
         <div className="overlay-captions">
           {captions.map((c) => (

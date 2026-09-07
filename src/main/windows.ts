@@ -91,7 +91,7 @@ export function showMainWindow(): void {
   mainWindow.focus()
 }
 
-const overlaySize = () => (overlayCaptions ? { width: 380, height: 188 } : { width: 260, height: 76 })
+const overlaySize = () => (overlayCaptions ? { width: 380, height: 230 } : { width: 300, height: 118 })
 
 /** Phụ đề cần chỗ, nhưng ô chỉ báo vẫn là ô chỉ báo: chỉ đổi kích thước, không đổi tính bắt buộc. */
 export function setOverlayCaptions(enabled: boolean): void {

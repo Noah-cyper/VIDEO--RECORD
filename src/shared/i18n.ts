@@ -250,6 +250,30 @@ const vi = {
   'settings.liveModelHint':
     'Model này chạy song song với việc ghi nên phải nhẹ: tiny và base kịp thời gian thực, small trở lên sẽ tụt lại trên máy yếu. Không liên quan tới model gỡ băng sau khi ghi.',
 
+  'tray.ready': 'Sẵn sàng',
+  'tray.recording': 'Đang ghi…',
+  'tray.start': 'Bắt đầu ghi',
+  'tray.stop': 'Dừng ghi',
+  'tray.pauseResume': 'Tạm dừng / tiếp tục',
+  'tray.bookmark': 'Đánh dấu mốc',
+  'tray.open': 'Mở CallRec',
+  'tray.quit': 'Thoát',
+
+  'overlay.stop': 'Dừng',
+  'overlay.pause': 'Tạm dừng',
+  'overlay.resume': 'Tiếp tục',
+  'overlay.bookmark': 'Mốc',
+
+  'settings.shortcuts': 'Phím tắt toàn cục',
+  'settings.shortcutsHint':
+    'Dùng được kể cả khi cửa sổ CallRec đang ẩn. Phím nào bị ứng dụng khác chiếm thì dùng menu ở khay hệ thống thay thế.',
+  'settings.shortcutTaken': 'bị ứng dụng khác chiếm',
+  'settings.shortcutOk': 'dùng được',
+  'shortcut.toggle-record': 'Bắt đầu / dừng ghi',
+  'shortcut.pause': 'Tạm dừng / tiếp tục',
+  'shortcut.stop': 'Dừng ghi',
+  'shortcut.bookmark': 'Đánh dấu mốc',
+
   'speaker.me': 'Tôi',
   'speaker.them': 'Đối phương',
 } as const
@@ -501,6 +525,30 @@ const en: Record<TranslationKey, string> = {
   'settings.liveModel': 'Live caption model',
   'settings.liveModelHint':
     'This model runs alongside the recording, so it has to be light: tiny and base keep up in real time, small and above fall behind on slower machines. Unrelated to the transcription model used after the call.',
+
+  'tray.ready': 'Ready',
+  'tray.recording': 'Recording…',
+  'tray.start': 'Start recording',
+  'tray.stop': 'Stop recording',
+  'tray.pauseResume': 'Pause / resume',
+  'tray.bookmark': 'Add marker',
+  'tray.open': 'Open CallRec',
+  'tray.quit': 'Quit',
+
+  'overlay.stop': 'Stop',
+  'overlay.pause': 'Pause',
+  'overlay.resume': 'Resume',
+  'overlay.bookmark': 'Marker',
+
+  'settings.shortcuts': 'Global shortcuts',
+  'settings.shortcutsHint':
+    'These work even while the CallRec window is hidden. If another app has taken one, use the tray menu instead.',
+  'settings.shortcutTaken': 'taken by another app',
+  'settings.shortcutOk': 'working',
+  'shortcut.toggle-record': 'Start / stop recording',
+  'shortcut.pause': 'Pause / resume',
+  'shortcut.stop': 'Stop recording',
+  'shortcut.bookmark': 'Add marker',
 
   'speaker.me': 'Me',
   'speaker.them': 'Other party',
