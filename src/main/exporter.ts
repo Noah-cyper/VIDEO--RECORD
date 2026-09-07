@@ -3,14 +3,15 @@ import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import { statfs } from 'node:fs/promises'
 import type { DiskStatus, ExportProgress, QualityPreset, Recording } from '@shared/types'
+import { CH } from '@shared/ipc'
 import { assessDisk, makeRecordingFolder, pickRoot, uniqueFolder } from '@shared/naming'
 import { buildAudioExtractArgs, buildExportArgs, buildThumbnailArgs, inputsFromManifest, videoCodecFor } from '@shared/ffmpeg'
-import { cleanupAfterExport, closeWriters, readManifest, sessionDir, setState } from './storage'
+import { cleanupAfterExport, closeWriters, findOrphans, readManifest, sessionDir, setState } from './storage'
 import { runFfmpeg } from './ffmpeg'
 import { addRecording } from './library'
 import { getSettings } from './settings'
 import { APP_FOLDER, probeWritable } from './paths'
-import { sendAlert } from './windows'
+import { broadcast, sendAlert } from './windows'
 import { exists } from './jsonstore'
 
 export type ProgressSink = (p: ExportProgress) => void
@@ -135,10 +136,13 @@ export async function exportSession(
     onProgress({ sessionId, phase: 'done', percent: 100 })
     return recording
   } catch (err) {
-    const message = `${err instanceof Error ? err.message : String(err)} — file thô vẫn còn, mở lại ứng dụng sẽ có nút xuất lại.`
+    const message = `${err instanceof Error ? err.message : String(err)} — file thô vẫn còn, xuất lại được từ banner ở đầu cửa sổ.`
     await setState(sessionId, 'error', message)
     // Giữ nguyên thư mục thô để người dùng thử xuất lại, đừng dọn khi chưa có file đích.
     onProgress({ sessionId, phase: 'error', percent: 0, message })
+    // Đẩy banner lên NGAY. Trước đây danh sách phiên cần cứu chỉ được gửi lúc khởi động app, nên
+    // hỏng xong người dùng đổi tab là mất sạch dấu vết - đúng cách một bản ghi biến mất im lặng.
+    broadcast(CH.sessionOrphansFound, await findOrphans())
     return null
   }
 }
