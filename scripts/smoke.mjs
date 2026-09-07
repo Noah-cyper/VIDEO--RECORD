@@ -145,6 +145,15 @@ app.whenReady().then(async () => {
     const beforeCheck = await window.callrec.update.get()
     const afterCheck = await window.callrec.update.check()
 
+    // Huỷ xuất file khi không có phiên nào đang chạy phải là lệnh vô hại, không được ném lỗi:
+    // đây là nút thoát duy nhất khi bước xuất file kẹt, nó không được phép tự hỏng.
+    let cancelOk = true
+    try {
+      await window.callrec.exportRecording.cancel()
+    } catch {
+      cancelOk = false
+    }
+
     // Phím tắt: đăng ký hỏng vốn bị nuốt im lặng, nên ít nhất phải đọc được trạng thái ra.
     const shortcuts = await window.callrec.shortcuts.status()
     // Lệnh từ ô chỉ báo: kênh mở cho renderer nên giá trị lạ phải bị bỏ qua, không làm chết main.
@@ -161,6 +170,7 @@ app.whenReady().then(async () => {
       rootNormalized, rootError,
       ffmpegOk,
       diskDir: disk.dir,
+      cancelOk,
       shortcutCount: shortcuts.length,
       shortcutAccel: shortcuts[0]?.accelerator ?? '',
       aliveAfterOverlay,
@@ -269,6 +279,7 @@ app.whenReady().then(async () => {
       problems.push(`preflight ổ đĩa trỏ sai chỗ: ${settingsChecks.diskDir}, đúng ra là ${settingsChecks.before}`)
     }
     if (settingsChecks.diskCanRecord !== true) problems.push('thư mục lưu ghi được nhưng preflight vẫn chặn')
+    if (!settingsChecks.cancelOk) problems.push('nút Huỷ xuất file ném lỗi khi không có gì để huỷ')
     if (settingsChecks.shortcutCount !== 3) {
       problems.push(`mong đợi 3 phím tắt, nhận ${settingsChecks.shortcutCount}`)
     }

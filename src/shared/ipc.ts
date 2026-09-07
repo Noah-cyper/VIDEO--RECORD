@@ -26,6 +26,7 @@ export const CH = {
   sessionDiscard: 'session:discard',
 
   exportStart: 'export:start',
+  exportCancel: 'export:cancel',
   exportProgress: 'export:progress',
 
   libraryList: 'library:list',
@@ -227,6 +228,8 @@ export interface CallrecApi {
   }
   exportRecording: {
     start(sessionId: string, durationMs: number, title?: string): Promise<Recording | null>
+    /** Đường thoát khi bước xuất file kẹt; phần đã ghi vẫn được cứu thành file thô. */
+    cancel(): Promise<void>
     onProgress(cb: (p: ExportProgress) => void): () => void
   }
   library: {

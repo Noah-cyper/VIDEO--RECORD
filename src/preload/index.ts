@@ -36,6 +36,7 @@ const api: CallrecApi & { onOrphans(cb: (m: SessionManifest[]) => void): () => v
   },
   exportRecording: {
     start: (id: string, durationMs: number, title?: string) => ipcRenderer.invoke(CH.exportStart, id, durationMs, title),
+    cancel: () => ipcRenderer.invoke(CH.exportCancel),
     onProgress: (cb: (p: ExportProgress) => void) => on(CH.exportProgress, cb),
   },
   library: {

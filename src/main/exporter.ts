@@ -102,6 +102,7 @@ export async function exportSession(
   durationMs: number,
   title: string | undefined,
   onProgress: ProgressSink,
+  signal?: AbortSignal,
 ): Promise<Recording | null> {
   const manifest = await readManifest(sessionId)
   if (!manifest) {
@@ -173,6 +174,7 @@ export async function exportSession(
 
     const hasVideo = Boolean(inputs.video)
     const progress = (message?: string) => ({
+      signal,
       totalMs: durationMs,
       // Encode lại một buổi ghi dài có thể mất vài phút, nhưng đứng im quá 2 phút là treo thật.
       stallMs: 120_000,
@@ -219,7 +221,9 @@ export async function exportSession(
     if (keptVideo) {
       onProgress({ sessionId, phase: 'thumbnail', percent: 99 })
       const thumbAt = Math.min(10, Math.max(1, Math.floor(durationMs / 2000)))
-      await runFfmpeg(buildThumbnailArgs(output, join(folder, 'thumbnail.jpg'), thumbAt)).catch(() => undefined)
+      await runFfmpeg(buildThumbnailArgs(output, join(folder, 'thumbnail.jpg'), thumbAt), { signal }).catch(
+        () => undefined,
+      )
     }
 
     const size = await fs.stat(output).then((s) => s.size, () => 0)
@@ -256,7 +260,10 @@ export async function exportSession(
     onProgress({ sessionId, phase: 'done', percent: 100 })
     return recording
   } catch (err) {
-    const reason = err instanceof Error ? err.message : String(err)
+    // Huỷ là hành động có chủ đích của người dùng, không phải sự cố - nói đúng như vậy.
+    const reason = signal?.aborted
+      ? 'Đã huỷ xuất file theo yêu cầu.'
+      : err instanceof Error ? err.message : String(err)
     const rescued = folder ? await rescueRaw(sessionId, manifest, folder, title, durationMs, reason, inputs) : null
     const message = rescued
       ? `${reason} — đã chép file thô vào ${rescued.folder}.`

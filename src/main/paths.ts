@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs'
 import nodePath, { type PlatformPath } from 'node:path'
+import { withTimeout } from '@shared/async'
 
 /** Tên thư mục app tự tạo khi người dùng trỏ thẳng vào gốc ổ đĩa. */
 export const APP_FOLDER = 'CallRec'
@@ -51,11 +52,14 @@ export function assertInside(parent: string, child: string, what: string): strin
  * kết nối không, thư mục có chỉ-đọc không - `existsSync` trả lời được câu hỏi khác hẳn.
  * Trả về null nếu ghi được, hoặc lý do hỏng đọc được cho người dùng.
  */
+export const PROBE_TIMEOUT_MS = 10_000
+
 export async function probeWritable(dir: string): Promise<string | null> {
   const probe = nodePath.join(dir, '.callrec-write-test')
   try {
-    await fs.mkdir(dir, { recursive: true })
-    await fs.writeFile(probe, '')
+    // Có timeout vì ổ USB bị rút giữa chừng làm lời gọi fs treo hàng phút chứ không báo lỗi.
+    await withTimeout(fs.mkdir(dir, { recursive: true }), PROBE_TIMEOUT_MS, `Thư mục "${dir}"`)
+    await withTimeout(fs.writeFile(probe, ''), PROBE_TIMEOUT_MS, `Thư mục "${dir}"`)
     return null
   } catch (err) {
     return err instanceof Error ? err.message : String(err)
