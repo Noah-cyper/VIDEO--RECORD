@@ -176,6 +176,20 @@ describe('chọn đường dịch', () => {
     expect(liveTargetMode('ja')).toBe('cloud')
   })
 
+  it('đích trùng nguồn thì không dịch - đừng tốn một lượt gọi API để dịch tiếng Anh sang tiếng Anh', () => {
+    expect(liveTargetMode('en', 'en')).toBe('off')
+    expect(liveTargetMode('vi', 'vi')).toBe('off')
+  })
+
+  it('nguồn khác đích thì vẫn dịch như thường', () => {
+    expect(liveTargetMode('en', 'vi')).toBe('local')
+    expect(liveTargetMode('ja', 'vi')).toBe('cloud')
+  })
+
+  it('nguồn tự nhận diện thì không thể kết luận trùng, cứ dịch', () => {
+    expect(liveTargetMode('en', 'auto')).toBe('local')
+  })
+
   it('cờ -tr chỉ xuất hiện khi dịch trên máy', () => {
     const base = { modelPath: 'm.bin', wavPath: 'a.wav', outputPrefix: 'a', language: 'vi' }
     expect(buildWhisperArgs({ ...base, translate: true })).toContain('-tr')

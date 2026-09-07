@@ -216,6 +216,17 @@ mất vế sau và đoán bừa, còn chờ đủ 8 giây mới cắt thì phụ
 chỉ nói một từ. Nói liên tục không nghỉ thì vẫn bị cắt cưỡng bức ở 8 giây. Giữ lại 3 khung trước
 lúc phát hiện có tiếng, nếu không âm đầu của từ đầu tiên bị cụt.
 
+### Ngôn ngữ nguồn
+
+Whisper cần biết đang nghe thứ tiếng gì. Trước đây app đưa cho nó **ngôn ngữ giao diện** — gọi
+tiếng Anh mà app để tiếng Việt là ra chữ vô nghĩa, cả ở phụ đề lẫn biên bản gỡ băng sau.
+
+Nay có cài đặt riêng **"Ngôn ngữ đang nói trong cuộc gọi"**, mặc định `auto` (whisper tự nhận
+diện). Nó chi phối cả hai đường: phụ đề trực tiếp và gỡ băng sau khi ghi. Với `auto`, biên bản
+lưu lại thứ tiếng whisper **thật sự nghe ra**, không lưu chữ "auto".
+
+Đích trùng nguồn thì không dịch — dịch tiếng Anh sang tiếng Anh chỉ tốn một lượt gọi API.
+
 ### Ba đường dịch
 
 | Chọn | Chạy ở đâu | Điều kiện |
@@ -223,6 +234,10 @@ lúc phát hiện có tiếng, nếu không âm đầu của từ đầu tiên b
 | Không dịch | — | Chỉ hiện nguyên văn |
 | Tiếng Anh | Ngay trên máy, cờ `-tr` của whisper.cpp | Không cần mạng, không cần khoá API |
 | Ngôn ngữ khác | API | Phải bật gửi ra dịch vụ ngoài **và** có khoá API, giống hệt tóm tắt |
+
+Ngôn ngữ ngoài danh sách 10 thứ tiếng có sẵn: gõ thẳng tên (ví dụ "Tiếng Bồ Đào Nha"). Mã sinh ra
+phải khớp đúng khuôn `customLanguageCode()` vì nó vừa đi vào prompt vừa đi vào tên file bản dịch,
+và tên do người dùng gõ bị cắt ký tự điều khiển trước khi vào prompt.
 
 whisper.cpp chỉ dịch được đúng một hướng là sang tiếng Anh. Muốn tiếng Nhật, tiếng Trung… thì
 buộc phải qua API, và khi đó **lời thoại rời khỏi máy này** — mặc định tắt (NFR-06), giao diện

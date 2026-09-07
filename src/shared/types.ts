@@ -115,6 +115,13 @@ export interface Settings {
   liveCaptions: boolean
   /** '' = chỉ hiện nguyên văn; 'en' = whisper dịch ngay trên máy; mã khác = phải đi qua API. */
   liveTarget: string
+  /** Tên ngôn ngữ đích khi nó nằm ngoài danh sách sẵn có; đây là tên đưa thẳng vào prompt dịch. */
+  liveTargetLabel: string
+  /**
+   * Ngôn ngữ ĐANG NÓI trong cuộc gọi, dùng cho cả phụ đề trực tiếp lẫn gỡ băng sau. Trước đây
+   * whisper nhận ngôn ngữ giao diện - gọi tiếng Anh mà app để tiếng Việt là ra kết quả rác.
+   */
+  spokenLanguage: string
   /** Model riêng cho phụ đề: bản gỡ băng chọn theo độ chính xác, bản trực tiếp chọn theo tốc độ. */
   liveModel: 'tiny' | 'base' | 'small' | 'medium'
 }

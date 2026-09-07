@@ -4,6 +4,7 @@ import type { PermissionStatus, ShortcutStatus, UpdateStatus, WhisperStatus } fr
 import { WHISPER_MODELS, type WhisperModelName } from '@shared/whisper'
 import { useT } from './i18n'
 import { prettyAccelerator } from '@shared/shortcuts'
+import { SPOKEN_AUTO, TARGET_LANGUAGES } from '@shared/translate'
 
 function UpdateLine({ update }: { update: UpdateStatus }) {
   const t = useT()
@@ -180,6 +181,21 @@ export function SettingsView({
             <span className="muted">{t('settings.consentHint')}</span>
           </span>
         </label>
+
+        <div className="field">
+          <label htmlFor="spoken-lang-settings">{t('live.spoken')}</label>
+          <select
+            id="spoken-lang-settings"
+            value={settings.spokenLanguage}
+            onChange={(e) => onSettings({ spokenLanguage: e.target.value })}
+          >
+            <option value={SPOKEN_AUTO}>{t('live.spokenAuto')}</option>
+            {TARGET_LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code}>{l.label}</option>
+            ))}
+          </select>
+          <span className="muted" style={{ fontSize: 12 }}>{t('settings.spokenHint')}</span>
+        </div>
 
         <div className="field">
           <label htmlFor="whisper-model">{t('settings.whisperModel')}</label>

@@ -285,6 +285,19 @@ const vi = {
   'record.noUsableStreams':
     'Cả ba luồng đều rỗng, không có gì để dựng thành file. Chạy "Kiểm tra thiết bị" ở màn hình Ghi để biết micro và âm thanh hệ thống có vào tiếng không.',
 
+  'live.spoken': 'Ngôn ngữ đang nói trong cuộc gọi',
+  'live.spokenAuto': 'Tự nhận diện',
+  'live.spokenHint':
+    'Chọn đúng thứ tiếng hai bên đang nói. Trước đây app đoán theo ngôn ngữ giao diện — gọi tiếng Anh mà app để tiếng Việt thì phụ đề ra chữ vô nghĩa. Mục này chi phối cả phụ đề trực tiếp lẫn gỡ băng sau khi ghi.',
+  'live.targetSame': '{lang} — trùng ngôn ngữ đang nói, không dịch',
+  'live.targetCustom': 'Ngôn ngữ khác…',
+  'live.targetCustomName': 'Tên ngôn ngữ muốn dịch sang',
+  'live.targetCustomPlaceholder': 'Ví dụ: Tiếng Ý, Tiếng Bồ Đào Nha, Tiếng Ả Rập',
+  'live.targetCustomHint':
+    'Gõ tên ngôn ngữ rồi bấm Áp dụng. Ngôn ngữ ngoài danh sách luôn phải đi qua API, tức là lời thoại rời khỏi máy này.',
+  'settings.spokenHint':
+    'Dùng cho cả phụ đề trực tiếp lẫn gỡ băng. Để "Tự nhận diện" thì whisper tự đoán; chọn thẳng thứ tiếng cho kết quả chắc hơn khi biết trước cuộc gọi nói tiếng gì.',
+
   'speaker.me': 'Tôi',
   'speaker.them': 'Đối phương',
 } as const
@@ -571,6 +584,19 @@ const en: Record<TranslationKey, string> = {
     'The {stream} stream never recorded a single second, so it was left out of the final file — everything else was saved normally. Usually this means nothing was playing through the speakers while recording.',
   'record.noUsableStreams':
     'All three streams are empty, so there is nothing to build a file from. Run "Test devices" on the Record screen to check whether the microphone and system audio are picking anything up.',
+
+  'live.spoken': 'Language spoken on the call',
+  'live.spokenAuto': 'Detect automatically',
+  'live.spokenHint':
+    'Pick the language both sides actually speak. The app used to assume it matched the interface language — an English call with a Vietnamese interface produced nonsense captions. This applies to both live captions and the transcript made after recording.',
+  'live.targetSame': '{lang} — same as the spoken language, no translation',
+  'live.targetCustom': 'Another language…',
+  'live.targetCustomName': 'Language to translate into',
+  'live.targetCustomPlaceholder': 'e.g. Italian, Portuguese, Arabic',
+  'live.targetCustomHint':
+    'Type the language name and press Apply. Languages outside the list always go through the API, which means the speech leaves this machine.',
+  'settings.spokenHint':
+    'Used for both live captions and transcription. "Detect automatically" lets whisper guess; naming the language is more reliable when you already know what the call will be in.',
 
   'speaker.me': 'Me',
   'speaker.them': 'Other party',
