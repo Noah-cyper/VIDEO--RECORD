@@ -237,7 +237,7 @@ const vi = {
     'Nghe ké hai luồng rồi gỡ băng từng đoạn ngay trong lúc ghi. Phụ đề tới chậm 2-6 giây tuỳ máy, và đây là bản nghe nhanh - biên bản chính xác vẫn là bản gỡ băng sau khi ghi xong.',
   'live.target': 'Dịch phụ đề sang',
   'live.targetOff': 'Không dịch — chỉ hiện nguyên văn',
-  'live.targetLocal': '{lang} — dịch ngay trên máy, không cần mạng',
+  'live.targetLocal': '{lang} — dịch trên máy khi chưa có khoá API; có khoá thì đi qua API cho chính xác hơn',
   'live.targetCloud': '{lang} — qua API, lời thoại rời khỏi máy này',
   'live.preparing': 'Đang tải model phụ đề về máy, lần đầu có thể mất một lúc. Bản ghi bắt đầu ngay sau đó.',
   'live.waiting': 'Đang nghe… phụ đề hiện ra khi có người nói.',
@@ -253,7 +253,7 @@ const vi = {
     'Máy không theo kịp nên một đoạn phụ đề đã bị bỏ. Bản ghi không mất gì; chọn model phụ đề nhẹ hơn nếu bị thường xuyên.',
   'settings.liveModel': 'Model phụ đề trực tiếp',
   'settings.liveModelHint':
-    'Model này chạy song song với việc ghi nên phải nhẹ: tiny và base kịp thời gian thực, small trở lên sẽ tụt lại trên máy yếu. Không liên quan tới model gỡ băng sau khi ghi.',
+    'Model này chạy song song với việc ghi nên phải nhẹ. Với tiếng Việt, tiny nghe sai rất nhiều — base là mức thấp nhất dùng được, small chính xác hơn hẳn nếu máy đủ khoẻ. Không liên quan tới model gỡ băng sau khi ghi.',
 
   'tray.ready': 'Sẵn sàng',
   'tray.recording': 'Đang ghi…',
@@ -287,6 +287,9 @@ const vi = {
   'record.noUsableStreams':
     'Cả ba luồng đều rỗng, không có gì để dựng thành file. Chạy "Kiểm tra thiết bị" ở màn hình Ghi để biết micro và âm thanh hệ thống có vào tiếng không.',
 
+  'live.captionBar': 'Hiện thanh phụ đề chạy ngang đầu màn hình',
+  'live.captionBarHint':
+    'Một thanh dài nằm sát mép trên màn hình, chữ chạy từ phải sang trái, đọc được cả khi cửa sổ CallRec đã thu xuống khay. Thanh này xuyên chuột nên không chắn nút bấm của cửa sổ cuộc gọi.',
   'live.spoken': 'Ngôn ngữ đang nói trong cuộc gọi',
   'live.spokenAuto': 'Tự nhận diện',
   'live.spokenHint':
@@ -539,7 +542,7 @@ const en: Record<TranslationKey, string> = {
     'Taps both streams and transcribes them segment by segment while you record. Captions lag 2-6 seconds depending on the machine, and this is the quick read - the accurate record is still the transcript made after the call.',
   'live.target': 'Translate captions into',
   'live.targetOff': 'No translation — original wording only',
-  'live.targetLocal': '{lang} — translated on this machine, no network needed',
+  'live.targetLocal': '{lang} — translated locally when no API key is set; with a key it goes through the API for better accuracy',
   'live.targetCloud': '{lang} — via the API, the speech leaves this machine',
   'live.preparing': 'Downloading the caption model; the first time takes a while. Recording starts right after.',
   'live.waiting': 'Listening… captions appear once somebody speaks.',
@@ -555,7 +558,7 @@ const en: Record<TranslationKey, string> = {
     'This machine fell behind, so one caption segment was dropped. Nothing is missing from the recording; pick a lighter caption model if it keeps happening.',
   'settings.liveModel': 'Live caption model',
   'settings.liveModelHint':
-    'This model runs alongside the recording, so it has to be light: tiny and base keep up in real time, small and above fall behind on slower machines. Unrelated to the transcription model used after the call.',
+    'This model runs alongside the recording, so it has to be light. For Vietnamese, tiny mishears a lot — base is the lowest usable setting, and small is noticeably more accurate if the machine can take it. Unrelated to the transcription model used after the call.',
 
   'tray.ready': 'Ready',
   'tray.recording': 'Recording…',
@@ -589,6 +592,9 @@ const en: Record<TranslationKey, string> = {
   'record.noUsableStreams':
     'All three streams are empty, so there is nothing to build a file from. Run "Test devices" on the Record screen to check whether the microphone and system audio are picking anything up.',
 
+  'live.captionBar': 'Show a caption ticker across the top of the screen',
+  'live.captionBarHint':
+    'A long bar pinned to the top edge, text scrolling right to left, readable even when the CallRec window is in the tray. It is click-through, so it never blocks buttons in the call window.',
   'live.spoken': 'Language spoken on the call',
   'live.spokenAuto': 'Detect automatically',
   'live.spokenHint':

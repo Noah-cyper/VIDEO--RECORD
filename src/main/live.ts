@@ -6,7 +6,7 @@ import type { LiveStartInput, LiveStartResult } from '@shared/ipc'
 import { CH } from '@shared/ipc'
 import {
   buildLivePrompt, cleanLiveText, encodeWav, liveTargetMode, MAX_SEGMENT_BYTES, pushBounded,
-  stripQuotes, type LiveCaption,
+  stripQuotes, type LiveCaption, type LiveMode,
 } from '@shared/live'
 import { parseWhisperJson, type Speaker } from '@shared/transcript'
 import { languageLabel, SPOKEN_AUTO, TARGET_LANGUAGES } from '@shared/translate'
@@ -14,7 +14,7 @@ import type { WhisperModelName } from '@shared/whisper'
 import { getSettings } from './settings'
 import { getApiKey } from './secrets'
 import { ensureModel, runWhisper, whisperAvailable } from './whisper'
-import { broadcast, setOverlayCaptions } from './windows'
+import { broadcast, setCaptionBar, setOverlayCaptions } from './windows'
 
 const MODEL = 'claude-opus-5'
 
@@ -22,9 +22,11 @@ interface LiveSession {
   id: string
   target: string
   targetName: string
+  sourceName: string
   model: WhisperModelName
   language: string
   spoken: string
+  mode: LiveMode
   client: Anthropic | null
 }
 
@@ -60,9 +62,12 @@ export async function startLive(input: LiveStartInput): Promise<LiveStartResult>
   if (!(await whisperAvailable())) return { ok: false, reason: 'no-binary' }
 
   const settings = settingsForName
+  // Hỏi khoá TRƯỚC khi chọn đường: có khoá thì cả tiếng Anh cũng đi qua API, vì bản dịch của
+  // whisper nhỏ chạy thời gian thực thường sai nghĩa.
+  const apiKey = settings.allowCloudSummary ? await getApiKey() : null
+  const mode = liveTargetMode(input.target, settings.spokenLanguage, Boolean(apiKey))
   let client: Anthropic | null = null
-  if (liveTargetMode(input.target, settings.spokenLanguage) === 'cloud') {
-    const apiKey = settings.allowCloudSummary ? await getApiKey() : null
+  if (mode === 'cloud') {
     if (!apiKey) return { ok: false, reason: 'cloud-off' }
     client = new Anthropic({ apiKey })
   }
@@ -85,11 +90,14 @@ export async function startLive(input: LiveStartInput): Promise<LiveStartResult>
     // người dùng gọi bằng thứ tiếng khác với thứ tiếng họ dùng app.
     language: settings.spokenLanguage === SPOKEN_AUTO ? 'auto' : settings.spokenLanguage,
     spoken: settings.spokenLanguage,
+    sourceName: settings.spokenLanguage === SPOKEN_AUTO ? '' : languageLabel(settings.spokenLanguage),
+    mode,
     client,
   }
   queue = []
   reportedError = false
   setOverlayCaptions(true)
+  setCaptionBar(settings.captionBar)
   return { ok: true }
 }
 
@@ -97,6 +105,7 @@ export async function stopLive(): Promise<void> {
   session = null
   queue = []
   setOverlayCaptions(false)
+  setCaptionBar(false)
   // Đoạn tiếng nằm trong thư mục tạm là lời thoại thật; dọn ngay chứ không đợi hệ điều hành.
   await fs.rm(workDir(), { recursive: true, force: true }).catch(() => undefined)
 }
@@ -154,7 +163,10 @@ async function transcribeSegment(current: LiveSession, job: Job): Promise<void> 
       wavPath: wav,
       model: current.model,
       language: current.language,
-      translate: liveTargetMode(current.target, current.spoken) === 'local',
+      // Chỉ bắt whisper tự dịch khi không có đường API - đó là đường kém chính xác hơn.
+      translate: current.mode === 'local',
+      // Beam 1: phụ đề tới muộn thì vô dụng, nên đổi chút chính xác lấy tốc độ ở đây.
+      beamSize: 1,
     })
     if (session !== current) return
 
@@ -165,7 +177,7 @@ async function transcribeSegment(current: LiveSession, job: Job): Promise<void> 
     )
     if (!text) return
 
-    const needsCloud = liveTargetMode(current.target, current.spoken) === 'cloud'
+    const needsCloud = current.mode === 'cloud'
     const caption: LiveCaption = { id: job.id, speaker: job.speaker, atMs: job.atMs, text, pending: needsCloud }
     broadcast(CH.liveCaption, caption)
     // Không await: bản dịch tới sau vài giây, còn hàng đợi gỡ băng phải chạy tiếp ngay.

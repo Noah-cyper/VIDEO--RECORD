@@ -152,6 +152,15 @@ describe('làm sạch và dựng prompt', () => {
     expect(cleanLiveText('Alo?')).toBe('Alo?')
   })
 
+  it('prompt nói rõ ngôn ngữ nguồn khi biết - mô hình dịch đỡ phải đoán', () => {
+    expect(buildLivePrompt('Anh gửi báo giá nhé', 'English', 'Tiếng Việt')).toContain('Tiếng Việt')
+    expect(buildLivePrompt('Anh gửi báo giá nhé', 'English')).not.toContain('undefined')
+  })
+
+  it('prompt dặn trước rằng chữ vào là do máy nhận dạng, có thể sai vài từ', () => {
+    expect(buildLivePrompt('xin chao', 'English')).toMatch(/nhận dạng tiếng nói/i)
+  })
+
   it('prompt nêu rõ chỉ trả về bản dịch', () => {
     const prompt = buildLivePrompt('Anh gửi báo giá nhé', 'English')
     expect(prompt).toContain('English')
@@ -188,6 +197,19 @@ describe('chọn đường dịch', () => {
 
   it('nguồn tự nhận diện thì không thể kết luận trùng, cứ dịch', () => {
     expect(liveTargetMode('en', 'auto')).toBe('local')
+  })
+
+  /**
+   * Cờ -tr bắt whisper vừa nghe vừa dịch; với model nhỏ chạy thời gian thực thì bản tiếng Anh
+   * nó trả về thường sai nghĩa. Có API thì để whisper chỉ nghe, còn dịch để mô hình dịch lo.
+   */
+  it('có khoá API thì tiếng Anh cũng đi qua API chứ không để whisper tự dịch', () => {
+    expect(liveTargetMode('en', 'vi', true)).toBe('cloud')
+    expect(liveTargetMode('en', 'vi', false)).toBe('local')
+  })
+
+  it('có khoá API cũng không dịch khi đích trùng nguồn', () => {
+    expect(liveTargetMode('vi', 'vi', true)).toBe('off')
   })
 
   it('cờ -tr chỉ xuất hiện khi dịch trên máy', () => {

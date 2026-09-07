@@ -151,3 +151,32 @@ body.overlay { background: transparent; }
 .overlay-captions { display: flex; flex-direction: column; gap: 3px; width: 100%; margin-top: 6px; font-size: 12px; line-height: 1.35; }
 .overlay-captions .live-who { flex: 0 0 auto; }
 .overlay-captions div { display: flex; gap: 6px; }
+
+/* Thanh phụ đề chạy chữ trên đầu màn hình: cửa sổ riêng, nền trong suốt, xuyên chuột. */
+.ticker {
+  display: flex; align-items: center; gap: 14px;
+  height: 100%; padding: 0 18px;
+  background: rgba(12, 13, 18, .82);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.ticker-who {
+  flex: 0 0 auto; font-size: 15px; font-weight: 600; color: var(--muted);
+  padding: 4px 10px; border-radius: 999px; background: var(--panel-2);
+}
+.ticker-who.them { color: var(--accent); }
+.ticker-track { flex: 1; overflow: hidden; }
+.ticker-line {
+  display: inline-block; white-space: nowrap;
+  font-size: 30px; line-height: 1.25; font-weight: 600;
+  /* Chữ nằm trên nền bất kỳ của màn hình đang ghi, nên phải có viền tối mới đọc được. */
+  text-shadow: 0 2px 6px rgba(0, 0, 0, .9);
+  animation-name: ticker; animation-timing-function: linear; animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+.ticker-original { margin-left: 22px; font-size: 18px; font-weight: 400; color: var(--muted); }
+@keyframes ticker {
+  from { transform: translateX(100%); }
+  to { transform: translateX(-100%); }
+}

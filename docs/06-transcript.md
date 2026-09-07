@@ -238,12 +238,20 @@ lưu lại thứ tiếng whisper **thật sự nghe ra**, không lưu chữ "aut
 | Chọn | Chạy ở đâu | Điều kiện |
 |---|---|---|
 | Không dịch | — | Chỉ hiện nguyên văn |
-| Tiếng Anh | Ngay trên máy, cờ `-tr` của whisper.cpp | Không cần mạng, không cần khoá API |
+| Tiếng Anh | Trên máy bằng cờ `-tr`, **chỉ khi chưa có khoá API** | Không cần mạng |
 | Ngôn ngữ khác | API | Phải bật gửi ra dịch vụ ngoài **và** có khoá API, giống hệt tóm tắt |
 
 Ngôn ngữ ngoài danh sách 10 thứ tiếng có sẵn: gõ thẳng tên (ví dụ "Tiếng Bồ Đào Nha"). Mã sinh ra
 phải khớp đúng khuôn `customLanguageCode()` vì nó vừa đi vào prompt vừa đi vào tên file bản dịch,
 và tên do người dùng gõ bị cắt ký tự điều khiển trước khi vào prompt.
+
+**Có khoá API thì tiếng Anh cũng đi qua API.** Cờ `-tr` bắt whisper vừa nghe vừa dịch cùng lúc;
+với model nhỏ chạy thời gian thực, bản tiếng Anh nó trả về thường sai nghĩa. Để whisper làm đúng
+một việc là nghe, rồi đưa chữ cho mô hình dịch, cho kết quả tốt hơn hẳn — và thường còn nhanh hơn
+vì một lượt gọi API rẻ hơn một lượt dịch cục bộ.
+
+Phụ đề trực tiếp còn chạy whisper với `-bs 1 -bo 1` thay vì mặc định 5: phụ đề tới muộn thì vô
+dụng, nên ở đây đổi chút chính xác lấy tốc độ. Bản gỡ băng sau khi ghi vẫn dùng mặc định.
 
 whisper.cpp chỉ dịch được đúng một hướng là sang tiếng Anh. Muốn tiếng Nhật, tiếng Trung… thì
 buộc phải qua API, và khi đó **lời thoại rời khỏi máy này** — mặc định tắt (NFR-06), giao diện
@@ -252,6 +260,20 @@ nói thẳng điều đó ở ngay dòng chọn ngôn ngữ.
 Ở chế độ tiếng Anh, whisper trả về thẳng bản tiếng Anh nên không có nguyên văn để đối chiếu:
 chạy hai lượt để có cả hai sẽ tốn gấp đôi CPU, không đáng. Ở chế độ API thì có cả hai — nguyên
 văn hiện ngay, bản dịch thay vào chỗ đó vài giây sau.
+
+### Thanh phụ đề chạy ngang đầu màn hình
+
+Cửa sổ riêng (`captions.html`), nằm sát mép trên, rộng gần hết màn hình, chữ chạy từ phải sang
+trái với tốc độ tính theo chiều dài câu — câu dài mà chạy nhanh như câu ngắn thì không ai đọc kịp.
+
+Ba tính chất bắt buộc:
+
+- **Xuyên chuột** (`setIgnoreMouseEvents(true)`): nó nằm đè lên cửa sổ cuộc gọi, chắn mất nút bấm
+  thì tiện ích thành chướng ngại vật.
+- **Tách hẳn khỏi ô chỉ báo đang ghi.** Ô kia là ràng buộc pháp lý FR-08 và không tắt được; thanh
+  này chỉ là tiện ích, bật tắt tuỳ ý.
+- **Bản dịch tới sau thay tại chỗ** dòng đang chạy (cùng `id`), để người đọc không phải xem hai
+  lần cùng một câu.
 
 ### Giới hạn phải nói trước
 
