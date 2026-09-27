@@ -60,6 +60,7 @@ jobs:
         with:
           name: installer-${{ matrix.os }}
           path: release/*.*
+          retention-days: 1
           if-no-files-found: error
 
   # Chỉ mở release ra cho trình cập nhật thấy khi đã đủ file của MỌI nền tảng. Không có bước này
